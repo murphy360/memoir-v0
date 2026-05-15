@@ -3,6 +3,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import { EventAssetList } from "./EventAssetList";
 import { EventCapturePanel } from "./EventCapturePanel";
 import { EventLinkedMemories } from "./EventLinkedMemories";
+import { PhotoDetailsModal } from "./PhotoDetailsModal";
 import { UNASSIGNED_PERIOD_VALUE } from "../lib/homePageHelpers";
 import type { AssetEntry, DirectoryEntry, EventFaceEntry, LifeEpic, LifeEvent, LifePeriod, LifeThread, MemoryEntry, Question } from "../types";
 
@@ -288,6 +289,7 @@ export function EventCard({
   const [isResearchOpen, setIsResearchOpen] = useState(false);
   const [showThreadPicker, setShowThreadPicker] = useState(false);
   const [showMergeWorkflow, setShowMergeWorkflow] = useState(false);
+  const [previewFace, setPreviewFace] = useState<EventFaceEntry | null>(null);
   const assignedThread = threads.find((t) => t.id === event.thread_id) ?? null;
   const mergeOptions = mergeCandidates.filter((candidate) => candidate.id !== event.id);
   // Keep photo analysis visibility on the event card so users can track progress without opening Add Memory.
@@ -762,7 +764,11 @@ export function EventCard({
                   const isUnknownSubject = isUnknownCompreFaceSubject(face.compreface_subject);
                   return (
                     <div key={face.id} className="assetNotesRow" style={{ alignItems: "center", gap: "0.6rem", width: "100%" }}>
-                      <div
+                      <button
+                        type="button"
+                        className="faceThumbButton"
+                        title="Open larger photo details"
+                        onClick={() => setPreviewFace(face)}
                         style={{
                           width: "58px",
                           height: "58px",
@@ -770,6 +776,9 @@ export function EventCard({
                           overflow: "hidden",
                           border: "1px solid rgba(0,0,0,0.15)",
                           flexShrink: 0,
+                          padding: 0,
+                          background: "#fff",
+                          cursor: "zoom-in",
                         }}
                       >
                         <img
@@ -784,7 +793,7 @@ export function EventCard({
                             transformOrigin: `${originX} ${originY}`,
                           }}
                         />
-                      </div>
+                      </button>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p className="meta" style={{ margin: 0 }}>
                           {face.person_name ? `Tagged: ${face.person_name}` : detectedName ? `Detected: ${detectedName}` : "Unknown person"}
@@ -1046,6 +1055,16 @@ export function EventCard({
           )}
         </>
       )}
+
+      <PhotoDetailsModal
+        isOpen={Boolean(previewFace)}
+        imageUrl={previewFace ? resolveApiUrl(`${previewFace.asset_download_url}?download=false`) : ""}
+        title={previewFace?.asset_title || previewFace?.compreface_subject || "Photo"}
+        onClose={() => setPreviewFace(null)}
+        faces={previewFace ? eventFaces.filter((face) => face.asset_id === previewFace.asset_id) : []}
+        focusFaceId={previewFace?.id || null}
+        filename={previewFace?.asset_title || null}
+      />
     </article>
   );
 }
