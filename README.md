@@ -121,6 +121,38 @@ docker compose up --build
 docker compose down
 ```
 
+## Linting
+
+Use a single command to run backend and frontend lint checks:
+
+- Windows (PowerShell):
+
+```powershell
+./lint.ps1
+```
+
+- Unix-like environments:
+
+```bash
+make lint
+```
+
+Initial baseline rules are intentionally lenient to catch low-hanging issues without blocking current development:
+
+- Backend (Ruff):
+	- Syntax/runtime checks (`E9`, `F63`, `F7`, `F82`)
+- Backend (Pylint):
+	- Advisory line length (`line-too-long`) at 140 chars
+	- Advisory complexity (`too-complex`) max 25
+	- Advisory file size guardrail (`too-many-lines`) max 2500 lines per module
+- Frontend (ESLint):
+	- Max file lines: 3000 (skip blank/comment lines)
+	- Max function lines: 300 (skip blank/comment lines)
+	- Max line length: 140 chars (ignoring URLs/strings/templates/comments)
+	- Cyclomatic complexity: 25 (warning)
+
+These thresholds are designed as a starting point and can be tightened incrementally after large legacy files are split. Backend advisory checks are currently non-blocking so teams can chip away at low-hanging cleanup first.
+
 ## API Endpoints (MVP)
 
 - `GET /api/health`: Health status.
