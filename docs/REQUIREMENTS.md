@@ -8,7 +8,8 @@ and a stopgap.
 How to read it:
 
 - "Must" is a requirement for the first release. "Should" is expected but can slip. "May" is an option.
-- "Decide:" marks a choice the owner has not made yet. Section 14 collects them.
+- The owner answered every open question on 2026-09-27. Section 14 records the answers; the text below already
+  reflects them.
 - "v0" means the current code. Where a v0 number or rule is cited, the rewrite starts from it and may change it
   with a reason written down.
 - Prose is short sentences, one idea each, no em-dashes.
@@ -37,7 +38,7 @@ becomes a biography with evidence.
 | **The storyteller** ("the grandmother") | An older, non-technical family member whose life is being recorded | One obvious button. Plain words. Confirmation that it worked and where it went. Never a dead end. |
 | **The archivist** (the owner) | Sets the system up, curates the timeline, fixes dates and names, reviews faces | Power tools that stay out of the storyteller's way. Bulk operations. Confidence that nothing is silently lost. |
 | **A contributor** | A child or grandchild who records the storyteller, uploads photos, adds context | Their own login. Their uploads attributed to them. The same simple capture. |
-| **A viewer** (optional) | Family who browse and listen | Read-only access. Decide: whether viewers exist in version 1 (section 14). |
+| **A viewer** | Family who browse and listen | Read-only access. In version 1 (owner's decision). |
 
 ### 1.4 Fixed product constraints (from the v0 grandmother review skill)
 
@@ -125,10 +126,11 @@ camera fields, dimensions, orientation, raw EXIF. An asset links to any number o
 (`evidence`, `recording`). Unlinked assets sit in the inbox. A photo's narrations (memories recorded about it) are
 visible from the photo.
 
-**Face.** One detected face in one photo. Normalised bounding box, detector confidence, the recognised identity
-candidate and its similarity, plugin outputs (age range, gender) if enabled, the raw recogniser result, and the
-confirmed Person if a human confirmed or the system auto-assigned above the threshold. Records whether the assignment
-was manual or automatic. A face may belong to an unknown-face cluster (section 7.4).
+**Face.** One detected face in one photo, as reported by the photo-analysis service (section 6.7). Normalised
+bounding box, detector confidence, the recognised identity (a CompreFace subject shared with the household's cameras)
+and its similarity, plugin outputs (age range, gender) if enabled, the raw result, and the confirmed Person if a human
+confirmed or the system auto-assigned above the threshold. Records whether the assignment was manual or automatic.
+A face may belong to an unknown-face cluster (section 7.4).
 
 **Question.** A follow-up prompt. Text, status (pending, answered, dismissed), the memory or event it came from, the
 memory that answered it, scope (general, period, event, person). Unique by normalised text among pending questions.
@@ -193,8 +195,8 @@ which AI features are enabled, the auto-assign similarity threshold, and the fac
 - Upload is resilient: chunked or resumable for long recordings, and a failed upload keeps the audio in the browser
   until it succeeds or the user discards it.
 - Audio is normalised server-side to mono MP3 at 44.1 kHz, 128 kbps (v0's ffmpeg settings). If conversion fails the
-  original is kept and transcription still runs. The original is kept alongside for a configurable time (default 30
-  days) then purged, or kept forever if the setting says so.
+  original is kept and transcription still runs. The original recording is kept forever alongside the MP3 (owner's
+  decision: storage is cheap next to a lost recording).
 
 ### 4.2 Typed memories
 
@@ -205,8 +207,8 @@ which AI features are enabled, the auto-assign similarity threshold, and the fac
 
 - **Add photos** is its own primary action, next to Record. It accepts many files at once, from the picker, by drag
   and drop, from the clipboard, and by sharing from a phone (web share target where supported).
-- Accepted: JPEG, PNG, GIF, WebP, HEIC (converted to JPEG), PDF, plain text. Anything else is refused before upload
-  with a plain message.
+- Accepted: JPEG, PNG, GIF, WebP, HEIC (converted to JPEG server-side; libheif in the image, version 1), PDF, plain
+  text. Anything else is refused before upload with a plain message.
 - Each file shows its own progress and outcome. One failure does not stop the others. Duplicates (same SHA-256 in
   the archive) are detected and offered as "already here, open it".
 - A photo can be added to an event, a period or nothing (the inbox). Adding to a period without an event is allowed
@@ -258,9 +260,11 @@ sits on any photo without a narration.
 
 ### 6.1 General
 
-- Every AI call goes through a provider interface. Gemini is the first provider (`gemini-2.5-flash` default, with
-  per-task model overrides for research and photo analysis, as v0 had). Prompts, parsing and limits live in the
-  service that owns the task, not in the provider adapter.
+- Text and audio AI (transcription, extraction, questions, summaries, research) goes through a provider interface
+  inside Memoir. Gemini is the first provider (`gemini-2.5-flash` default, with per-task model overrides, as v0 had).
+  Prompts, parsing and limits live in the service that owns the task, not in the provider adapter.
+- **All photo AI and all face work is delegated to the owner's photo-analysis service** (section 6.7). Memoir has no
+  CompreFace client and no vision prompts of its own.
 - Every AI task is a job (section 12) with a timeout, a retry policy, a cost record (model, tokens, duration) and a
   result stored with provenance: which model, which prompt version, when.
 - The output of an AI task is a proposal until the storyteller or archivist accepts it, except for the transcript,
@@ -295,9 +299,9 @@ If extraction fails the memory is saved with what exists and flagged "needs deta
 ### 6.4 Placement suggestion
 
 Given the memory's date range, people and places, suggest the event: the closest event by date in the matching
-period, higher weight winning ties (v0's rule), then the period alone, then "new". The suggestion is shown, never
-applied without confirmation, except for the storyteller's quick capture where the setting "file quick memories
-automatically" is on. Auto-created events and periods are labelled as such and are ordinary rows afterwards, never
+period, higher weight winning ties (v0's rule), then the period alone, then "new". For a one-tap quick memory the suggestion is
+applied at once and stated in plain words ("Saved to 1960s, Summer job") with one tap to change it (owner's
+decision). For every other capture the suggestion is shown first and confirmed with a tap. Auto-created events and periods are labelled as such and are ordinary rows afterwards, never
 re-created by a background process.
 
 ### 6.5 Follow-up questions
@@ -327,26 +331,45 @@ re-created by a background process.
   candidates from the event titles, and a biography. Presented as proposals with one "apply all" and per-item
   accepts. Title candidates come from the content, never from a hard-coded list. The counts of what ran are shown.
 
-### 6.7 Photo analysis
+### 6.7 Photo analysis (the photo-analysis service)
 
-One pipeline, one order, for every photo, whatever triggered it:
+The owner's photo-analysis service (`murphy360/photo-analysis`, running on dontpanic as `photo_analysis_app`) owns
+every photo: local object triage, CompreFace face identification with auto-enrolment, and vision-LLM description from
+several providers with a per-source cost policy. Memoir is one more client of it, like Home Assistant. Memoir does
+EXIF and geocoding itself (they are metadata, not analysis) and sends the photo on.
 
-1. **EXIF.** Dimensions, camera, lens, orientation, capture time (with offset handling to UTC), GPS, EXIF place
+Memoir's pipeline, one order, whatever triggered it:
+
+1. **EXIF** (in Memoir). Dimensions, camera, lens, orientation, capture time (offset handled to UTC), GPS, EXIF place
    name. Raw EXIF kept. Runs once at upload; a manual capture-date override is never overwritten by re-runs.
-2. **Reverse geocoding** when GPS exists and no place name yet. Name is "locality, region, country". Resolves to a
-   Place when one is within a configurable distance.
-3. **Faces** (section 7). Runs when the archive setting says so; can be run by hand.
-4. **AI analysis**, two passes, batched with a batch size that respects the payload limit:
-   - Pass 1, research: identify what is visible (signs, vehicles, uniforms, landmarks) and what was happening at that
-     time and place, web-grounded, five to twelve sentences of notes.
-   - Pass 2, structured: summary, suggested title (4 to 8 words), assessed place, visual evidence, contextual
-     narrative, discrepancy flag between metadata and evidence. Context passed in: capture time, coordinates, known
-     people from confirmed faces, the linked event, period and memory. Pass 1 failing is not fatal to pass 2.
-   The excerpt and assessed place apply to the asset; the suggested title is a proposal unless the asset has no title.
+2. **Reverse geocoding** (in Memoir) when GPS exists and no place name yet. "locality, region, country". Resolves to
+   a Place when one is within a configurable distance.
+3. **Submit to photo-analysis** with `source=memoir`, the asset id as metadata, a callback URL, and the context
+   below. Store the job id. Faces and description come back in one result.
+4. **Apply the result.** Faces become Face rows (section 7). The description, suggested title, assessed place,
+   evidence and discrepancy notes become the asset's excerpt and proposals.
 
-Progress streams to the browser per photo and per stage (running, done, skipped, failed) over SSE or job polling,
-survives a page reload, and is visible on the event, in the inbox and on the job list. "Processed" means the AI
-excerpt exists; re-runs skip processed photos unless asked.
+What Memoir needs from photo-analysis that it does not have today (these become photo-analysis tickets):
+
+- **An archive endpoint**, separate from the camera path, for photos that deserve real attention. Called with a
+  photo, optional context and a requested depth. The camera sources and their deer keep their cheap policy.
+- **Several analysts.** The archive endpoint runs more than one vision provider on the same photo and returns each
+  answer plus a reconciled one (the service's `thorough` cross-check idea, made the default here).
+- **Two stages, in order.** First the picture on its own: what is visible, where and when it seems to be, who is
+  in it. Then a review against the supplied context (the linked event and period, the storyteller's transcript,
+  known people): does the context fit the evidence? The result keeps both, and a plain flag when they disagree.
+  The storyteller's account is context to be checked, never ground truth. "Sometimes Grandma gets it wrong."
+- **Structured output** for the archive endpoint: summary, suggested title (4 to 8 words), assessed place, visual
+  evidence, contextual narrative, discrepancy notes, and per-analyst answers with provider and model.
+- **Web-grounded research** as part of the archive depth: signs, vehicles, uniforms, landmarks, and what was
+  happening at that time and place.
+- **Face identity management** endpoints so Memoir never talks to CompreFace directly: list subjects, create a
+  subject, enrol a face crop into a subject, rename, merge two subjects, delete. See section 7.3.
+- A `memoir` source in its policy with the archive depth allowed and a daily cap the owner sets.
+
+Progress streams to the browser per photo and per stage (uploaded, metadata, submitted, faces, description, done,
+failed) over SSE or job polling, survives a page reload, and is visible on the event, in the inbox and on the job
+list. "Processed" means the analysis result exists; re-runs skip processed photos unless asked.
 
 ### 6.8 Analysis state
 
@@ -364,7 +387,7 @@ the UI can show "up to date" or "has new material".
   from the page and from the list.
 - A place has a page too: its memories, events and photos, and a map if it has coordinates. Places can be renamed,
   merged and given aliases (v0 had none of these).
-- Rename keeps every link and renames the face identity in the recogniser in the same transaction.
+- Rename keeps every link. The face identity is an id, not a name, so nothing in the recogniser changes.
 - Merge moves aliases, mentions, storyteller roles and faces to the target; the source name becomes an alias.
 - Split creates the new people, copies the mentions to each, keeps the old name as an alias if asked, and puts the
   source's faces in the review queue rather than dropping them.
@@ -372,10 +395,12 @@ the UI can show "up to date" or "has new material".
 
 ### 7.2 Face detection and recognition
 
-- Provider: self-hosted CompreFace behind a provider interface, one recognition service per archive. No fallback
-  detector.
-- Per photo: detect and recognise in one call (limit 50 faces, prediction count 3, detection probability threshold
-  0.75, optional age and gender plugins). Store normalised boxes and the raw result.
+- Provider: the photo-analysis service, which runs the household's self-hosted CompreFace. **Identities are shared**
+  with the cameras (owner's decision): one subject per family member, whether seen at the door or in a 1965 print.
+  A face enrolled from an old photo helps the doorbell, and the other way round. No fallback detector.
+- Per photo: photo-analysis detects and recognises (v0 settings to start from: limit 50 faces, prediction count 3,
+  detection probability threshold 0.75, optional age and gender plugins). Memoir stores normalised boxes and the raw
+  result.
 - De-duplication: drop overlapping boxes (IoU over 0.42, larger box wins); one photo assigns a given identity to at
   most one face.
 - Recognition below the minimum similarity (default 0.90) is treated as unknown.
@@ -388,15 +413,19 @@ the UI can show "up to date" or "has new material".
 
 ### 7.3 Identity integrity
 
-- A Person has at most one recogniser identity and an identity belongs to at most one Person, enforced by the
-  database and by the service.
-- Assigning a face to a person with no identity creates the identity named by a stable id (not the display name),
-  enrols the face crop, and stores the id. Confirming a face enrols it. Renaming a person renames nothing in the
-  recogniser because the identity is the id.
+- A Person has at most one recogniser identity (a CompreFace subject id, shared with the cameras) and an identity
+  belongs to at most one Person, enforced by the database and by the service.
+- Every recogniser mutation goes through photo-analysis's identity endpoints (section 6.7), never to CompreFace
+  directly. Assigning a face to a person with no identity creates the identity under a stable id (not the display
+  name), enrols the face crop, and stores the id. Confirming a face enrols it. Renaming a person renames nothing in
+  the recogniser.
+- Because identities are shared, a subject may already exist from the cameras before Memoir knows the person. Linking
+  a Person to an existing subject is an explicit action with a preview of that subject's sample faces.
 - Merge: if both people have identities, the source's faces are re-enrolled into the target's identity and the source
-  identity is deleted, in a job with a record of what moved.
-- Every recogniser mutation is logged and reversible from the archive's own data (the archive is the source of
-  truth; the recogniser can be rebuilt from confirmed faces with one command).
+  identity is deleted, in a job with a record of what moved. The camera side sees the merge too, so it is confirmed
+  with a plain warning.
+- Every recogniser mutation is logged and reversible from the archive's own data (the archive is the source of truth
+  for who is who; the recogniser can be rebuilt from confirmed faces with one command).
 
 ### 7.4 Unknown people
 
@@ -453,18 +482,17 @@ A memoir is a shared family archive, so the unit of sharing is the archive, not 
 - A recording has a storyteller (the Person speaking) and an uploader (the account). These differ when a grandchild
   records a grandparent. Both are shown.
 - Deletions are soft with an owner-only purge, so a viewer's mistake or an over-eager auto-merge is recoverable.
-- Should: a per-memory `visibility` (archive, or only me) from day one, even if the UI for it comes later.
-
-### 9.3 Decisions for the owner
-
-- Email plus password only, or also passkeys (WebAuthn)? Passkeys suit a storyteller who forgets passwords.
-- Do viewers exist in version 1, or is everyone a contributor?
-- Per-memory privacy in version 1 or later?
+- All three roles exist in version 1 (owner's decision). Every mutation checks the role; the interface hides what a
+  viewer cannot do.
+- Sign-in is email and password (owner's decision). Passkeys and magic links are later options.
+- Every memory has a `visibility` column (archive, or only me) defaulting to the archive, enforced on every query
+  from day one. The interface switch comes later, so no promise is shown that the UI cannot keep.
 
 ## 10. Privacy and data ownership
 
-- Data at rest lives on the owner's server. Blobs and database are on an encrypted volume, or the application
-  encrypts blobs with a key from the environment. Decide: which (section 14).
+- Data at rest lives on the owner's server, protected by the host's access controls and the application login. No
+  encryption at rest in version 1 (owner's decision, 2026-09-27). Revisit when the archive holds more; an encrypted
+  volume is the cheap path when it comes.
 - Transcripts, photos and documents go only to the configured providers, and only when the archive has that feature
   on. A per-archive switch turns each provider off. The settings page names every provider that receives data.
 - Faces never leave the host: CompreFace is self-hosted. No cloud face API is ever added as a fallback.
@@ -472,7 +500,7 @@ A memoir is a shared family archive, so the unit of sharing is the archive, not 
 - **Export** is first class from version 1: a ZIP with a JSON of every entity and every blob under stable names, and
   a human-readable HTML timeline, requested from the settings page and produced as a job. Should: PDF later.
 - **Delete the archive** is available to the owner and removes everything, including recogniser identities.
-- Retention: soft-deleted rows purge after 30 days; original (unnormalised) audio per the setting in 4.1.
+- Retention: soft-deleted rows purge after 30 days; original recordings are kept forever (4.1).
 
 ## 11. User experience
 
@@ -559,15 +587,20 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
   blobs. Thumbnails are generated once and cached.
 - **API.** Every list is paginated. Every mutation returns the changed entity. Errors are structured (code, message,
   field). OpenAPI is generated and the frontend client is typed from it.
-- **Frontend.** Components under 300 lines, no component with more than a dozen props, server state in a query cache
-  (per-entity fetching, optimistic updates), UI state in the URL or local storage.
+- **Frontend.** Vite plus React as a single-page app (owner's decision): nothing renders on the server, the web
+  image is static files behind a tiny server, the PWA is easy. Components under 300 lines, no component with more
+  than a dozen props, server state in a query cache (per-entity fetching, optimistic updates), UI state in the URL or
+  local storage.
 - **Configuration.** Environment variables with one typed settings object, documented in one place. Provider settings
   read at startup, not at import.
 - **Hosting.** One image per process (api, web, worker), same origin under a base path (`/memoir`) behind Caddy on
   dontpanic, health checks, data in `/docker/memoir`. The deployment shape from PR #1 stays valid; Caddy's basic
   auth goes once the app's own login is live.
-- **Providers behind interfaces.** AI (Gemini first), faces (CompreFace first), geocoding (Nominatim first), each a
-  small adapter with a fake for tests.
+- **Providers behind interfaces.** Text AI (Gemini first), photos and faces (the photo-analysis service, section
+  6.7), geocoding (Nominatim first), each a small adapter with a fake for tests. Memoir never imports a CompreFace or
+  vision client.
+- **Repository.** The rewrite is `murphy360/memoir`. The version 0 repository is renamed `memoir-v0` first (GitHub
+  redirects the old URL; the deployed v0 images keep their names). The new repository starts with the standards.
 - **Times are UTC** in the database; the UI shows the archive's time zone.
 - **Observability.** Structured logs with request and job ids, a metrics endpoint, and a jobs page in the UI.
 
@@ -579,18 +612,24 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
 - PDF export (HTML export ships first).
 - Native mobile apps (PWA instead).
 - Public sharing links.
+- Encryption at rest, passkeys, magic links, the per-memory visibility switch in the UI.
 
-## 14. Decisions for the owner
+## 14. Decisions made (owner, 2026-09-27)
 
-1. Viewers in version 1, or everyone a contributor?
-2. Passkeys alongside passwords?
-3. Per-memory "only me" visibility in version 1?
-4. Encryption: encrypted volume, or application-level blob encryption?
-5. Same repository (`murphy360/memoir`, v0 kept on a branch or tag) or a new one?
-6. Frontend stack: stay with Next.js, or a lighter SPA (Vite plus React) since nothing renders on the server?
-7. Auto-file the storyteller's quick memories, or always confirm placement?
-8. Keep original audio forever, or 30 days?
-9. HEIC support in version 1 (needs a converter in the image) or later?
+| Question | Decision |
+|---|---|
+| Roles in version 1 | Owner, contributor and viewer |
+| Sign-in | Email and password; passkeys later |
+| Per-memory "only me" | Column and enforcement now, interface later |
+| Encryption at rest | None for now; revisit |
+| Repository | Rename the old repo to `memoir-v0`; the rewrite is `murphy360/memoir` |
+| Frontend | Vite plus React single-page app |
+| Quick capture | Auto-file, show "Saved to", one tap to change |
+| Original audio | Kept forever |
+| HEIC | Version 1 |
+| Photo analysis | photo-analysis owns triage, faces and description; Memoir keeps EXIF and geocoding |
+| Face identities | Shared with the cameras (one CompreFace subject per family member) |
+| Deep photo analysis | A new archive endpoint in photo-analysis: several analysts, picture first, then a review against the supplied context that may disagree with it; cameras untouched |
 
 ## Appendix A. v0 API surface, for reference
 
