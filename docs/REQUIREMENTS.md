@@ -360,12 +360,16 @@ What Memoir needs from photo-analysis that it does not have today (these become 
   photo, optional context and a requested depth. The camera sources and their deer keep their cheap policy.
 - **Several analysts.** The archive endpoint runs more than one vision provider on the same photo and returns each
   answer plus a reconciled one (the service's `thorough` cross-check idea, made the default here).
-- **Two stages, in order.** First the picture on its own: what is visible, where and when it seems to be, who is
-  in it. Then a review against the supplied context (the linked event and period, the storyteller's transcript,
-  known people): does the context fit the evidence? The result keeps both, and a plain flag when they disagree.
-  The storyteller's account is context to be checked, never ground truth. "Sometimes Grandma gets it wrong."
-- **Structured output** for the archive endpoint: summary, suggested title (4 to 8 words), assessed place, visual
-  evidence, contextual narrative, discrepancy notes, and per-analyst answers with provider and model.
+- **Two passes, in order** (photo-analysis #5). First the picture on its own, blind to anything the family said:
+  where, who and when, each answered independently by several analysts who then discuss to a consensus. Then the
+  storyteller's account (the linked event and period, the transcript, names) is given to the analysts and they
+  update their answers where it is credible and consistent with the evidence, and hold where it is not. The result
+  keeps both consensuses, the list of what changed on whose word, and the list of what the account said that the
+  picture does not support. Memoir shows the updated answer and keeps the independent one a tap away. "Sometimes
+  Grandma gets it wrong."
+- **Structured output** for the archive endpoint: per question (where, who, when) the independent and the updated
+  answer with confidence and evidence, the discussion rounds, the changes and disagreements, a narrative, a suggested
+  title (4 to 8 words), and per-analyst answers with provider and model.
 - **Web-grounded research** as part of the archive depth: signs, vehicles, uniforms, landmarks, and what was
   happening at that time and place.
 - **Face identity management** endpoints so Memoir never talks to CompreFace directly: list subjects, create a
@@ -634,7 +638,7 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
 | HEIC | Version 1 |
 | Photo analysis | photo-analysis owns everything about a photo: metadata (EXIF, GPS, reverse geocoding), triage, faces and description |
 | Face identities | Shared with the cameras (one CompreFace subject per family member) |
-| Deep photo analysis | A new archive endpoint in photo-analysis: several analysts, picture first, then a review against the supplied context that may disagree with it; cameras untouched |
+| Deep photo analysis | photo-analysis #5: several analysts answer where, who and when independently and discuss to a consensus; then the storyteller's account updates the answers where it earns it, with both versions kept; cameras untouched |
 
 ## Appendix A. v0 API surface, for reference
 
