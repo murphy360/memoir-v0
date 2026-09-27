@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DirectoryEntry } from "../types";
 import { getComprefaceSubjects } from "../lib/memoirApi";
@@ -448,9 +449,9 @@ export function DirectoryManager({
 
               <div className="directoryActions">
                 {!showDetailActions && detailsHrefBuilder ? (
-                  <a className="ghost" href={detailsHrefBuilder(item.id)}>
+                  <Link className="ghost" href={detailsHrefBuilder(item.id)}>
                     Open
-                  </a>
+                  </Link>
                 ) : isEditing ? (
                   <>
                     <button

@@ -14,8 +14,15 @@ import {
   Question,
 } from "../types";
 
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
+/** Where the API lives: an absolute URL when given, else the same origin under the base path. */
+export function apiBaseFrom(apiBaseUrl?: string, basePath?: string): string {
+  return apiBaseUrl || basePath || "";
+}
+
+export const API_BASE = apiBaseFrom(
+  process.env.NEXT_PUBLIC_API_BASE_URL,
+  process.env.NEXT_PUBLIC_BASE_PATH,
+);
 
 function toAbsoluteApiUrl(path: string): string {
   if (path.startsWith("http://") || path.startsWith("https://")) {

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { formatAssetCaptureDate } from "../../lib/homePageHelpers";
 import {
   addPersonAlias,
@@ -53,6 +54,7 @@ type PersonPhotoModalState = {
 
 export default function PersonDetailsPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const personId = Number(params?.id || 0);
 
   const [person, setPerson] = useState<PersonDetail | null>(null);
@@ -381,9 +383,9 @@ export default function PersonDetailsPage() {
   return (
     <main>
       <div className="personDetailsHero">
-        <a href="/" className="ghost">
+        <Link href="/" className="ghost">
           Back to timeline
-        </a>
+        </Link>
         <h1>{person?.name ?? "Loading person..."}</h1>
         <p className="meta">
           Manage profile, memories, events, photos, and face approvals.
@@ -561,7 +563,7 @@ export default function PersonDetailsPage() {
             onClick={() =>
               runMutation(async () => {
                 await mergePeopleEntries(personId, Number(mergeTargetId));
-                window.location.href = `/people/${mergeTargetId}`;
+                router.push(`/people/${mergeTargetId}`);
               }, "People merged.")
             }
           >
@@ -593,7 +595,7 @@ export default function PersonDetailsPage() {
                   .map((n) => n.trim())
                   .filter(Boolean);
                 await splitPersonEntry(personId, names, splitKeepAlias);
-                window.location.href = "/";
+                router.push("/");
               }, "Person split.")
             }
           >
@@ -606,7 +608,7 @@ export default function PersonDetailsPage() {
             onClick={() =>
               runMutation(async () => {
                 await deleteDirectoryEntry("people", personId);
-                window.location.href = "/";
+                router.push("/");
               }, "Person deleted.")
             }
           >
