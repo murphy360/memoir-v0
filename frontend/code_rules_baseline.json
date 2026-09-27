@@ -1,0 +1,39 @@
+{
+ "eslint": {
+  "app/components/CaptureSidebar.tsx::complexity::CaptureSidebar": 1,
+  "app/components/DirectoryManager.tsx::complexity::?": 1,
+  "app/components/EpicCard.tsx::complexity::EpicCard": 1,
+  "app/components/EventAssetList.tsx::@typescript-eslint/no-unused-vars": 11,
+  "app/components/EventAssetList.tsx::complexity::EventAssetList": 1,
+  "app/components/EventAssetList.tsx::complexity::pickDefaultEventId": 1,
+  "app/components/EventCapturePanel.tsx::complexity::EventCapturePanel": 1,
+  "app/components/EventCard.tsx::complexity::?": 1,
+  "app/components/EventCard.tsx::complexity::EventCard": 1,
+  "app/components/MemoryCard.tsx::@typescript-eslint/no-unused-vars": 1,
+  "app/components/MemoryCard.tsx::complexity::MemoryCard": 1,
+  "app/components/PhotoDetailsModal.tsx::complexity::PhotoDetailsModal": 1,
+  "app/components/PhotoDetailsModal.tsx::complexity::getFaceBox": 1,
+  "app/hooks/useRecordingController.ts::react-hooks/exhaustive-deps": 1,
+  "app/lib/homePageHelpers.tsx::complexity::renderImageMetadataBadges": 1,
+  "app/page.tsx::@typescript-eslint/no-unused-vars": 7,
+  "app/page.tsx::complexity::?": 2,
+  "app/page.tsx::complexity::HomePage": 1,
+  "app/page.tsx::complexity::createLifeEvent": 1,
+  "app/page.tsx::complexity::uploadDocumentsToEvent": 1,
+  "app/page.tsx::max-statements::HomePage": 1,
+  "app/page.tsx::react-hooks/exhaustive-deps": 2,
+  "app/people/[id]/page.tsx::complexity::PersonDetailsPage": 1,
+  "app/people/[id]/page.tsx::complexity::getFaceOverlayBox": 1,
+  "app/people/[id]/page.tsx::react-hooks/exhaustive-deps": 1,
+  "next.config.mjs::no-undef": 1
+ },
+ "lines": {
+  "app/components/EventAssetList.tsx": 1722,
+  "app/components/EventCard.tsx": 1580,
+  "app/lib/memoirApi.ts": 1042,
+  "app/page.tsx": 3940,
+  "app/people/[id]/page.tsx": 842
+ },
+ "note": "code rules ratchet: ceilings only go down (murphy360/standards)",
+ "ruff": {}
+}

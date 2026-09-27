@@ -16,3 +16,14 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# Tooling
+.venv/
+.ruff_cache/
+.pytest_cache/
+.standards/
+*.db
+
+# Local data
+/backend/data/
+/frontend/tsconfig.tsbuildinfo
