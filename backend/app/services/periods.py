@@ -5,7 +5,15 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models import Asset, EventAsset, LifeEpic, LifeEvent, LifePeriod, LifeThread, MemoryEntry
+from app.models import (
+    Asset,
+    EventAsset,
+    LifeEpic,
+    LifeEvent,
+    LifePeriod,
+    LifeThread,
+    MemoryEntry,
+)
 from app.schemas import (
     AssetResponse,
     LifeEpicResponse,
@@ -17,7 +25,11 @@ from app.schemas import (
     UpdateLifeEventRequest,
     UpdateLifePeriodRequest,
 )
-from app.services.date_normalization import clean_date_text, parse_text_date_range, resolve_start_end_dates
+from app.services.date_normalization import (
+    clean_date_text,
+    parse_text_date_range,
+    resolve_start_end_dates,
+)
 from app.services.gemini_client import generate_period_biography
 
 
@@ -44,7 +56,9 @@ def slugify_period_title(value: str) -> str:
     return compact[:180] or "period"
 
 
-def unique_period_slug(db: Session, title: str, existing_id: Optional[int] = None) -> str:
+def unique_period_slug(
+    db: Session, title: str, existing_id: Optional[int] = None
+) -> str:
     base = slugify_period_title(title)
     candidate = base
     suffix = 2
@@ -56,7 +70,9 @@ def unique_period_slug(db: Session, title: str, existing_id: Optional[int] = Non
         suffix += 1
 
 
-def unique_thread_slug(db: Session, title: str, existing_id: Optional[int] = None) -> str:
+def unique_thread_slug(
+    db: Session, title: str, existing_id: Optional[int] = None
+) -> str:
     base = slugify_period_title(title)
     candidate = base
     suffix = 2
@@ -68,7 +84,9 @@ def unique_thread_slug(db: Session, title: str, existing_id: Optional[int] = Non
         suffix += 1
 
 
-def apply_period_updates(db: Session, period: LifePeriod, body: UpdateLifePeriodRequest) -> None:
+def apply_period_updates(
+    db: Session, period: LifePeriod, body: UpdateLifePeriodRequest
+) -> None:
     """Apply mutable period fields, including normalized date sort bounds."""
     if body.title is not None:
         clean_title = normalize_period_title(body.title)
@@ -83,10 +101,14 @@ def apply_period_updates(db: Session, period: LifePeriod, body: UpdateLifePeriod
     if body.end_date_text is not None:
         period.end_date_text = clean_date_text(body.end_date_text)
 
-    period.start_sort, period.end_sort = resolve_start_end_dates(period.start_date_text, period.end_date_text)
+    period.start_sort, period.end_sort = resolve_start_end_dates(
+        period.start_date_text, period.end_date_text
+    )
 
 
-def apply_epic_updates(db: Session, epic: LifeEpic, body: UpdateLifeEpicRequest) -> None:
+def apply_epic_updates(
+    db: Session, epic: LifeEpic, body: UpdateLifeEpicRequest
+) -> None:
     """Apply epic edits and keep epic/event period alignment intact."""
     previous_period_id = epic.period_id
 
@@ -108,7 +130,9 @@ def apply_epic_updates(db: Session, epic: LifeEpic, body: UpdateLifeEpicRequest)
         if not target_period:
             raise HTTPException(status_code=404, detail="Target period not found")
         epic.period_id = body.period_id
-        db.query(LifeEvent).filter(LifeEvent.epic_id == epic.id).update({"period_id": body.period_id})
+        db.query(LifeEvent).filter(LifeEvent.epic_id == epic.id).update(
+            {"period_id": body.period_id}
+        )
 
     if "description" in body.model_fields_set:
         epic.description = (body.description or "").strip()[:2000] or None
@@ -122,7 +146,9 @@ def apply_epic_updates(db: Session, epic: LifeEpic, body: UpdateLifeEpicRequest)
     if "end_date_text" in body.model_fields_set:
         epic.end_date_text = clean_date_text(body.end_date_text)
 
-    epic.start_sort, epic.end_sort = resolve_start_end_dates(epic.start_date_text, epic.end_date_text)
+    epic.start_sort, epic.end_sort = resolve_start_end_dates(
+        epic.start_date_text, epic.end_date_text
+    )
 
     if epic.period_id != previous_period_id:
         if previous_period_id is not None:
@@ -130,7 +156,9 @@ def apply_epic_updates(db: Session, epic: LifeEpic, body: UpdateLifeEpicRequest)
         refresh_period_summary(db, db.get(LifePeriod, epic.period_id))
 
 
-def apply_event_updates(db: Session, event: LifeEvent, body: UpdateLifeEventRequest) -> None:
+def apply_event_updates(
+    db: Session, event: LifeEvent, body: UpdateLifeEventRequest
+) -> None:
     """Apply event edits and enforce valid period/epic relationships for move operations."""
     previous_period_id = event.period_id
 
@@ -167,13 +195,17 @@ def apply_event_updates(db: Session, event: LifeEvent, body: UpdateLifeEventRequ
         if not resolved_epic:
             raise HTTPException(status_code=404, detail="Epic not found")
         if next_period_id is not None and resolved_epic.period_id != next_period_id:
-            raise HTTPException(status_code=400, detail="Epic does not belong to the provided period")
+            raise HTTPException(
+                status_code=400, detail="Epic does not belong to the provided period"
+            )
         next_period_id = resolved_epic.period_id
 
     if next_period_id is not None and not db.get(LifePeriod, next_period_id):
         raise HTTPException(status_code=404, detail="Target period not found")
     if next_period_id is None:
-        raise HTTPException(status_code=400, detail="Event requires period_id or epic_id")
+        raise HTTPException(
+            status_code=400, detail="Event requires period_id or epic_id"
+        )
 
     event.period_id = next_period_id
     event.epic_id = next_epic_id
@@ -187,8 +219,18 @@ def apply_event_updates(db: Session, event: LifeEvent, body: UpdateLifeEventRequ
         event.weight = body.weight
 
     if event.period_id != previous_period_id:
-        refresh_period_summary(db, db.get(LifePeriod, previous_period_id) if previous_period_id is not None else None)
-        refresh_period_summary(db, db.get(LifePeriod, event.period_id) if event.period_id is not None else None)
+        refresh_period_summary(
+            db,
+            db.get(LifePeriod, previous_period_id)
+            if previous_period_id is not None
+            else None,
+        )
+        refresh_period_summary(
+            db,
+            db.get(LifePeriod, event.period_id)
+            if event.period_id is not None
+            else None,
+        )
 
 
 def period_asset_count_from_events(events: list[LifeEvent]) -> int:
@@ -260,7 +302,11 @@ def build_event_response(event: LifeEvent) -> LifeEventResponse:
         linked_memory_ids.append(event.legacy_memory_id)
     for link in event.linked_assets:
         asset = link.asset
-        if asset and asset.legacy_memory_id is not None and asset.legacy_memory_id not in linked_memory_ids:
+        if (
+            asset
+            and asset.legacy_memory_id is not None
+            and asset.legacy_memory_id not in linked_memory_ids
+        ):
             linked_memory_ids.append(asset.legacy_memory_id)
 
     return LifeEventResponse(
@@ -288,7 +334,9 @@ def build_event_response(event: LifeEvent) -> LifeEventResponse:
         legacy_memory_id=event.legacy_memory_id,
         linked_memory_ids=linked_memory_ids,
         legacy_audio_url=(legacy_memory.audio_url if legacy_memory else None),
-        legacy_audio_size_bytes=(legacy_memory.audio_size_bytes if legacy_memory else None),
+        legacy_audio_size_bytes=(
+            legacy_memory.audio_size_bytes if legacy_memory else None
+        ),
         linked_asset_count=len(event.linked_assets),
         analysis_status=event.analysis_status,
         analysis_last_analyzed_at=event.analysis_last_analyzed_at,
@@ -314,8 +362,16 @@ def _extract_year_hints(text: Optional[str]) -> list[int]:
 
 
 def _period_bounds_in_years(period: LifePeriod) -> tuple[Optional[int], Optional[int]]:
-    start_year = period.start_sort.year if period.start_sort else _extract_year_hint(period.start_date_text)
-    end_year = period.end_sort.year if period.end_sort else _extract_year_hint(period.end_date_text)
+    start_year = (
+        period.start_sort.year
+        if period.start_sort
+        else _extract_year_hint(period.start_date_text)
+    )
+    end_year = (
+        period.end_sort.year
+        if period.end_sort
+        else _extract_year_hint(period.end_date_text)
+    )
     return start_year, end_year
 
 
@@ -341,7 +397,9 @@ def _event_year_bounds(events: list[LifeEvent]) -> tuple[Optional[int], Optional
     return min(years), max(years)
 
 
-def _recommended_period_dates_from_events(events: list[LifeEvent]) -> tuple[Optional[str], Optional[str], Optional[date], Optional[date]]:
+def _recommended_period_dates_from_events(
+    events: list[LifeEvent],
+) -> tuple[Optional[str], Optional[str], Optional[date], Optional[date]]:
     min_year, max_year = _event_year_bounds(events)
     if min_year is None or max_year is None:
         return None, None, None, None
@@ -350,7 +408,12 @@ def _recommended_period_dates_from_events(events: list[LifeEvent]) -> tuple[Opti
     recommended_end_text = str(max_year)
     recommended_start_sort = date(min_year, 1, 1)
     recommended_end_sort = date(max_year, 12, 31)
-    return recommended_start_text, recommended_end_text, recommended_start_sort, recommended_end_sort
+    return (
+        recommended_start_text,
+        recommended_end_text,
+        recommended_start_sort,
+        recommended_end_sort,
+    )
 
 
 def _is_generic_period_title(title: str) -> bool:
@@ -392,9 +455,14 @@ def _event_title_to_period_candidate(event_title: str, year_suffix: str) -> str 
     return f"{cleaned} {year_suffix}".strip()
 
 
-def _suggest_period_titles(period: LifePeriod, events: list[LifeEvent]) -> tuple[list[str], str]:
+def _suggest_period_titles(
+    period: LifePeriod, events: list[LifeEvent]
+) -> tuple[list[str], str]:
     if not events:
-        return [], "No events in this period yet, so there is no evidence to suggest a better title."
+        return (
+            [],
+            "No events in this period yet, so there is no evidence to suggest a better title.",
+        )
 
     min_year, max_year = _event_year_bounds(events)
     if min_year is None or max_year is None:
@@ -411,8 +479,7 @@ def _suggest_period_titles(period: LifePeriod, events: list[LifeEvent]) -> tuple
             decade_label = f"the {(min_year // 10) * 10}s\u2013{(max_year // 10) * 10}s"
 
     haystack = " ".join(
-        f"{event.title or ''} {event.description or ''}".lower()
-        for event in events
+        f"{event.title or ''} {event.description or ''}".lower() for event in events
     )
 
     candidates: list[str] = []
@@ -448,29 +515,116 @@ def _suggest_period_titles(period: LifePeriod, events: list[LifeEvent]) -> tuple
             institution_hits.append(f"{label} {year_suffix}")
     candidates.extend(institution_hits)
 
-    if any(tok in haystack for tok in ["elementary", "grade school", "primary school", "first grade", "second grade", "third grade", "fourth grade", "fifth grade"]):
+    if any(
+        tok in haystack
+        for tok in [
+            "elementary",
+            "grade school",
+            "primary school",
+            "first grade",
+            "second grade",
+            "third grade",
+            "fourth grade",
+            "fifth grade",
+        ]
+    ):
         candidates.append(f"Elementary School Years {year_suffix}")
-    if any(tok in haystack for tok in ["middle school", "junior high", "sixth grade", "seventh grade", "eighth grade"]):
+    if any(
+        tok in haystack
+        for tok in [
+            "middle school",
+            "junior high",
+            "sixth grade",
+            "seventh grade",
+            "eighth grade",
+        ]
+    ):
         candidates.append(f"Middle School Years {year_suffix}")
-    if any(tok in haystack for tok in ["high school", "ninth grade", "tenth grade", "eleventh grade", "twelfth grade", "prep school", "senior year", "prom", "homecoming"]):
+    if any(
+        tok in haystack
+        for tok in [
+            "high school",
+            "ninth grade",
+            "tenth grade",
+            "eleventh grade",
+            "twelfth grade",
+            "prep school",
+            "senior year",
+            "prom",
+            "homecoming",
+        ]
+    ):
         candidates.append(f"High School Years {year_suffix}")
-    if any(tok in haystack for tok in ["university", "college", "undergraduate", "campus", "fraternity", "sorority"]):
+    if any(
+        tok in haystack
+        for tok in [
+            "university",
+            "college",
+            "undergraduate",
+            "campus",
+            "fraternity",
+            "sorority",
+        ]
+    ):
         candidates.append(f"College Years {year_suffix}")
-    if any(tok in haystack for tok in ["graduate school", "master", "phd", "doctorate", "dissertation", "thesis"]):
+    if any(
+        tok in haystack
+        for tok in [
+            "graduate school",
+            "master",
+            "phd",
+            "doctorate",
+            "dissertation",
+            "thesis",
+        ]
+    ):
         candidates.append(f"Graduate Studies {year_suffix}")
-    if any(tok in haystack for tok in ["deployment", "deployed", "mobilized", "mobilization"]):
+    if any(
+        tok in haystack
+        for tok in ["deployment", "deployed", "mobilized", "mobilization"]
+    ):
         candidates.append(f"Overseas Deployment {year_suffix}")
-    if any(tok in haystack for tok in ["navy", "army", "marine", "air force", "coast guard", "military", "enlisted"]):
+    if any(
+        tok in haystack
+        for tok in [
+            "navy",
+            "army",
+            "marine",
+            "air force",
+            "coast guard",
+            "military",
+            "enlisted",
+        ]
+    ):
         candidates.append(f"Military Service {year_suffix}")
-    if any(tok in haystack for tok in ["married", "wedding", "engagement", "honeymoon"]):
+    if any(
+        tok in haystack for tok in ["married", "wedding", "engagement", "honeymoon"]
+    ):
         candidates.append(f"Marriage and Early Family {year_suffix}")
-    if any(tok in haystack for tok in ["daughter", "son", "newborn", "baby", "pregnancy"]):
+    if any(
+        tok in haystack for tok in ["daughter", "son", "newborn", "baby", "pregnancy"]
+    ):
         candidates.append(f"Growing Our Family {year_suffix}")
-    if any(tok in haystack for tok in ["scout", "troop", "eagle", "cub scout", "boy scout"]):
+    if any(
+        tok in haystack for tok in ["scout", "troop", "eagle", "cub scout", "boy scout"]
+    ):
         candidates.append(f"Scouting Years {year_suffix}")
-    if any(tok in haystack for tok in ["job", "career", "hired", "promotion", "manager", "engineer", "developer"]):
+    if any(
+        tok in haystack
+        for tok in [
+            "job",
+            "career",
+            "hired",
+            "promotion",
+            "manager",
+            "engineer",
+            "developer",
+        ]
+    ):
         candidates.append(f"Career Years {year_suffix}")
-    if any(tok in haystack for tok in ["childhood", "born", "growing up", "playground"]):
+    if any(
+        tok in haystack for tok in ["childhood", "born", "growing up", "playground"]
+    ):
         candidates.append(f"Early Childhood {year_suffix}")
 
     candidates.append(f"A Chapter from {decade_label}")
@@ -494,7 +648,9 @@ def _suggest_period_titles(period: LifePeriod, events: list[LifeEvent]) -> tuple
     return unique[:5], reasoning
 
 
-def _generate_period_summary(period: LifePeriod, events: list[LifeEvent], asset_count: int) -> tuple[str, str]:
+def _generate_period_summary(
+    period: LifePeriod, events: list[LifeEvent], asset_count: int
+) -> tuple[str, str]:
     if not events:
         return (
             "Auto-generated biography: This chapter is waiting for its first memory. As new moments and supporting materials are added, this biography-style summary will grow into a fuller life story.",
@@ -531,7 +687,10 @@ def _generate_period_summary(period: LifePeriod, events: list[LifeEvent], asset_
         asset_count=asset_count,
     )
     if ai_text:
-        return f"Auto-generated biography: {ai_text}", "Summary written by AI from current events and linked assets."
+        return (
+            f"Auto-generated biography: {ai_text}",
+            "Summary written by AI from current events and linked assets.",
+        )
 
     count = len(event_titles)
     if count == 0:
@@ -539,14 +698,18 @@ def _generate_period_summary(period: LifePeriod, events: list[LifeEvent], asset_
     elif count == 1:
         event_line = f"This chapter contains one recorded moment from {range_text}."
     else:
-        event_line = f"This chapter covers {count} recorded moments spanning {range_text}."
+        event_line = (
+            f"This chapter covers {count} recorded moments spanning {range_text}."
+        )
 
     if asset_count == 0:
         asset_line = "No supporting photos or documents are linked yet."
     elif asset_count == 1:
         asset_line = "One supporting asset is linked to help tell the story."
     else:
-        asset_line = f"{asset_count} supporting assets are linked to help tell the story."
+        asset_line = (
+            f"{asset_count} supporting assets are linked to help tell the story."
+        )
 
     summary = f"Auto-generated biography: {event_line} {asset_line}"
     return summary[:1200], "Summary generated from current events and linked assets."
@@ -555,10 +718,14 @@ def _generate_period_summary(period: LifePeriod, events: list[LifeEvent], asset_
 def _should_auto_update_period_summary(period: LifePeriod) -> bool:
     if not period.summary:
         return True
-    return period.summary.startswith("Auto-generated summary:") or period.summary.startswith("Auto-generated biography:")
+    return period.summary.startswith(
+        "Auto-generated summary:"
+    ) or period.summary.startswith("Auto-generated biography:")
 
 
-def refresh_period_summary(db: Session, period: Optional[LifePeriod], force: bool = False) -> Optional[str]:
+def refresh_period_summary(
+    db: Session, period: Optional[LifePeriod], force: bool = False
+) -> Optional[str]:
     if not period:
         return None
 
@@ -568,10 +735,16 @@ def refresh_period_summary(db: Session, period: Optional[LifePeriod], force: boo
     events = (
         db.query(LifeEvent)
         .filter(LifeEvent.period_id == period.id)
-        .order_by(LifeEvent.event_date_sort.is_(None), LifeEvent.event_date_sort.asc(), LifeEvent.created_at.asc())
+        .order_by(
+            LifeEvent.event_date_sort.is_(None),
+            LifeEvent.event_date_sort.asc(),
+            LifeEvent.created_at.asc(),
+        )
         .all()
     )
-    summary_text, _ = _generate_period_summary(period, events, period_asset_count_from_events(events))
+    summary_text, _ = _generate_period_summary(
+        period, events, period_asset_count_from_events(events)
+    )
     period.summary = summary_text
     return summary_text
 
@@ -588,23 +761,31 @@ def analyze_period(
 
     coverage_ok = True
     coverage_gaps: list[str] = []
-    if event_min_year is not None and (period_start_year is None or period_start_year > event_min_year):
+    if event_min_year is not None and (
+        period_start_year is None or period_start_year > event_min_year
+    ):
         coverage_ok = False
         coverage_gaps.append(f"start should be {event_min_year}")
-    if event_max_year is not None and (period_end_year is None or period_end_year < event_max_year):
+    if event_max_year is not None and (
+        period_end_year is None or period_end_year < event_max_year
+    ):
         coverage_ok = False
         coverage_gaps.append(f"end should be {event_max_year}")
 
     if coverage_ok:
         coverage_reasoning = "Current period dates cover the known event date range."
     elif coverage_gaps:
-        coverage_reasoning = "Period date coverage can improve: " + ", ".join(coverage_gaps) + "."
+        coverage_reasoning = (
+            "Period date coverage can improve: " + ", ".join(coverage_gaps) + "."
+        )
     else:
         coverage_reasoning = "Event dates are too uncertain to assess period coverage."
 
     rec_start_text, rec_end_text, _, _ = _recommended_period_dates_from_events(events)
     recommended_titles, title_reasoning = _suggest_period_titles(period, events)
-    generated_summary, summary_reasoning = _generate_period_summary(period, events, asset_count)
+    generated_summary, summary_reasoning = _generate_period_summary(
+        period, events, asset_count
+    )
 
     return LifePeriodAnalysisResponse(
         period_id=period.id,
@@ -656,7 +837,11 @@ def build_asset_response(asset: Asset) -> AssetResponse:
         orientation=asset.orientation,
         image_width=asset.image_width,
         image_height=asset.image_height,
-        playback_url=(asset.download_url if (asset.content_type or "").startswith("audio/") else None),
+        playback_url=(
+            asset.download_url
+            if (asset.content_type or "").startswith("audio/")
+            else None
+        ),
         text_excerpt=asset.text_excerpt,
         notes=asset.notes,
         download_url=asset.download_url,
@@ -665,10 +850,16 @@ def build_asset_response(asset: Asset) -> AssetResponse:
     )
 
 
-def ensure_event_asset_link(db: Session, event: LifeEvent, asset: Asset, relation_type: str = "evidence") -> None:
+def ensure_event_asset_link(
+    db: Session, event: LifeEvent, asset: Asset, relation_type: str = "evidence"
+) -> None:
     exists = any(link.asset_id == asset.id for link in event.linked_assets)
     if not exists:
-        db.add(EventAsset(event_id=event.id, asset_id=asset.id, relation_type=relation_type[:30]))
+        db.add(
+            EventAsset(
+                event_id=event.id, asset_id=asset.id, relation_type=relation_type[:30]
+            )
+        )
 
 
 def get_or_create_period_for_memory(db: Session, memory: MemoryEntry) -> LifePeriod:

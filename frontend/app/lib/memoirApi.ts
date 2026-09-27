@@ -14,7 +14,15 @@ import {
   Question,
 } from "../types";
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
+/** Where the API lives: an absolute URL when given, else the same origin under the base path. */
+export function apiBaseFrom(apiBaseUrl?: string, basePath?: string): string {
+  return apiBaseUrl || basePath || "";
+}
+
+export const API_BASE = apiBaseFrom(
+  process.env.NEXT_PUBLIC_API_BASE_URL,
+  process.env.NEXT_PUBLIC_BASE_PATH,
+);
 
 function toAbsoluteApiUrl(path: string): string {
   if (path.startsWith("http://") || path.startsWith("https://")) {
@@ -45,7 +53,11 @@ async function expectOk(response: Response, message: string): Promise<void> {
  * Send a JSON PATCH request and return a parsed response body.
  * Used to keep Period/Epic/Event mutation calls on one shared code path.
  */
-async function patchJson<T>(path: string, payload: unknown, message: string): Promise<T> {
+async function patchJson<T>(
+  path: string,
+  payload: unknown,
+  message: string,
+): Promise<T> {
   const response = await fetch(toAbsoluteApiUrl(path), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -135,37 +147,57 @@ export async function fetchTimelineBundle(): Promise<TimelineBundle> {
 }
 
 export async function fetchEventAssets(eventId: number): Promise<AssetEntry[]> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/events/${eventId}/assets`), { cache: "no-store" });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/events/${eventId}/assets`),
+    { cache: "no-store" },
+  );
   await expectOk(response, "Failed to load event assets");
   return response.json();
 }
 
 /** Load detected faces for one event from GET /api/events/{event_id}/faces. */
-export async function fetchEventFaces(eventId: number): Promise<EventFaceEntry[]> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/events/${eventId}/faces`), { cache: "no-store" });
+export async function fetchEventFaces(
+  eventId: number,
+): Promise<EventFaceEntry[]> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/events/${eventId}/faces`),
+    { cache: "no-store" },
+  );
   await expectOk(response, "Failed to load event faces");
   return response.json();
 }
 
 /** Assign or clear person link for a detected face via POST /api/faces/{face_id}/assign-person. */
-export async function assignFacePerson(faceId: number, personId: number | null): Promise<EventFaceEntry> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/faces/${faceId}/assign-person`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ person_id: personId }),
-  });
+export async function assignFacePerson(
+  faceId: number,
+  personId: number | null,
+): Promise<EventFaceEntry> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/faces/${faceId}/assign-person`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ person_id: personId }),
+    },
+  );
 
   await expectOk(response, "Failed to assign face");
   return response.json();
 }
 
 /** Rename a detected face's CompreFace subject via POST /api/faces/{face_id}/rename-subject. */
-export async function renameFaceSubject(faceId: number, newSubjectName: string): Promise<EventFaceEntry> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/faces/${faceId}/rename-subject`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ new_subject_name: newSubjectName }),
-  });
+export async function renameFaceSubject(
+  faceId: number,
+  newSubjectName: string,
+): Promise<EventFaceEntry> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/faces/${faceId}/rename-subject`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ new_subject_name: newSubjectName }),
+    },
+  );
 
   await expectOk(response, "Failed to rename CompreFace subject");
   return response.json();
@@ -173,7 +205,9 @@ export async function renameFaceSubject(faceId: number, newSubjectName: string):
 
 /** Permanently delete a detected face record via DELETE /api/faces/{face_id}. */
 export async function deleteFace(faceId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/faces/${faceId}`), { method: "DELETE" });
+  const response = await fetch(toAbsoluteApiUrl(`/api/faces/${faceId}`), {
+    method: "DELETE",
+  });
   await expectOk(response, "Failed to delete face");
 }
 
@@ -193,7 +227,10 @@ export async function createPeriod(payload: {
 }
 
 /** Create a top-level thread via POST /api/threads. */
-export async function createThread(payload: { title: string; summary: string | null }): Promise<LifeThread> {
+export async function createThread(payload: {
+  title: string;
+  summary: string | null;
+}): Promise<LifeThread> {
   const response = await fetch(toAbsoluteApiUrl("/api/threads"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -223,33 +260,49 @@ export async function createEpic(payload: {
 
 /** Delete a thread via DELETE /api/threads/{thread_id}. */
 export async function deleteThread(threadId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/threads/${threadId}`), { method: "DELETE" });
+  const response = await fetch(toAbsoluteApiUrl(`/api/threads/${threadId}`), {
+    method: "DELETE",
+  });
   await expectOk(response, "Delete thread failed");
 }
 
 /** Delete an epic via DELETE /api/epics/{epic_id}. */
 export async function deleteEpic(epicId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/epics/${epicId}`), { method: "DELETE" });
+  const response = await fetch(toAbsoluteApiUrl(`/api/epics/${epicId}`), {
+    method: "DELETE",
+  });
   await expectOk(response, "Delete epic failed");
 }
 
 /** Assign or clear a thread on an epic via PATCH /api/epics/{epic_id}. */
-export async function assignEpicToThread(epicId: number, threadId: number | null): Promise<LifeEpic> {
+export async function assignEpicToThread(
+  epicId: number,
+  threadId: number | null,
+): Promise<LifeEpic> {
   return updateEpicById(epicId, { thread_id: threadId });
 }
 
 /** Move an epic into a different period via PATCH /api/epics/{epic_id}. */
-export async function assignEpicToPeriod(epicId: number, periodId: number): Promise<LifeEpic> {
+export async function assignEpicToPeriod(
+  epicId: number,
+  periodId: number,
+): Promise<LifeEpic> {
   return updateEpicById(epicId, { period_id: periodId });
 }
 
 /** Assign or clear a thread on an event via PATCH /api/events/{event_id}. */
-export async function assignEventToThread(eventId: number, threadId: number | null): Promise<LifeEvent> {
+export async function assignEventToThread(
+  eventId: number,
+  threadId: number | null,
+): Promise<LifeEvent> {
   return updateEventById(eventId, { thread_id: threadId });
 }
 
 /** Rename a thread via PATCH /api/threads/{thread_id}. */
-export async function renameThread(threadId: number, title: string): Promise<void> {
+export async function renameThread(
+  threadId: number,
+  title: string,
+): Promise<void> {
   const response = await fetch(toAbsoluteApiUrl(`/api/threads/${threadId}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -276,7 +329,11 @@ export async function updateEpicById(
     end_date_text?: string | null;
   },
 ): Promise<LifeEpic> {
-  return patchJson<LifeEpic>(`/api/epics/${epicId}`, payload, "Failed to update epic");
+  return patchJson<LifeEpic>(
+    `/api/epics/${epicId}`,
+    payload,
+    "Failed to update epic",
+  );
 }
 
 export async function createEvent(payload: {
@@ -299,18 +356,29 @@ export async function createEvent(payload: {
 
 export async function analyzeLifePeriod(
   periodId: number,
-  payload: { apply_dates: boolean; apply_title: boolean; regenerate_summary: boolean; reanalyze_events?: boolean },
+  payload: {
+    apply_dates: boolean;
+    apply_title: boolean;
+    regenerate_summary: boolean;
+    reanalyze_events?: boolean;
+  },
 ): Promise<LifePeriodAnalysis> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/periods/${periodId}/analyze`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/periods/${periodId}/analyze`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
   await expectOk(response, "Analyze period failed");
   return response.json();
 }
 
-export async function renameEventTitle(eventId: number, title: string): Promise<void> {
+export async function renameEventTitle(
+  eventId: number,
+  title: string,
+): Promise<void> {
   await updateEventById(eventId, { title });
 }
 
@@ -327,10 +395,17 @@ export async function updateEventById(
     weight?: number;
   },
 ): Promise<LifeEvent> {
-  return patchJson<LifeEvent>(`/api/events/${eventId}`, payload, "Failed to update event");
+  return patchJson<LifeEvent>(
+    `/api/events/${eventId}`,
+    payload,
+    "Failed to update event",
+  );
 }
 
-export async function renamePeriodTitle(periodId: number, title: string): Promise<void> {
+export async function renamePeriodTitle(
+  periodId: number,
+  title: string,
+): Promise<void> {
   await updatePeriodById(periodId, { title });
 }
 
@@ -339,7 +414,10 @@ export async function updatePeriodDates(
   startDateText: string | null,
   endDateText: string | null,
 ): Promise<void> {
-  await updatePeriodById(periodId, { start_date_text: startDateText, end_date_text: endDateText });
+  await updatePeriodById(periodId, {
+    start_date_text: startDateText,
+    end_date_text: endDateText,
+  });
 }
 
 /** Update a period by id via PATCH /api/periods/{period_id}. */
@@ -351,20 +429,32 @@ export async function updatePeriodById(
     end_date_text?: string | null;
   },
 ): Promise<LifePeriod> {
-  return patchJson<LifePeriod>(`/api/periods/${periodId}`, payload, "Failed to update period");
+  return patchJson<LifePeriod>(
+    `/api/periods/${periodId}`,
+    payload,
+    "Failed to update period",
+  );
 }
 
 export async function deletePeriodById(periodId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/periods/${periodId}`), { method: "DELETE" });
+  const response = await fetch(toAbsoluteApiUrl(`/api/periods/${periodId}`), {
+    method: "DELETE",
+  });
   await expectOk(response, "Failed to delete period");
 }
 
-export async function mergePeriodInto(fromPeriodId: number, intoPeriodId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/periods/${fromPeriodId}/merge`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ into_period_id: intoPeriodId }),
-  });
+export async function mergePeriodInto(
+  fromPeriodId: number,
+  intoPeriodId: number,
+): Promise<void> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/periods/${fromPeriodId}/merge`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ into_period_id: intoPeriodId }),
+    },
+  );
   await expectOk(response, "Failed to merge period");
 }
 
@@ -381,12 +471,22 @@ export async function uploadAsset(formData: FormData): Promise<AssetEntry> {
 export async function processEventPhotoAssets(
   eventId: number,
   includeProcessed = false,
-): Promise<{ events_processed: number; photos_processed: number; processed_asset_ids: number[] }> {
-  const response = await fetch(toAbsoluteApiUrl("/api/assets/photos/process-events"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ event_id: eventId, include_processed: includeProcessed }),
-  });
+): Promise<{
+  events_processed: number;
+  photos_processed: number;
+  processed_asset_ids: number[];
+}> {
+  const response = await fetch(
+    toAbsoluteApiUrl("/api/assets/photos/process-events"),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_id: eventId,
+        include_processed: includeProcessed,
+      }),
+    },
+  );
   await expectOk(response, "Process event photos failed");
   return response.json();
 }
@@ -409,11 +509,14 @@ export async function processSinglePhotoAsset(
   gemini_suggested_title: string | null;
   suggested_title: string | null;
 }> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/assets/${assetId}/process-photo`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ include_processed: includeProcessed }),
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/assets/${assetId}/process-photo`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ include_processed: includeProcessed }),
+    },
+  );
   await expectOk(response, "Process photo failed");
   return response.json();
 }
@@ -425,7 +528,10 @@ export async function deleteAsset(assetId: number): Promise<void> {
   await expectOk(response, "Delete asset failed");
 }
 
-export async function updateAssetNotes(assetId: number, notes: string | null): Promise<void> {
+export async function updateAssetNotes(
+  assetId: number,
+  notes: string | null,
+): Promise<void> {
   const response = await fetch(toAbsoluteApiUrl(`/api/assets/${assetId}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -434,7 +540,10 @@ export async function updateAssetNotes(assetId: number, notes: string | null): P
   await expectOk(response, "Update asset notes failed");
 }
 
-export async function updateAssetTitle(assetId: number, title: string | null): Promise<void> {
+export async function updateAssetTitle(
+  assetId: number,
+  title: string | null,
+): Promise<void> {
   const response = await fetch(toAbsoluteApiUrl(`/api/assets/${assetId}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -447,7 +556,10 @@ export async function updateAssetTitle(assetId: number, title: string | null): P
  * PATCH /api/assets/{assetId}
  * Sends a manual captured date text override so backend normalization can replace or clear captured_at fields.
  */
-export async function updateAssetCapturedDate(assetId: number, capturedAtText: string | null): Promise<void> {
+export async function updateAssetCapturedDate(
+  assetId: number,
+  capturedAtText: string | null,
+): Promise<void> {
   const response = await fetch(toAbsoluteApiUrl(`/api/assets/${assetId}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -461,11 +573,14 @@ export async function linkAssetToEvent(
   eventId: number,
   relationType: string,
 ): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/assets/${assetId}/link-event/${eventId}`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ relation_type: relationType }),
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/assets/${assetId}/link-event/${eventId}`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ relation_type: relationType }),
+    },
+  );
   await expectOk(response, "Link asset failed");
 }
 
@@ -476,53 +591,79 @@ export async function deleteEventById(eventId: number): Promise<void> {
   await expectOk(response, "Delete event failed");
 }
 
-export async function mergeEventInto(sourceId: number, targetId: number): Promise<LifeEvent> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/events/${sourceId}/merge`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ into_event_id: targetId }),
-  });
+export async function mergeEventInto(
+  sourceId: number,
+  targetId: number,
+): Promise<LifeEvent> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/events/${sourceId}/merge`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ into_event_id: targetId }),
+    },
+  );
   await expectOk(response, "Merge event failed");
   return response.json();
 }
 
 export async function summarizeEventById(eventId: number): Promise<LifeEvent> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/events/${eventId}/summarize`), {
-    method: "POST",
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/events/${eventId}/summarize`),
+    {
+      method: "POST",
+    },
+  );
   await expectOk(response, "Event summary failed");
   return response.json();
 }
 
 export async function researchEventById(eventId: number): Promise<LifeEvent> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/events/${eventId}/research`), {
-    method: "POST",
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/events/${eventId}/research`),
+    {
+      method: "POST",
+    },
+  );
   await expectOk(response, "Event research failed");
   return response.json();
 }
 
-export async function applyEventResearchSuggestionById(eventId: number): Promise<LifeEvent> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/events/${eventId}/apply-research-suggestion`), {
-    method: "POST",
-  });
+export async function applyEventResearchSuggestionById(
+  eventId: number,
+): Promise<LifeEvent> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/events/${eventId}/apply-research-suggestion`),
+    {
+      method: "POST",
+    },
+  );
   await expectOk(response, "Apply event suggestion failed");
   return response.json();
 }
 
-export async function dismissEventResearchSuggestionById(eventId: number): Promise<LifeEvent> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/events/${eventId}/dismiss-research-suggestion`), {
-    method: "POST",
-  });
+export async function dismissEventResearchSuggestionById(
+  eventId: number,
+): Promise<LifeEvent> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/events/${eventId}/dismiss-research-suggestion`),
+    {
+      method: "POST",
+    },
+  );
   await expectOk(response, "Dismiss event suggestion failed");
   return response.json();
 }
 
 export async function dismissQuestionById(questionId: number): Promise<void> {
-  await fetch(toAbsoluteApiUrl(`/api/questions/${questionId}/dismiss`), { method: "POST" });
+  await fetch(toAbsoluteApiUrl(`/api/questions/${questionId}/dismiss`), {
+    method: "POST",
+  });
 }
 
-export async function saveMainCharacterName(value: string | null): Promise<void> {
+export async function saveMainCharacterName(
+  value: string | null,
+): Promise<void> {
   await fetch(toAbsoluteApiUrl("/api/settings/main_character_name"), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -531,30 +672,46 @@ export async function saveMainCharacterName(value: string | null): Promise<void>
 }
 
 export async function reanalyzeMemoryById(memoryId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/memories/${memoryId}/reanalyze`), {
-    method: "POST",
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/memories/${memoryId}/reanalyze`),
+    {
+      method: "POST",
+    },
+  );
   await expectOk(response, "Reanalyze failed");
 }
 
 export async function researchMemoryById(memoryId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/memories/${memoryId}/research`), {
-    method: "POST",
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/memories/${memoryId}/research`),
+    {
+      method: "POST",
+    },
+  );
   await expectOk(response, "Research failed");
 }
 
-export async function applyResearchSuggestionById(memoryId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/memories/${memoryId}/apply-research-suggestion`), {
-    method: "POST",
-  });
+export async function applyResearchSuggestionById(
+  memoryId: number,
+): Promise<void> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/memories/${memoryId}/apply-research-suggestion`),
+    {
+      method: "POST",
+    },
+  );
   await expectOk(response, "Apply failed");
 }
 
-export async function dismissResearchSuggestionById(memoryId: number): Promise<void> {
-  await fetch(toAbsoluteApiUrl(`/api/memories/${memoryId}/dismiss-research-suggestion`), {
-    method: "POST",
-  });
+export async function dismissResearchSuggestionById(
+  memoryId: number,
+): Promise<void> {
+  await fetch(
+    toAbsoluteApiUrl(`/api/memories/${memoryId}/dismiss-research-suggestion`),
+    {
+      method: "POST",
+    },
+  );
 }
 
 export async function deleteMemoryById(memoryId: number): Promise<void> {
@@ -564,32 +721,49 @@ export async function deleteMemoryById(memoryId: number): Promise<void> {
   await expectOk(response, "Delete failed");
 }
 
-export async function assignRecorderPerson(memoryId: number, personId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/memories/${memoryId}/recorder`), {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ person_id: personId }),
-  });
+export async function assignRecorderPerson(
+  memoryId: number,
+  personId: number,
+): Promise<void> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/memories/${memoryId}/recorder`),
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ person_id: personId }),
+    },
+  );
   await expectOk(response, "Recorder update failed");
 }
 
 /** Load full person profile details via GET /api/people/{person_id}. */
-export async function fetchPersonDetail(personId: number): Promise<PersonDetail> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${personId}`), { cache: "no-store" });
+export async function fetchPersonDetail(
+  personId: number,
+): Promise<PersonDetail> {
+  const response = await fetch(toAbsoluteApiUrl(`/api/people/${personId}`), {
+    cache: "no-store",
+  });
   await expectOk(response, "Failed to load person details");
   return response.json();
 }
 
 /** Load person activity bundles via GET /api/people/{person_id}/activity. */
-export async function fetchPersonActivity(personId: number): Promise<PersonActivity> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${personId}/activity`), { cache: "no-store" });
+export async function fetchPersonActivity(
+  personId: number,
+): Promise<PersonActivity> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/people/${personId}/activity`),
+    { cache: "no-store" },
+  );
   await expectOk(response, "Failed to load person activity");
   return response.json();
 }
 
 /** Load people directory rows for merge targets from GET /api/people. */
 export async function fetchPeopleDirectory(): Promise<DirectoryEntry[]> {
-  const response = await fetch(toAbsoluteApiUrl("/api/people"), { cache: "no-store" });
+  const response = await fetch(toAbsoluteApiUrl("/api/people"), {
+    cache: "no-store",
+  });
   await expectOk(response, "Failed to load people directory");
   return response.json();
 }
@@ -605,11 +779,14 @@ export async function updatePersonContact(
     birthday_text?: string | null;
   },
 ): Promise<PersonDetail> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${personId}/contact`), {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/people/${personId}/contact`),
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
   await expectOk(response, "Failed to update person contact details");
   return response.json();
 }
@@ -619,49 +796,75 @@ export async function createPersonQuickMemory(
   personId: number,
   payload: { text: string; estimated_date_text?: string | null },
 ): Promise<MemoryEntry> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${personId}/memories/quick`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/people/${personId}/memories/quick`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
   await expectOk(response, "Failed to create quick memory");
   return response.json();
 }
 
 /** Fetch pending suggested face matches for approval via GET /api/people/{person_id}/faces/suggested. */
-export async function fetchPersonSuggestedFaces(personId: number): Promise<EventFaceEntry[]> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${personId}/faces/suggested`), { cache: "no-store" });
+export async function fetchPersonSuggestedFaces(
+  personId: number,
+): Promise<EventFaceEntry[]> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/people/${personId}/faces/suggested`),
+    { cache: "no-store" },
+  );
   await expectOk(response, "Failed to load suggested faces");
   return response.json();
 }
 
 /** Approve one suggested face match and sync CompreFace via POST /api/people/{person_id}/faces/{face_id}/approve. */
-export async function approvePersonFace(personId: number, faceId: number): Promise<EventFaceEntry> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${personId}/faces/${faceId}/approve`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ person_id: personId }),
-  });
+export async function approvePersonFace(
+  personId: number,
+  faceId: number,
+): Promise<EventFaceEntry> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/people/${personId}/faces/${faceId}/approve`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ person_id: personId }),
+    },
+  );
   await expectOk(response, "Failed to approve face");
   return response.json();
 }
 
-export async function mergePeopleEntries(sourceId: number, intoId: number): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${sourceId}/merge`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ into_person_id: intoId }),
-  });
+export async function mergePeopleEntries(
+  sourceId: number,
+  intoId: number,
+): Promise<void> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/people/${sourceId}/merge`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ into_person_id: intoId }),
+    },
+  );
   await expectOk(response, "Merge failed");
 }
 
 /** Link one person to an existing CompreFace subject via POST /api/people/{person_id}/link-compreface. */
-export async function linkPersonToCompreface(personId: number, subjectName: string): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${personId}/link-compreface`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subject_name: subjectName }),
-  });
+export async function linkPersonToCompreface(
+  personId: number,
+  subjectName: string,
+): Promise<void> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/people/${personId}/link-compreface`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject_name: subjectName }),
+    },
+  );
   await expectOk(response, "CompreFace link failed");
 }
 
@@ -677,32 +880,49 @@ export async function splitPersonEntry(
   newNames: string[],
   keepAlias: boolean,
 ): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${sourceId}/split`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ new_names: newNames, keep_alias: keepAlias }),
-  });
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/people/${sourceId}/split`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ new_names: newNames, keep_alias: keepAlias }),
+    },
+  );
   await expectOk(response, "Split failed");
 }
 
-export async function addPersonAlias(personId: number, alias: string): Promise<void> {
-  const response = await fetch(toAbsoluteApiUrl(`/api/people/${personId}/aliases`), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ alias }),
-  });
+export async function addPersonAlias(
+  personId: number,
+  alias: string,
+): Promise<void> {
+  const response = await fetch(
+    toAbsoluteApiUrl(`/api/people/${personId}/aliases`),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ alias }),
+    },
+  );
   await expectOk(response, "Add alias failed");
 }
 
-export async function removePersonAlias(personId: number, alias: string): Promise<void> {
+export async function removePersonAlias(
+  personId: number,
+  alias: string,
+): Promise<void> {
   const response = await fetch(
-    toAbsoluteApiUrl(`/api/people/${personId}/aliases/${encodeURIComponent(alias)}`),
+    toAbsoluteApiUrl(
+      `/api/people/${personId}/aliases/${encodeURIComponent(alias)}`,
+    ),
     { method: "DELETE" },
   );
   await expectOk(response, "Remove alias failed");
 }
 
-export async function createDirectoryEntry(kind: "people" | "places", name: string): Promise<void> {
+export async function createDirectoryEntry(
+  kind: "people" | "places",
+  name: string,
+): Promise<void> {
   const response = await fetch(toAbsoluteApiUrl(`/api/${kind}`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -735,7 +955,10 @@ export async function renameDirectoryEntry(
   await expectOk(response, "Rename failed");
 }
 
-export async function deleteDirectoryEntry(kind: "people" | "places", itemId: number): Promise<void> {
+export async function deleteDirectoryEntry(
+  kind: "people" | "places",
+  itemId: number,
+): Promise<void> {
   const response = await fetch(toAbsoluteApiUrl(`/api/${kind}/${itemId}`), {
     method: "DELETE",
   });
@@ -773,7 +996,10 @@ export async function createMemoryFromAudioBlob(
   return response.json();
 }
 
-export async function answerQuestionWithMemory(questionId: number, answerMemoryId: number): Promise<void> {
+export async function answerQuestionWithMemory(
+  questionId: number,
+  answerMemoryId: number,
+): Promise<void> {
   await fetch(toAbsoluteApiUrl(`/api/questions/${questionId}/answer`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -781,7 +1007,10 @@ export async function answerQuestionWithMemory(questionId: number, answerMemoryI
   });
 }
 
-export async function updateMemoryTitle(memoryId: number, eventDescription: string): Promise<void> {
+export async function updateMemoryTitle(
+  memoryId: number,
+  eventDescription: string,
+): Promise<void> {
   const response = await fetch(toAbsoluteApiUrl(`/api/memories/${memoryId}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -790,7 +1019,10 @@ export async function updateMemoryTitle(memoryId: number, eventDescription: stri
   await expectOk(response, "Failed to update memory title");
 }
 
-export async function createMemoryFromDocument(formData: FormData, eventId?: number): Promise<MemoryEntry> {
+export async function createMemoryFromDocument(
+  formData: FormData,
+  eventId?: number,
+): Promise<MemoryEntry> {
   if (eventId !== undefined) {
     formData.append("event_id", String(eventId));
   }
@@ -800,7 +1032,9 @@ export async function createMemoryFromDocument(formData: FormData, eventId?: num
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: "Upload failed" }));
+    const errorData = await response
+      .json()
+      .catch(() => ({ detail: "Upload failed" }));
     throw new Error(errorData.detail || "Upload failed");
   }
 

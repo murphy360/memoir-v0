@@ -30,7 +30,10 @@ export function useRecordingController(setStatus: (value: string) => void) {
         }
 
         const savedDeviceId = localStorage.getItem(AUDIO_DEVICE_STORAGE_KEY);
-        if (savedDeviceId && inputs.some((item) => item.deviceId === savedDeviceId)) {
+        if (
+          savedDeviceId &&
+          inputs.some((item) => item.deviceId === savedDeviceId)
+        ) {
           return savedDeviceId;
         }
 

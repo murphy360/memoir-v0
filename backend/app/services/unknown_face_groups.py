@@ -86,7 +86,9 @@ def reconcile_unknown_face_groups_for_asset(db: Session, asset_id: int) -> None:
             .first()
         )
         if not existing_group:
-            existing_group = UnknownFaceGroup(fingerprint=face.face_fingerprint or uuid4().hex)
+            existing_group = UnknownFaceGroup(
+                fingerprint=face.face_fingerprint or uuid4().hex
+            )
             db.add(existing_group)
             db.flush()
 
@@ -141,7 +143,9 @@ def list_unknown_face_groups_for_event(db: Session, event_id: int) -> list[dict]
                     {
                         "face_id": face.id,
                         "asset_id": face.asset_id,
-                        "asset_download_url": face.asset.download_url if face.asset else "",
+                        "asset_download_url": face.asset.download_url
+                        if face.asset
+                        else "",
                         "bbox_x": face.bbox_x,
                         "bbox_y": face.bbox_y,
                         "bbox_w": face.bbox_w,
@@ -157,7 +161,9 @@ def list_unknown_face_groups_for_event(db: Session, event_id: int) -> list[dict]
     return payload
 
 
-def assign_unknown_group_to_person(db: Session, group_id: int, person_id: int) -> UnknownFaceGroup:
+def assign_unknown_group_to_person(
+    db: Session, group_id: int, person_id: int
+) -> UnknownFaceGroup:
     """Assign all unknown faces in a group to an existing person."""
     group = db.get(UnknownFaceGroup, group_id)
     if not group:
@@ -176,7 +182,9 @@ def assign_unknown_group_to_person(db: Session, group_id: int, person_id: int) -
     return group
 
 
-def create_person_from_unknown_group(db: Session, group_id: int, name: str) -> tuple[UnknownFaceGroup, Person]:
+def create_person_from_unknown_group(
+    db: Session, group_id: int, name: str
+) -> tuple[UnknownFaceGroup, Person]:
     """Create (or reuse) a person and assign all faces from one unknown group."""
     group = db.get(UnknownFaceGroup, group_id)
     if not group:
@@ -195,7 +203,9 @@ def create_person_from_unknown_group(db: Session, group_id: int, name: str) -> t
     return group, person
 
 
-def merge_unknown_face_groups(db: Session, source_group_id: int, into_group_id: int) -> UnknownFaceGroup:
+def merge_unknown_face_groups(
+    db: Session, source_group_id: int, into_group_id: int
+) -> UnknownFaceGroup:
     """Move faces from source group into target group and delete emptied source."""
     source = db.get(UnknownFaceGroup, source_group_id)
     target = db.get(UnknownFaceGroup, into_group_id)
@@ -212,7 +222,9 @@ def merge_unknown_face_groups(db: Session, source_group_id: int, into_group_id: 
     return target
 
 
-def split_unknown_face_group(db: Session, source_group_id: int, face_ids: list[int]) -> UnknownFaceGroup:
+def split_unknown_face_group(
+    db: Session, source_group_id: int, face_ids: list[int]
+) -> UnknownFaceGroup:
     """Move selected face ids from a source group into a newly created group."""
     source = db.get(UnknownFaceGroup, source_group_id)
     if not source:
@@ -249,7 +261,11 @@ def _refresh_group_representatives(db: Session, group_ids: set[int]) -> None:
     if not group_ids:
         return
 
-    groups = db.query(UnknownFaceGroup).filter(UnknownFaceGroup.id.in_(list(group_ids))).all()
+    groups = (
+        db.query(UnknownFaceGroup)
+        .filter(UnknownFaceGroup.id.in_(list(group_ids)))
+        .all()
+    )
     for group in groups:
         candidate_faces = [face for face in group.faces if face.person_id is None]
         if not candidate_faces:
@@ -271,7 +287,11 @@ def _delete_empty_groups(db: Session, group_ids: set[int]) -> None:
     if not group_ids:
         return
 
-    groups = db.query(UnknownFaceGroup).filter(UnknownFaceGroup.id.in_(list(group_ids))).all()
+    groups = (
+        db.query(UnknownFaceGroup)
+        .filter(UnknownFaceGroup.id.in_(list(group_ids)))
+        .all()
+    )
     for group in groups:
         has_faces = any(face.unknown_face_group_id == group.id for face in group.faces)
         if not has_faces:

@@ -3,8 +3,6 @@ import hashlib
 import json
 import logging
 import os
-import re
-from collections import Counter
 from io import BytesIO
 from pathlib import Path
 from datetime import date, datetime
@@ -17,7 +15,25 @@ from PIL import Image, UnidentifiedImageError
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, engine, ensure_schema_migrations, get_db
-from app.models import Asset, AssetFace, Base, EventAsset, LifeEpic, LifeEvent, LifePeriod, LifeThread, MemoryEntry, MemoryPerson, MemoryPlace, Person, PersonAlias, Place, Question, Setting, UnknownFaceGroup
+from app.models import (
+    Asset,
+    AssetFace,
+    Base,
+    EventAsset,
+    LifeEpic,
+    LifeEvent,
+    LifePeriod,
+    LifeThread,
+    MemoryEntry,
+    MemoryPerson,
+    MemoryPlace,
+    Person,
+    PersonAlias,
+    Place,
+    Question,
+    Setting,
+    UnknownFaceGroup,
+)
 from app.schemas import (
     AnalyzeLifePeriodRequest,
     AssetResponse,
@@ -75,7 +91,10 @@ from app.services.gemini_client import (
     suggest_event_edit_from_context,
 )
 from app.services.gemini_client import extract_text_from_document
-from app.services.image_metadata import compress_photo_for_storage, extract_and_apply_image_metadata
+from app.services.image_metadata import (
+    compress_photo_for_storage,
+    extract_and_apply_image_metadata,
+)
 from app.services.geocoding import backfill_asset_location_names
 from app.services.faces import (
     approve_face_for_person,
@@ -140,7 +159,9 @@ from app.services.periods import (
     unique_period_slug,
     unique_thread_slug,
 )
-from app.services.period_analysis_pipeline import queue_and_process_period_event_analysis
+from app.services.period_analysis_pipeline import (
+    queue_and_process_period_event_analysis,
+)
 from app.services.photo_batch import (
     QueuedPhotoUpload,
     analyze_photo_assets_stream,
@@ -161,7 +182,11 @@ from app.services.memory_analysis import (
     fallback_metadata_from_transcript,
     generate_questions_from_memory,
 )
-from app.services.date_normalization import clean_date_text, parse_text_date_range, resolve_start_end_dates
+from app.services.date_normalization import (
+    clean_date_text,
+    parse_text_date_range,
+    resolve_start_end_dates,
+)
 
 
 def _generate_questions(transcript: str, event_description: str, metadata) -> list[str]:
@@ -169,10 +194,13 @@ def _generate_questions(transcript: str, event_description: str, metadata) -> li
     questions = generate_questions_from_memory(transcript, event_description, metadata)
     # If only the generic 'what happened just before' fallback fired, use Gemini instead
     if len(questions) == 1 and questions[0].startswith("You shared:"):
-        gemini_questions = generate_insightful_questions(transcript, event_description, metadata)
+        gemini_questions = generate_insightful_questions(
+            transcript, event_description, metadata
+        )
         if gemini_questions:
             return gemini_questions
     return questions
+
 
 logger = logging.getLogger("memoir.api")
 AUDIO_STORAGE_DIR = Path(os.getenv("AUDIO_STORAGE_DIR", "/data/audio"))
@@ -194,10 +222,14 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup() -> None:
     logger.info("=== APP STARTUP ===")
-    logger.info("Registered models: %s", [table for table in Base.metadata.tables.keys()])
+    logger.info(
+        "Registered models: %s", [table for table in Base.metadata.tables.keys()]
+    )
     logger.info("Creating tables...")
     Base.metadata.create_all(bind=engine)
-    logger.info("Tables after create_all: %s", [table for table in Base.metadata.tables.keys()])
+    logger.info(
+        "Tables after create_all: %s", [table for table in Base.metadata.tables.keys()]
+    )
     AUDIO_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     DOCUMENT_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     logger.info("Running schema migrations...")
@@ -235,38 +267,48 @@ def derive_asset_title(filename: Optional[str]) -> Optional[str]:
 
 def backfill_sortable_dates(db: Session) -> None:
     for period in db.query(LifePeriod).all():
-        start_sort, end_sort = resolve_start_end_dates(period.start_date_text, period.end_date_text)
+        start_sort, end_sort = resolve_start_end_dates(
+            period.start_date_text, period.end_date_text
+        )
         period.start_sort = start_sort
         period.end_sort = end_sort
 
     for epic in db.query(LifeEpic).all():
-        start_sort, end_sort = resolve_start_end_dates(epic.start_date_text, epic.end_date_text)
+        start_sort, end_sort = resolve_start_end_dates(
+            epic.start_date_text, epic.end_date_text
+        )
         epic.start_sort = start_sort
         epic.end_sort = end_sort
 
     for event in db.query(LifeEvent).all():
         start_sort, end_sort = parse_text_date_range(event.event_date_text)
         if event.date_precision:
-            start_sort = build_sort_date(
-                event.date_precision,
-                event.date_year,
-                event.date_month,
-                event.date_day,
-                event.date_decade,
-            ) or start_sort
+            start_sort = (
+                build_sort_date(
+                    event.date_precision,
+                    event.date_year,
+                    event.date_month,
+                    event.date_day,
+                    event.date_decade,
+                )
+                or start_sort
+            )
         event.event_date_sort = start_sort
         event.event_end_date_sort = end_sort or start_sort
 
     for memory in db.query(MemoryEntry).all():
         start_sort, end_sort = parse_text_date_range(memory.estimated_date_text)
         if memory.date_precision:
-            start_sort = build_sort_date(
-                memory.date_precision,
-                memory.date_year,
-                memory.date_month,
-                memory.date_day,
-                memory.date_decade,
-            ) or start_sort
+            start_sort = (
+                build_sort_date(
+                    memory.date_precision,
+                    memory.date_year,
+                    memory.date_month,
+                    memory.date_day,
+                    memory.date_decade,
+                )
+                or start_sort
+            )
         memory.estimated_date_sort = start_sort
         memory.estimated_end_date_sort = end_sort or start_sort
 
@@ -282,7 +324,9 @@ def list_threads(db: Session = Depends(get_db)) -> list[LifeThreadResponse]:
 
 
 @app.post("/api/threads", response_model=LifeThreadResponse)
-def create_thread(body: CreateLifeThreadRequest, db: Session = Depends(get_db)) -> LifeThreadResponse:
+def create_thread(
+    body: CreateLifeThreadRequest, db: Session = Depends(get_db)
+) -> LifeThreadResponse:
     title = normalize_period_title(body.title)
     if not title:
         raise HTTPException(status_code=400, detail="Thread title is required")
@@ -299,7 +343,9 @@ def create_thread(body: CreateLifeThreadRequest, db: Session = Depends(get_db)) 
 
 
 @app.patch("/api/threads/{thread_id}", response_model=LifeThreadResponse)
-def update_thread(thread_id: int, body: UpdateLifeThreadRequest, db: Session = Depends(get_db)) -> LifeThreadResponse:
+def update_thread(
+    thread_id: int, body: UpdateLifeThreadRequest, db: Session = Depends(get_db)
+) -> LifeThreadResponse:
     thread = db.get(LifeThread, thread_id)
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
@@ -325,20 +371,30 @@ def delete_thread(thread_id: int, db: Session = Depends(get_db)) -> None:
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
     # Detach events and epics from thread before deleting
-    db.query(LifeEvent).filter(LifeEvent.thread_id == thread_id).update({"thread_id": None})
-    db.query(LifeEpic).filter(LifeEpic.thread_id == thread_id).update({"thread_id": None})
+    db.query(LifeEvent).filter(LifeEvent.thread_id == thread_id).update(
+        {"thread_id": None}
+    )
+    db.query(LifeEpic).filter(LifeEpic.thread_id == thread_id).update(
+        {"thread_id": None}
+    )
     db.delete(thread)
     db.commit()
 
 
 @app.get("/api/periods", response_model=list[LifePeriodResponse])
 def list_periods(db: Session = Depends(get_db)) -> list[LifePeriodResponse]:
-    periods = db.query(LifePeriod).order_by(LifePeriod.start_sort.asc().nulls_last(), LifePeriod.created_at.asc()).all()
+    periods = (
+        db.query(LifePeriod)
+        .order_by(LifePeriod.start_sort.asc().nulls_last(), LifePeriod.created_at.asc())
+        .all()
+    )
     return [build_period_response(period) for period in periods]
 
 
 @app.patch("/api/periods/{period_id}", response_model=LifePeriodResponse)
-def update_period(period_id: int, body: UpdateLifePeriodRequest, db: Session = Depends(get_db)) -> LifePeriodResponse:
+def update_period(
+    period_id: int, body: UpdateLifePeriodRequest, db: Session = Depends(get_db)
+) -> LifePeriodResponse:
     period = db.get(LifePeriod, period_id)
     if not period:
         raise HTTPException(status_code=404, detail="Period not found")
@@ -357,14 +413,18 @@ def delete_period(period_id: int, db: Session = Depends(get_db)) -> None:
         raise HTTPException(status_code=404, detail="Period not found")
 
     # Detach events and assets from the period before deleting
-    db.query(LifeEvent).filter(LifeEvent.period_id == period_id).update({"period_id": None})
+    db.query(LifeEvent).filter(LifeEvent.period_id == period_id).update(
+        {"period_id": None}
+    )
     db.query(Asset).filter(Asset.period_id == period_id).update({"period_id": None})
     db.delete(period)
     db.commit()
 
 
 @app.post("/api/periods/{period_id}/merge", status_code=204)
-def merge_period(period_id: int, body: MergePeriodsRequest, db: Session = Depends(get_db)) -> None:
+def merge_period(
+    period_id: int, body: MergePeriodsRequest, db: Session = Depends(get_db)
+) -> None:
     source = db.get(LifePeriod, period_id)
     if not source:
         raise HTTPException(status_code=404, detail="Source period not found")
@@ -375,8 +435,12 @@ def merge_period(period_id: int, body: MergePeriodsRequest, db: Session = Depend
         raise HTTPException(status_code=400, detail="Cannot merge a period into itself")
 
     # Move events and assets from source → target
-    db.query(LifeEvent).filter(LifeEvent.period_id == source.id).update({"period_id": target.id})
-    db.query(Asset).filter(Asset.period_id == source.id).update({"period_id": target.id})
+    db.query(LifeEvent).filter(LifeEvent.period_id == source.id).update(
+        {"period_id": target.id}
+    )
+    db.query(Asset).filter(Asset.period_id == source.id).update(
+        {"period_id": target.id}
+    )
     db.delete(source)
     db.commit()
     # Refresh the target summary now that it has more content
@@ -386,7 +450,9 @@ def merge_period(period_id: int, body: MergePeriodsRequest, db: Session = Depend
 
 
 @app.post("/api/periods", response_model=LifePeriodResponse)
-def create_period(body: CreateLifePeriodRequest, db: Session = Depends(get_db)) -> LifePeriodResponse:
+def create_period(
+    body: CreateLifePeriodRequest, db: Session = Depends(get_db)
+) -> LifePeriodResponse:
     title = normalize_period_title(body.title)
     if not title:
         raise HTTPException(status_code=400, detail="Period title is required")
@@ -398,7 +464,9 @@ def create_period(body: CreateLifePeriodRequest, db: Session = Depends(get_db)) 
         end_date_text=clean_date_text(body.end_date_text),
         summary=body.summary,
     )
-    period.start_sort, period.end_sort = resolve_start_end_dates(period.start_date_text, period.end_date_text)
+    period.start_sort, period.end_sort = resolve_start_end_dates(
+        period.start_date_text, period.end_date_text
+    )
     db.add(period)
     db.commit()
     db.refresh(period)
@@ -406,7 +474,9 @@ def create_period(body: CreateLifePeriodRequest, db: Session = Depends(get_db)) 
 
 
 @app.get("/api/periods/{period_id}/events", response_model=list[LifeEventResponse])
-def list_period_events(period_id: int, db: Session = Depends(get_db)) -> list[LifeEventResponse]:
+def list_period_events(
+    period_id: int, db: Session = Depends(get_db)
+) -> list[LifeEventResponse]:
     period = db.get(LifePeriod, period_id)
     if not period:
         raise HTTPException(status_code=404, detail="Period not found")
@@ -414,14 +484,20 @@ def list_period_events(period_id: int, db: Session = Depends(get_db)) -> list[Li
     events = (
         db.query(LifeEvent)
         .filter(LifeEvent.period_id == period_id)
-        .order_by(LifeEvent.event_date_sort.is_(None), LifeEvent.event_date_sort.asc(), LifeEvent.created_at.asc())
+        .order_by(
+            LifeEvent.event_date_sort.is_(None),
+            LifeEvent.event_date_sort.asc(),
+            LifeEvent.created_at.asc(),
+        )
         .all()
     )
     return [build_event_response(event) for event in events]
 
 
 @app.get("/api/periods/{period_id}/epics", response_model=list[LifeEpicResponse])
-def list_period_epics(period_id: int, db: Session = Depends(get_db)) -> list[LifeEpicResponse]:
+def list_period_epics(
+    period_id: int, db: Session = Depends(get_db)
+) -> list[LifeEpicResponse]:
     period = db.get(LifePeriod, period_id)
     if not period:
         raise HTTPException(status_code=404, detail="Period not found")
@@ -429,23 +505,35 @@ def list_period_epics(period_id: int, db: Session = Depends(get_db)) -> list[Lif
     epics = (
         db.query(LifeEpic)
         .filter(LifeEpic.period_id == period_id)
-        .order_by(LifeEpic.start_sort.is_(None), LifeEpic.start_sort.asc(), LifeEpic.created_at.asc())
+        .order_by(
+            LifeEpic.start_sort.is_(None),
+            LifeEpic.start_sort.asc(),
+            LifeEpic.created_at.asc(),
+        )
         .all()
     )
     return [build_epic_response(epic) for epic in epics]
 
 
 @app.get("/api/epics", response_model=list[LifeEpicResponse])
-def list_epics(period_id: Optional[int] = None, db: Session = Depends(get_db)) -> list[LifeEpicResponse]:
+def list_epics(
+    period_id: Optional[int] = None, db: Session = Depends(get_db)
+) -> list[LifeEpicResponse]:
     query = db.query(LifeEpic)
     if period_id is not None:
         query = query.filter(LifeEpic.period_id == period_id)
-    epics = query.order_by(LifeEpic.start_sort.is_(None), LifeEpic.start_sort.asc(), LifeEpic.created_at.asc()).all()
+    epics = query.order_by(
+        LifeEpic.start_sort.is_(None),
+        LifeEpic.start_sort.asc(),
+        LifeEpic.created_at.asc(),
+    ).all()
     return [build_epic_response(epic) for epic in epics]
 
 
 @app.post("/api/epics", response_model=LifeEpicResponse)
-def create_epic(body: CreateLifeEpicRequest, db: Session = Depends(get_db)) -> LifeEpicResponse:
+def create_epic(
+    body: CreateLifeEpicRequest, db: Session = Depends(get_db)
+) -> LifeEpicResponse:
     period = db.get(LifePeriod, body.period_id)
     if not period:
         raise HTTPException(status_code=404, detail="Period not found")
@@ -462,7 +550,9 @@ def create_epic(body: CreateLifeEpicRequest, db: Session = Depends(get_db)) -> L
         start_date_text=clean_date_text(body.start_date_text),
         end_date_text=clean_date_text(body.end_date_text),
     )
-    epic.start_sort, epic.end_sort = resolve_start_end_dates(epic.start_date_text, epic.end_date_text)
+    epic.start_sort, epic.end_sort = resolve_start_end_dates(
+        epic.start_date_text, epic.end_date_text
+    )
     db.add(epic)
     db.commit()
     db.refresh(epic)
@@ -470,7 +560,9 @@ def create_epic(body: CreateLifeEpicRequest, db: Session = Depends(get_db)) -> L
 
 
 @app.patch("/api/epics/{epic_id}", response_model=LifeEpicResponse)
-def update_epic(epic_id: int, body: UpdateLifeEpicRequest, db: Session = Depends(get_db)) -> LifeEpicResponse:
+def update_epic(
+    epic_id: int, body: UpdateLifeEpicRequest, db: Session = Depends(get_db)
+) -> LifeEpicResponse:
     epic = db.get(LifeEpic, epic_id)
     if not epic:
         raise HTTPException(status_code=404, detail="Epic not found")
@@ -506,7 +598,11 @@ def analyze_life_period(
     events = (
         db.query(LifeEvent)
         .filter(LifeEvent.period_id == period.id)
-        .order_by(LifeEvent.event_date_sort.is_(None), LifeEvent.event_date_sort.asc(), LifeEvent.created_at.asc())
+        .order_by(
+            LifeEvent.event_date_sort.is_(None),
+            LifeEvent.event_date_sort.asc(),
+            LifeEvent.created_at.asc(),
+        )
         .all()
     )
 
@@ -523,19 +619,36 @@ def analyze_life_period(
     events = (
         db.query(LifeEvent)
         .filter(LifeEvent.period_id == period.id)
-        .order_by(LifeEvent.event_date_sort.is_(None), LifeEvent.event_date_sort.asc(), LifeEvent.created_at.asc())
+        .order_by(
+            LifeEvent.event_date_sort.is_(None),
+            LifeEvent.event_date_sort.asc(),
+            LifeEvent.created_at.asc(),
+        )
         .all()
     )
-    analysis = analyze_period(period, events, period_asset_count_from_events(events), pipeline_stats=pipeline_stats)
+    analysis = analyze_period(
+        period,
+        events,
+        period_asset_count_from_events(events),
+        pipeline_stats=pipeline_stats,
+    )
 
-    if body.apply_dates and analysis.recommended_start_date_text and analysis.recommended_end_date_text:
+    if (
+        body.apply_dates
+        and analysis.recommended_start_date_text
+        and analysis.recommended_end_date_text
+    ):
         period.start_date_text = analysis.recommended_start_date_text
         period.end_date_text = analysis.recommended_end_date_text
-        period.start_sort, period.end_sort = resolve_start_end_dates(period.start_date_text, period.end_date_text)
+        period.start_sort, period.end_sort = resolve_start_end_dates(
+            period.start_date_text, period.end_date_text
+        )
 
     if body.apply_title and analysis.recommended_titles:
         period.title = analysis.recommended_titles[0]
-        period.slug = unique_period_slug(db, analysis.recommended_titles[0], existing_id=period.id)
+        period.slug = unique_period_slug(
+            db, analysis.recommended_titles[0], existing_id=period.id
+        )
 
     if body.apply_title_text:
         clean = body.apply_title_text.strip()[:160]
@@ -552,15 +665,26 @@ def analyze_life_period(
         events = (
             db.query(LifeEvent)
             .filter(LifeEvent.period_id == period.id)
-            .order_by(LifeEvent.event_date_sort.is_(None), LifeEvent.event_date_sort.asc(), LifeEvent.created_at.asc())
+            .order_by(
+                LifeEvent.event_date_sort.is_(None),
+                LifeEvent.event_date_sort.asc(),
+                LifeEvent.created_at.asc(),
+            )
             .all()
         )
 
-    return analyze_period(period, events, period_asset_count_from_events(events), pipeline_stats=pipeline_stats)
+    return analyze_period(
+        period,
+        events,
+        period_asset_count_from_events(events),
+        pipeline_stats=pipeline_stats,
+    )
 
 
 @app.post("/api/events", response_model=LifeEventResponse)
-def create_event(body: CreateLifeEventRequest, db: Session = Depends(get_db)) -> LifeEventResponse:
+def create_event(
+    body: CreateLifeEventRequest, db: Session = Depends(get_db)
+) -> LifeEventResponse:
     title = normalize_directory_name(body.title)
     if not title:
         raise HTTPException(status_code=400, detail="Event title is required")
@@ -580,11 +704,15 @@ def create_event(body: CreateLifeEventRequest, db: Session = Depends(get_db)) ->
         if not epic:
             raise HTTPException(status_code=404, detail="Epic not found")
         if period_id is not None and epic.period_id != period_id:
-            raise HTTPException(status_code=400, detail="Epic does not belong to the provided period")
+            raise HTTPException(
+                status_code=400, detail="Epic does not belong to the provided period"
+            )
         period_id = epic.period_id
 
     if period_id is None:
-        raise HTTPException(status_code=400, detail="Event requires period_id or epic_id")
+        raise HTTPException(
+            status_code=400, detail="Event requires period_id or epic_id"
+        )
 
     parsed_event_start, parsed_event_end = parse_text_date_range(body.event_date_text)
     if parsed_event_start is not None and parsed_event_end is None:
@@ -623,16 +751,24 @@ def create_event(body: CreateLifeEventRequest, db: Session = Depends(get_db)) ->
 
 
 @app.get("/api/events", response_model=list[LifeEventResponse])
-def list_events(period_id: Optional[int] = None, db: Session = Depends(get_db)) -> list[LifeEventResponse]:
+def list_events(
+    period_id: Optional[int] = None, db: Session = Depends(get_db)
+) -> list[LifeEventResponse]:
     query = db.query(LifeEvent)
     if period_id is not None:
         query = query.filter(LifeEvent.period_id == period_id)
-    events = query.order_by(LifeEvent.event_date_sort.is_(None), LifeEvent.event_date_sort.asc(), LifeEvent.created_at.asc()).all()
+    events = query.order_by(
+        LifeEvent.event_date_sort.is_(None),
+        LifeEvent.event_date_sort.asc(),
+        LifeEvent.created_at.asc(),
+    ).all()
     return [build_event_response(event) for event in events]
 
 
 @app.patch("/api/events/{event_id}", response_model=LifeEventResponse)
-def update_event(event_id: int, body: UpdateLifeEventRequest, db: Session = Depends(get_db)) -> LifeEventResponse:
+def update_event(
+    event_id: int, body: UpdateLifeEventRequest, db: Session = Depends(get_db)
+) -> LifeEventResponse:
     event = db.get(LifeEvent, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -662,9 +798,17 @@ def merge_event(
         raise HTTPException(status_code=400, detail="Cannot merge an event into itself")
 
     for link in list(source.linked_assets):
-        exists = any(existing.asset_id == link.asset_id for existing in target.linked_assets)
+        exists = any(
+            existing.asset_id == link.asset_id for existing in target.linked_assets
+        )
         if not exists:
-            db.add(EventAsset(event_id=target.id, asset_id=link.asset_id, relation_type=link.relation_type))
+            db.add(
+                EventAsset(
+                    event_id=target.id,
+                    asset_id=link.asset_id,
+                    relation_type=link.relation_type,
+                )
+            )
 
     if not target.description and source.description:
         target.description = source.description
@@ -708,7 +852,9 @@ def delete_event(event_id: int, db: Session = Depends(get_db)) -> dict:
 
 
 @app.get("/api/events/{event_id}/assets", response_model=list[AssetResponse])
-def list_event_assets(event_id: int, db: Session = Depends(get_db)) -> list[AssetResponse]:
+def list_event_assets(
+    event_id: int, db: Session = Depends(get_db)
+) -> list[AssetResponse]:
     event = db.get(LifeEvent, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -723,7 +869,8 @@ def _build_event_face_response(face: AssetFace) -> EventFaceResponse:
     return EventFaceResponse(
         id=face.id,
         asset_id=face.asset_id,
-        asset_title=(asset.title if asset else None) or (asset.original_filename if asset else None),
+        asset_title=(asset.title if asset else None)
+        or (asset.original_filename if asset else None),
         asset_download_url=(asset.download_url if asset else ""),
         bbox_x=face.bbox_x,
         bbox_y=face.bbox_y,
@@ -741,7 +888,9 @@ def _build_event_face_response(face: AssetFace) -> EventFaceResponse:
     )
 
 
-def _build_unknown_face_group_response(db: Session, group_id: int) -> UnknownFaceGroupResponse:
+def _build_unknown_face_group_response(
+    db: Session, group_id: int
+) -> UnknownFaceGroupResponse:
     group = db.get(UnknownFaceGroup, group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Unknown face group not found")
@@ -775,7 +924,9 @@ def _build_unknown_face_group_response(db: Session, group_id: int) -> UnknownFac
 
 
 @app.get("/api/events/{event_id}/faces", response_model=list[EventFaceResponse])
-def list_event_faces(event_id: int, db: Session = Depends(get_db)) -> list[EventFaceResponse]:
+def list_event_faces(
+    event_id: int, db: Session = Depends(get_db)
+) -> list[EventFaceResponse]:
     event = db.get(LifeEvent, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -802,7 +953,9 @@ def get_face_thumbnail(
 
     content_type = (asset.content_type or "").lower()
     if asset.kind != "photo" and not content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Face thumbnail is only available for photo assets")
+        raise HTTPException(
+            status_code=400, detail="Face thumbnail is only available for photo assets"
+        )
 
     bounded_size = max(32, min(512, size))
     bounded_padding = max(0.0, min(1.5, padding))
@@ -842,13 +995,22 @@ def get_face_thumbnail(
                 headers={"Cache-Control": "public, max-age=86400"},
             )
     except UnidentifiedImageError as exc:
-        raise HTTPException(status_code=415, detail="Source file is not a readable image") from exc
+        raise HTTPException(
+            status_code=415, detail="Source file is not a readable image"
+        ) from exc
     except OSError as exc:
-        raise HTTPException(status_code=500, detail="Could not render face thumbnail") from exc
+        raise HTTPException(
+            status_code=500, detail="Could not render face thumbnail"
+        ) from exc
 
 
-@app.get("/api/events/{event_id}/unknown-face-groups", response_model=list[UnknownFaceGroupResponse])
-def list_event_unknown_face_groups(event_id: int, db: Session = Depends(get_db)) -> list[UnknownFaceGroupResponse]:
+@app.get(
+    "/api/events/{event_id}/unknown-face-groups",
+    response_model=list[UnknownFaceGroupResponse],
+)
+def list_event_unknown_face_groups(
+    event_id: int, db: Session = Depends(get_db)
+) -> list[UnknownFaceGroupResponse]:
     event = db.get(LifeEvent, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -859,7 +1021,10 @@ def list_event_unknown_face_groups(event_id: int, db: Session = Depends(get_db))
     ]
 
 
-@app.post("/api/unknown-face-groups/{group_id}/assign-person", response_model=UnknownFaceGroupResponse)
+@app.post(
+    "/api/unknown-face-groups/{group_id}/assign-person",
+    response_model=UnknownFaceGroupResponse,
+)
 def assign_unknown_face_group(
     group_id: int,
     body: AssignUnknownFaceGroupRequest,
@@ -869,16 +1034,23 @@ def assign_unknown_face_group(
         assign_unknown_group_to_person(db, group_id, body.person_id)
     except ValueError as exc:
         if str(exc) == "group_not_found":
-            raise HTTPException(status_code=404, detail="Unknown face group not found") from exc
+            raise HTTPException(
+                status_code=404, detail="Unknown face group not found"
+            ) from exc
         if str(exc) == "person_not_found":
             raise HTTPException(status_code=404, detail="Person not found") from exc
-        raise HTTPException(status_code=400, detail="Could not assign unknown face group") from exc
+        raise HTTPException(
+            status_code=400, detail="Could not assign unknown face group"
+        ) from exc
 
     db.commit()
     return _build_unknown_face_group_response(db, group_id)
 
 
-@app.post("/api/unknown-face-groups/{group_id}/create-person", response_model=DirectoryEntryResponse)
+@app.post(
+    "/api/unknown-face-groups/{group_id}/create-person",
+    response_model=DirectoryEntryResponse,
+)
 def create_person_from_unknown_group_route(
     group_id: int,
     body: CreatePersonFromUnknownFaceGroupRequest,
@@ -888,14 +1060,20 @@ def create_person_from_unknown_group_route(
         _, person = create_person_from_unknown_group(db, group_id, body.name)
     except ValueError as exc:
         if str(exc) == "group_not_found":
-            raise HTTPException(status_code=404, detail="Unknown face group not found") from exc
-        raise HTTPException(status_code=400, detail="Could not create person from unknown face group") from exc
+            raise HTTPException(
+                status_code=404, detail="Unknown face group not found"
+            ) from exc
+        raise HTTPException(
+            status_code=400, detail="Could not create person from unknown face group"
+        ) from exc
 
     db.commit()
     return build_directory_response(person.name, person.id, 0)
 
 
-@app.post("/api/unknown-face-groups/{group_id}/merge", response_model=UnknownFaceGroupResponse)
+@app.post(
+    "/api/unknown-face-groups/{group_id}/merge", response_model=UnknownFaceGroupResponse
+)
 def merge_unknown_face_group_route(
     group_id: int,
     body: MergeUnknownFaceGroupRequest,
@@ -905,16 +1083,24 @@ def merge_unknown_face_group_route(
         target = merge_unknown_face_groups(db, group_id, body.into_group_id)
     except ValueError as exc:
         if str(exc) == "group_not_found":
-            raise HTTPException(status_code=404, detail="Unknown face group not found") from exc
+            raise HTTPException(
+                status_code=404, detail="Unknown face group not found"
+            ) from exc
         if str(exc) == "cannot_merge_same_group":
-            raise HTTPException(status_code=400, detail="Cannot merge a group into itself") from exc
-        raise HTTPException(status_code=400, detail="Could not merge unknown face groups") from exc
+            raise HTTPException(
+                status_code=400, detail="Cannot merge a group into itself"
+            ) from exc
+        raise HTTPException(
+            status_code=400, detail="Could not merge unknown face groups"
+        ) from exc
 
     db.commit()
     return _build_unknown_face_group_response(db, target.id)
 
 
-@app.post("/api/unknown-face-groups/{group_id}/split", response_model=UnknownFaceGroupResponse)
+@app.post(
+    "/api/unknown-face-groups/{group_id}/split", response_model=UnknownFaceGroupResponse
+)
 def split_unknown_face_group_route(
     group_id: int,
     body: SplitUnknownFaceGroupRequest,
@@ -924,10 +1110,16 @@ def split_unknown_face_group_route(
         split_group = split_unknown_face_group(db, group_id, body.face_ids)
     except ValueError as exc:
         if str(exc) == "group_not_found":
-            raise HTTPException(status_code=404, detail="Unknown face group not found") from exc
+            raise HTTPException(
+                status_code=404, detail="Unknown face group not found"
+            ) from exc
         if str(exc) == "no_faces_selected":
-            raise HTTPException(status_code=400, detail="No faces selected to split") from exc
-        raise HTTPException(status_code=400, detail="Could not split unknown face group") from exc
+            raise HTTPException(
+                status_code=400, detail="No faces selected to split"
+            ) from exc
+        raise HTTPException(
+            status_code=400, detail="Could not split unknown face group"
+        ) from exc
 
     db.commit()
     return _build_unknown_face_group_response(db, split_group.id)
@@ -966,14 +1158,25 @@ def rename_event_face_subject(
         if code == "face_not_found":
             raise HTTPException(status_code=404, detail="Face not found") from exc
         if code == "face_has_no_subject":
-            raise HTTPException(status_code=400, detail="Face has no CompreFace subject") from exc
+            raise HTTPException(
+                status_code=400, detail="Face has no CompreFace subject"
+            ) from exc
         if code == "subject_name_required":
-            raise HTTPException(status_code=400, detail="New subject name is required") from exc
+            raise HTTPException(
+                status_code=400, detail="New subject name is required"
+            ) from exc
         if code == "subject_name_too_long":
-            raise HTTPException(status_code=400, detail="New subject name is too long") from exc
+            raise HTTPException(
+                status_code=400, detail="New subject name is too long"
+            ) from exc
         if code == "compreface_rename_failed":
-            raise HTTPException(status_code=502, detail="Failed to rename CompreFace subject in upstream service") from exc
-        raise HTTPException(status_code=400, detail="Could not rename CompreFace subject") from exc
+            raise HTTPException(
+                status_code=502,
+                detail="Failed to rename CompreFace subject in upstream service",
+            ) from exc
+        raise HTTPException(
+            status_code=400, detail="Could not rename CompreFace subject"
+        ) from exc
 
     db.commit()
     db.refresh(face)
@@ -993,7 +1196,9 @@ def delete_event_face(face_id: int, db: Session = Depends(get_db)) -> None:
 
 
 @app.post("/api/assets/{asset_id}/sync-faces", response_model=list[EventFaceResponse])
-def sync_asset_faces(asset_id: int, db: Session = Depends(get_db)) -> list[EventFaceResponse]:
+def sync_asset_faces(
+    asset_id: int, db: Session = Depends(get_db)
+) -> list[EventFaceResponse]:
     """Trigger face detection on a single photo asset on demand."""
     asset = db.get(Asset, asset_id)
     if not asset:
@@ -1062,9 +1267,15 @@ def research_event(event_id: int, db: Session = Depends(get_db)) -> LifeEventRes
         if asset.captured_at_text:
             transcript_sections.append(f"Captured at: {asset.captured_at_text}")
 
-    combined_transcript = "\n\n".join(section for section in transcript_sections if section.strip())[:20000]
-    people = sorted({name for memory in memories for name in memory.referenced_people if name})
-    locations = sorted({name for memory in memories for name in memory.referenced_locations if name})
+    combined_transcript = "\n\n".join(
+        section for section in transcript_sections if section.strip()
+    )[:20000]
+    people = sorted(
+        {name for memory in memories for name in memory.referenced_people if name}
+    )
+    locations = sorted(
+        {name for memory in memories for name in memory.referenced_locations if name}
+    )
 
     research = research_memory_details(
         transcript=combined_transcript,
@@ -1087,7 +1298,9 @@ def research_event(event_id: int, db: Session = Depends(get_db)) -> LifeEventRes
         current_event_date_text=event.event_date_text,
         current_description=event.description,
     )
-    event.research_suggested_edit_json = json.dumps(dataclasses.asdict(suggestion)) if suggestion else None
+    event.research_suggested_edit_json = (
+        json.dumps(dataclasses.asdict(suggestion)) if suggestion else None
+    )
 
     source_memory_id = event_research_source_memory_id(event, memories)
     if source_memory_id is not None:
@@ -1102,8 +1315,12 @@ def research_event(event_id: int, db: Session = Depends(get_db)) -> LifeEventRes
     return build_event_response(event)
 
 
-@app.post("/api/events/{event_id}/apply-research-suggestion", response_model=LifeEventResponse)
-def apply_event_research_suggestion(event_id: int, db: Session = Depends(get_db)) -> LifeEventResponse:
+@app.post(
+    "/api/events/{event_id}/apply-research-suggestion", response_model=LifeEventResponse
+)
+def apply_event_research_suggestion(
+    event_id: int, db: Session = Depends(get_db)
+) -> LifeEventResponse:
     event = db.get(LifeEvent, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -1134,8 +1351,13 @@ def apply_event_research_suggestion(event_id: int, db: Session = Depends(get_db)
     return build_event_response(event)
 
 
-@app.post("/api/events/{event_id}/dismiss-research-suggestion", response_model=LifeEventResponse)
-def dismiss_event_research_suggestion(event_id: int, db: Session = Depends(get_db)) -> LifeEventResponse:
+@app.post(
+    "/api/events/{event_id}/dismiss-research-suggestion",
+    response_model=LifeEventResponse,
+)
+def dismiss_event_research_suggestion(
+    event_id: int, db: Session = Depends(get_db)
+) -> LifeEventResponse:
     event = db.get(LifeEvent, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -1149,7 +1371,11 @@ def dismiss_event_research_suggestion(event_id: int, db: Session = Depends(get_d
 def list_unlinked_assets(db: Session = Depends(get_db)) -> list[AssetResponse]:
     assets = (
         db.query(Asset)
-        .order_by(Asset.captured_at.is_(None), Asset.captured_at.asc(), Asset.created_at.desc())
+        .order_by(
+            Asset.captured_at.is_(None),
+            Asset.captured_at.asc(),
+            Asset.created_at.desc(),
+        )
         .all()
     )
     unlinked = [asset for asset in assets if not asset.event_links]
@@ -1181,16 +1407,22 @@ async def upload_asset(
 
     normalized_kind = (kind or "document").strip().lower()[:20]
     if normalized_kind == "audio" or (file.content_type or "").startswith("audio/"):
-        storage_filename, content_type, size_bytes, stored_bytes = save_audio_file(file, file_bytes, AUDIO_STORAGE_DIR)
+        storage_filename, content_type, size_bytes, stored_bytes = save_audio_file(
+            file, file_bytes, AUDIO_STORAGE_DIR
+        )
         original_filename = file.filename
         fingerprint = hashlib.sha256(stored_bytes).hexdigest()
         normalized_kind = "audio"
     else:
         # For images, compress before writing to disk; EXIF extraction uses original bytes
         storage_bytes = file_bytes
-        storage_content_type = (file.content_type or "").split(";")[0].strip().lower() or None
+        storage_content_type = (file.content_type or "").split(";")[
+            0
+        ].strip().lower() or None
         if storage_content_type and storage_content_type.startswith("image/"):
-            storage_bytes, storage_content_type = compress_photo_for_storage(file_bytes, storage_content_type)
+            storage_bytes, storage_content_type = compress_photo_for_storage(
+                file_bytes, storage_content_type
+            )
         (
             storage_filename,
             content_type,
@@ -1213,16 +1445,23 @@ async def upload_asset(
         notes=notes,
     )
     if normalized_kind != "audio":
-        extract_and_apply_image_metadata(asset, file_bytes, content_type, skip_geocoding=True)
+        extract_and_apply_image_metadata(
+            asset, file_bytes, content_type, skip_geocoding=True
+        )
         captured_text_override = clean_date_text(captured_at_text)
         if captured_text_override:
             start_date, end_date = parse_text_date_range(captured_text_override)
             if start_date is None:
-                raise HTTPException(status_code=400, detail="Could not parse captured date text override")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not parse captured date text override",
+                )
             resolved_end_date = end_date or start_date
             asset.captured_at_text = captured_text_override
             asset.captured_at = datetime.combine(start_date, datetime.min.time())
-            asset.captured_end_at = datetime.combine(resolved_end_date, datetime.min.time())
+            asset.captured_end_at = datetime.combine(
+                resolved_end_date, datetime.min.time()
+            )
 
     db.add(asset)
     db.flush()
@@ -1231,7 +1470,9 @@ async def upload_asset(
     # sync_asset_faces_for_photo is intentionally skipped here to keep uploads fast.
 
     if event:
-        db.add(EventAsset(event_id=event.id, asset_id=asset.id, relation_type="evidence"))
+        db.add(
+            EventAsset(event_id=event.id, asset_id=asset.id, relation_type="evidence")
+        )
 
     db.commit()
     db.refresh(asset)
@@ -1305,7 +1546,9 @@ async def queue_photo_assets(
         "queued_count": len(queued_items),
         "queue_size": get_photo_queue_size(),
         "processed_count": len(assets),
-        "assets": [build_asset_response(asset).model_dump(mode="json") for asset in assets],
+        "assets": [
+            build_asset_response(asset).model_dump(mode="json") for asset in assets
+        ],
     }
 
 
@@ -1355,10 +1598,15 @@ def stream_analyze_assets(
         raise HTTPException(status_code=400, detail="Provide asset_ids or event_id")
 
     if not ids:
+
         def _empty():
             yield f"data: {json.dumps({'type': 'complete', 'photos_processed': 0})}\n\n"
-        return StreamingResponse(_empty(), media_type="text/event-stream",
-                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+        return StreamingResponse(
+            _empty(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     def generate():
         db = SessionLocal()
@@ -1419,7 +1667,9 @@ def process_single_photo(
         force_faces=True,
     )
     if not processed:
-        raise HTTPException(status_code=400, detail="Photo asset could not be processed")
+        raise HTTPException(
+            status_code=400, detail="Photo asset could not be processed"
+        )
 
     db.commit()
     db.refresh(asset)
@@ -1460,7 +1710,13 @@ def link_asset_to_event(
         .first()
     )
     if not existing:
-        db.add(EventAsset(event_id=event_id, asset_id=asset_id, relation_type=(body.relation_type or "evidence")[:30]))
+        db.add(
+            EventAsset(
+                event_id=event_id,
+                asset_id=asset_id,
+                relation_type=(body.relation_type or "evidence")[:30],
+            )
+        )
         period = db.get(LifePeriod, event.period_id) if event.period_id else None
         refresh_period_summary(db, period)
         db.commit()
@@ -1470,14 +1726,16 @@ def link_asset_to_event(
 
 
 @app.patch("/api/assets/{asset_id}", response_model=AssetResponse)
-def update_asset(asset_id: int, body: UpdateAssetRequest, db: Session = Depends(get_db)) -> AssetResponse:
+def update_asset(
+    asset_id: int, body: UpdateAssetRequest, db: Session = Depends(get_db)
+) -> AssetResponse:
     asset = db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
     if "title" in body.model_fields_set:
         clean_title = body.title.strip() if body.title is not None else None
-        asset.title = (clean_title or None)
+        asset.title = clean_title or None
 
     if "notes" in body.model_fields_set:
         clean_notes = body.notes.strip() if body.notes is not None else None
@@ -1492,11 +1750,15 @@ def update_asset(asset_id: int, body: UpdateAssetRequest, db: Session = Depends(
         else:
             start_date, end_date = parse_text_date_range(cleaned_captured_text)
             if start_date is None:
-                raise HTTPException(status_code=400, detail="Could not parse captured date text")
+                raise HTTPException(
+                    status_code=400, detail="Could not parse captured date text"
+                )
             resolved_end_date = end_date or start_date
             asset.captured_at_text = cleaned_captured_text
             asset.captured_at = datetime.combine(start_date, datetime.min.time())
-            asset.captured_end_at = datetime.combine(resolved_end_date, datetime.min.time())
+            asset.captured_end_at = datetime.combine(
+                resolved_end_date, datetime.min.time()
+            )
 
     db.commit()
     db.refresh(asset)
@@ -1523,7 +1785,9 @@ def delete_asset(asset_id: int, db: Session = Depends(get_db)) -> None:
 
 
 @app.get("/api/assets/{asset_id}/download")
-def download_asset(asset_id: int, download: bool = True, db: Session = Depends(get_db)) -> FileResponse:
+def download_asset(
+    asset_id: int, download: bool = True, db: Session = Depends(get_db)
+) -> FileResponse:
     asset = db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
@@ -1565,12 +1829,16 @@ def list_people(db: Session = Depends(get_db)) -> list[DirectoryEntryResponse]:
 
 
 @app.get("/api/people/{person_id}", response_model=PersonDetailResponse)
-def get_person_details(person_id: int, db: Session = Depends(get_db)) -> PersonDetailResponse:
+def get_person_details(
+    person_id: int, db: Session = Depends(get_db)
+) -> PersonDetailResponse:
     person = db.get(Person, person_id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
 
-    directory_row = next((row for row in list_people_directory(db) if row.id == person_id), None)
+    directory_row = next(
+        (row for row in list_people_directory(db) if row.id == person_id), None
+    )
     memories = list_person_memories(db, person_id)
     events = list_person_events(db, person_id)
 
@@ -1581,9 +1849,13 @@ def get_person_details(person_id: int, db: Session = Depends(get_db)) -> PersonD
         memory_count=(directory_row.memory_count if directory_row else len(memories)),
         event_count=len(events),
         photo_count=(directory_row.photo_count if directory_row else 0),
-        avatar_download_url=(directory_row.avatar_download_url if directory_row else None),
+        avatar_download_url=(
+            directory_row.avatar_download_url if directory_row else None
+        ),
         compreface_subject_id=person.compreface_subject_id,
-        compreface_subject_url=(directory_row.compreface_subject_url if directory_row else None),
+        compreface_subject_url=(
+            directory_row.compreface_subject_url if directory_row else None
+        ),
         contact=PersonContactResponse(
             phone=person.phone,
             email=person.email,
@@ -1620,7 +1892,9 @@ def update_person_contact(
 
 
 @app.get("/api/people/{person_id}/activity", response_model=PersonActivityResponse)
-def get_person_activity(person_id: int, db: Session = Depends(get_db)) -> PersonActivityResponse:
+def get_person_activity(
+    person_id: int, db: Session = Depends(get_db)
+) -> PersonActivityResponse:
     person = db.get(Person, person_id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
@@ -1675,7 +1949,9 @@ def create_person_quick_memory(
     return memory
 
 
-@app.post("/api/people/{person_id}/faces/{face_id}/approve", response_model=EventFaceResponse)
+@app.post(
+    "/api/people/{person_id}/faces/{face_id}/approve", response_model=EventFaceResponse
+)
 def approve_person_face(
     person_id: int,
     face_id: int,
@@ -1699,8 +1975,12 @@ def approve_person_face(
     return _build_event_face_response(face)
 
 
-@app.get("/api/people/{person_id}/faces/suggested", response_model=list[EventFaceResponse])
-def list_person_suggested_faces(person_id: int, db: Session = Depends(get_db)) -> list[EventFaceResponse]:
+@app.get(
+    "/api/people/{person_id}/faces/suggested", response_model=list[EventFaceResponse]
+)
+def list_person_suggested_faces(
+    person_id: int, db: Session = Depends(get_db)
+) -> list[EventFaceResponse]:
     person = db.get(Person, person_id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
@@ -1721,7 +2001,10 @@ def list_person_suggested_faces(person_id: int, db: Session = Depends(get_db)) -
             AssetFace.person_id.is_(None),
             AssetFace.compreface_subject.isnot(None),
         )
-        .order_by(AssetFace.compreface_similarity.desc().nulls_last(), AssetFace.created_at.desc())
+        .order_by(
+            AssetFace.compreface_similarity.desc().nulls_last(),
+            AssetFace.created_at.desc(),
+        )
         .all()
     )
 
@@ -1733,7 +2016,9 @@ def list_person_suggested_faces(person_id: int, db: Session = Depends(get_db)) -
 
 
 @app.post("/api/people", response_model=DirectoryEntryResponse)
-def create_person(body: CreateDirectoryEntryRequest, db: Session = Depends(get_db)) -> DirectoryEntryResponse:
+def create_person(
+    body: CreateDirectoryEntryRequest, db: Session = Depends(get_db)
+) -> DirectoryEntryResponse:
     person = get_or_create_person(db, body.name)
     if not person:
         raise HTTPException(status_code=400, detail="Person name is required")
@@ -1760,15 +2045,20 @@ def rename_person(
             raise HTTPException(status_code=409, detail="Person name already exists")
 
     person.name = name
-    
+
     # Sync CompreFace subject name if this person has one
     if person.compreface_subject_id:
         from app.services.faces import rename_compreface_subject
+
         try:
             rename_compreface_subject(person.compreface_subject_id, name)
         except Exception as exc:
-            logger.warning("Failed to rename CompreFace subject %s: %s", person.compreface_subject_id, exc)
-    
+            logger.warning(
+                "Failed to rename CompreFace subject %s: %s",
+                person.compreface_subject_id,
+                exc,
+            )
+
     for memory in db.query(MemoryEntry).all():
         if memory.recorder_person_id == person.id:
             memory.recorder_name = person.name
@@ -1776,11 +2066,18 @@ def rename_person(
             memory.people_json = json.dumps(memory.referenced_people)
 
     db.commit()
-    return build_directory_response(person.name, person.id, len({
-        memory.id
-        for memory in db.query(MemoryEntry).all()
-        if memory.recorder_person_id == person.id or any(link.person_id == person.id for link in memory.people_links)
-    }))
+    return build_directory_response(
+        person.name,
+        person.id,
+        len(
+            {
+                memory.id
+                for memory in db.query(MemoryEntry).all()
+                if memory.recorder_person_id == person.id
+                or any(link.person_id == person.id for link in memory.people_links)
+            }
+        ),
+    )
 
 
 @app.post("/api/people/{person_id}/merge", response_model=DirectoryEntryResponse)
@@ -1798,7 +2095,9 @@ def merge_person(
         raise HTTPException(status_code=404, detail="Target person not found")
 
     if source.id == target.id:
-        raise HTTPException(status_code=400, detail="Cannot merge a person into themselves")
+        raise HTTPException(
+            status_code=400, detail="Cannot merge a person into themselves"
+        )
 
     merge_people_records(db, source, target)
     db.delete(source)
@@ -1811,23 +2110,34 @@ def merge_person(
     return build_directory_response(target.name, target.id, 0)
 
 
-@app.post("/api/people/{person_id}/link-compreface", response_model=DirectoryEntryResponse)
+@app.post(
+    "/api/people/{person_id}/link-compreface", response_model=DirectoryEntryResponse
+)
 def link_person_compreface(
     person_id: int,
     body: LinkPersonComprefaceRequest,
     db: Session = Depends(get_db),
 ) -> DirectoryEntryResponse:
     try:
-        person = link_person_to_existing_compreface_subject(db, person_id, body.subject_name)
+        person = link_person_to_existing_compreface_subject(
+            db, person_id, body.subject_name
+        )
     except ValueError as exc:
         code = str(exc)
         if code == "person_not_found":
             raise HTTPException(status_code=404, detail="Person not found") from exc
         if code == "subject_not_found":
-            raise HTTPException(status_code=404, detail="No matching CompreFace subject found") from exc
+            raise HTTPException(
+                status_code=404, detail="No matching CompreFace subject found"
+            ) from exc
         if code == "subject_already_linked":
-            raise HTTPException(status_code=409, detail="CompreFace subject is already linked to another person") from exc
-        raise HTTPException(status_code=400, detail="Could not link person to CompreFace") from exc
+            raise HTTPException(
+                status_code=409,
+                detail="CompreFace subject is already linked to another person",
+            ) from exc
+        raise HTTPException(
+            status_code=400, detail="Could not link person to CompreFace"
+        ) from exc
 
     db.commit()
     db.refresh(person)
@@ -1871,16 +2181,22 @@ def split_person(
             memory.recorder_person_id = None
             memory.recorder_name = None
 
-        has_source_link = any(link.person_id == source.id for link in memory.people_links)
+        has_source_link = any(
+            link.person_id == source.id for link in memory.people_links
+        )
         if has_source_link:
             for link in list(memory.people_links):
                 if link.person_id == source.id:
                     memory.people_links.remove(link)
                     db.delete(link)
             for new_person in new_people:
-                already_linked = any(link.person_id == new_person.id for link in memory.people_links)
+                already_linked = any(
+                    link.person_id == new_person.id for link in memory.people_links
+                )
                 if not already_linked:
-                    memory.people_links.append(MemoryPerson(person_id=new_person.id, role="mentioned"))
+                    memory.people_links.append(
+                        MemoryPerson(person_id=new_person.id, role="mentioned")
+                    )
             memory.people_json = json.dumps(memory.referenced_people)
 
     # Add the old name as an alias on each new person
@@ -1917,7 +2233,9 @@ def add_person_alias(
     # Check alias isn't already a person name
     for p in db.query(Person).all():
         if p.id != person_id and p.name.casefold() == alias.casefold():
-            raise HTTPException(status_code=409, detail="That name belongs to another person")
+            raise HTTPException(
+                status_code=409, detail="That name belongs to another person"
+            )
 
     # Check not already present for this person
     if any(a.alias.casefold() == alias.casefold() for a in person.aliases):
@@ -1985,6 +2303,7 @@ def delete_person(person_id: int, db: Session = Depends(get_db)) -> dict:
 def list_compreface_subjects_endpoint() -> list[str]:
     """List all available CompreFace subjects for linking to people."""
     from app.services.faces import list_compreface_subjects
+
     subjects = list_compreface_subjects()
     return [name for name, _ in subjects]
 
@@ -1995,7 +2314,9 @@ def list_places(db: Session = Depends(get_db)) -> list[DirectoryEntryResponse]:
 
 
 @app.post("/api/places", response_model=DirectoryEntryResponse)
-def create_place(body: CreateDirectoryEntryRequest, db: Session = Depends(get_db)) -> DirectoryEntryResponse:
+def create_place(
+    body: CreateDirectoryEntryRequest, db: Session = Depends(get_db)
+) -> DirectoryEntryResponse:
     place = get_or_create_place(db, body.name)
     if not place:
         raise HTTPException(status_code=400, detail="Place name is required")
@@ -2027,9 +2348,17 @@ def rename_place(
             memory.locations_json = json.dumps(memory.referenced_locations)
 
     db.commit()
-    return build_directory_response(place.name, place.id, len({
-        memory.id for memory in db.query(MemoryEntry).all() if any(link.place_id == place.id for link in memory.place_links)
-    }))
+    return build_directory_response(
+        place.name,
+        place.id,
+        len(
+            {
+                memory.id
+                for memory in db.query(MemoryEntry).all()
+                if any(link.place_id == place.id for link in memory.place_links)
+            }
+        ),
+    )
 
 
 @app.delete("/api/places/{place_id}")
@@ -2071,14 +2400,18 @@ def get_memory_audio(memory_id: int, db: Session = Depends(get_db)) -> FileRespo
 
 
 @app.get("/api/memories/{memory_id}/document")
-def get_memory_document(memory_id: int, download: bool = False, db: Session = Depends(get_db)) -> FileResponse:
+def get_memory_document(
+    memory_id: int, download: bool = False, db: Session = Depends(get_db)
+) -> FileResponse:
     memory = db.get(MemoryEntry, memory_id)
     if not memory or not memory.document_filename:
         raise HTTPException(status_code=404, detail="Document not found")
 
     file_path = DOCUMENT_STORAGE_DIR / memory.document_filename
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Document file missing from storage")
+        raise HTTPException(
+            status_code=404, detail="Document file missing from storage"
+        )
 
     filename = memory.document_original_filename or memory.document_filename
     disposition = "attachment" if download else "inline"
@@ -2102,7 +2435,9 @@ async def create_memory(
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="Audio payload is empty")
 
-    audio_filename, audio_content_type, audio_size_bytes, mp3_bytes = save_audio_file(audio, audio_bytes, AUDIO_STORAGE_DIR)
+    audio_filename, audio_content_type, audio_size_bytes, mp3_bytes = save_audio_file(
+        audio, audio_bytes, AUDIO_STORAGE_DIR
+    )
 
     related_asset: Optional[Asset] = None
     if related_asset_id is not None:
@@ -2113,7 +2448,10 @@ async def create_memory(
         if related_asset.kind != "photo" and not content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Related asset must be a photo")
         if event_id is None:
-            raise HTTPException(status_code=400, detail="event_id is required when related_asset_id is provided")
+            raise HTTPException(
+                status_code=400,
+                detail="event_id is required when related_asset_id is provided",
+            )
 
     transcription_enabled = os.getenv("TRANSCRIPTION_ENABLED", "true").lower() == "true"
 
@@ -2166,10 +2504,14 @@ async def create_memory(
             raise HTTPException(status_code=404, detail="Event not found")
 
         if related_asset:
-            ensure_event_asset_link(db, target_event, related_asset, relation_type="evidence")
+            ensure_event_asset_link(
+                db, target_event, related_asset, relation_type="evidence"
+            )
             related_asset.legacy_memory_id = entry.id
         else:
-            conflicting_asset = db.query(Asset).filter(Asset.legacy_memory_id == entry.id).first()
+            conflicting_asset = (
+                db.query(Asset).filter(Asset.legacy_memory_id == entry.id).first()
+            )
             if conflicting_asset and conflicting_asset.kind != "audio":
                 conflicting_asset.legacy_memory_id = None
                 db.flush()
@@ -2194,17 +2536,24 @@ async def create_memory(
                 )
                 db.add(audio_asset)
                 db.flush()
-            ensure_event_asset_link(db, target_event, audio_asset, relation_type="recording")
+            ensure_event_asset_link(
+                db, target_event, audio_asset, relation_type="recording"
+            )
     else:
         sync_life_hierarchy_for_memory(db, entry)
-        auto_event = db.query(LifeEvent).filter(LifeEvent.legacy_memory_id == entry.id).first()
+        auto_event = (
+            db.query(LifeEvent).filter(LifeEvent.legacy_memory_id == entry.id).first()
+        )
         if auto_event:
             refresh_event_summary_and_suggestion(db, auto_event, auto_apply_title=True)
 
     db.commit()
     db.refresh(entry)
 
-    if transcription_enabled and transcript not in ("Transcription failed.", "Transcription disabled."):
+    if transcription_enabled and transcript not in (
+        "Transcription failed.",
+        "Transcription disabled.",
+    ):
         try:
             add_unique_pending_questions(
                 db,
@@ -2213,7 +2562,9 @@ async def create_memory(
             )
             db.commit()
         except Exception as exc:
-            logger.warning("Could not generate questions for memory %s: %s", entry.id, exc)
+            logger.warning(
+                "Could not generate questions for memory %s: %s", entry.id, exc
+            )
 
     return entry
 
@@ -2263,7 +2614,9 @@ async def create_memory_from_document(
             ),
         )
 
-    transcript = extract_text_from_document(file.filename or "document", file_bytes, content_type)
+    transcript = extract_text_from_document(
+        file.filename or "document", file_bytes, content_type
+    )
 
     (
         document_filename,
@@ -2278,7 +2631,9 @@ async def create_memory_from_document(
 
     emotional_tone = "neutral"
     event_description = f"Document analysis: {document_original_filename}"
-    follow_up_question = "What additional factual details should be captured from this document?"
+    follow_up_question = (
+        "What additional factual details should be captured from this document?"
+    )
 
     document_start, document_end = parse_text_date_range(metadata.date_text)
     if document_start is not None and document_end is None:
@@ -2320,8 +2675,14 @@ async def create_memory_from_document(
         if not target_event:
             raise HTTPException(status_code=404, detail="Event not found")
 
-        asset_kind = "photo" if (document_content_type or "").startswith("image/") else "document"
-        conflicting_asset = db.query(Asset).filter(Asset.legacy_memory_id == entry.id).first()
+        asset_kind = (
+            "photo"
+            if (document_content_type or "").startswith("image/")
+            else "document"
+        )
+        conflicting_asset = (
+            db.query(Asset).filter(Asset.legacy_memory_id == entry.id).first()
+        )
         if conflicting_asset and conflicting_asset.kind != asset_kind:
             conflicting_asset.legacy_memory_id = None
             db.flush()
@@ -2344,7 +2705,9 @@ async def create_memory_from_document(
             doc_path = DOCUMENT_STORAGE_DIR / document_filename
             if doc_path.exists():
                 try:
-                    extract_and_apply_image_metadata(document_asset, doc_path.read_bytes(), document_content_type)
+                    extract_and_apply_image_metadata(
+                        document_asset, doc_path.read_bytes(), document_content_type
+                    )
                 except Exception:
                     pass
         ensure_event_asset_link(db, target_event, document_asset)
@@ -2369,7 +2732,9 @@ def reanalyze_memory(memory_id: int, db: Session = Depends(get_db)) -> MemoryEnt
     if memory.document_filename and not memory.audio_filename:
         file_path = DOCUMENT_STORAGE_DIR / memory.document_filename
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Document file missing from storage")
+            raise HTTPException(
+                status_code=404, detail="Document file missing from storage"
+            )
 
         file_bytes = file_path.read_bytes()
         if not file_bytes:
@@ -2388,7 +2753,9 @@ def reanalyze_memory(memory_id: int, db: Session = Depends(get_db)) -> MemoryEnt
 
         memory.transcript = transcript
         memory.estimated_date_text = metadata.date_text
-        parsed_memory_start, parsed_memory_end = parse_text_date_range(memory.estimated_date_text)
+        parsed_memory_start, parsed_memory_end = parse_text_date_range(
+            memory.estimated_date_text
+        )
         if parsed_memory_start is not None and parsed_memory_end is None:
             parsed_memory_end = parsed_memory_start
         memory.estimated_date_sort = metadata.sort_date or parsed_memory_start
@@ -2415,7 +2782,10 @@ def reanalyze_memory(memory_id: int, db: Session = Depends(get_db)) -> MemoryEnt
 
     # --- Audio memory reanalysis ---
     if not memory.audio_filename:
-        raise HTTPException(status_code=400, detail="Memory has no stored audio or document to reanalyze")
+        raise HTTPException(
+            status_code=400,
+            detail="Memory has no stored audio or document to reanalyze",
+        )
 
     file_path = AUDIO_STORAGE_DIR / memory.audio_filename
     if not file_path.exists():
@@ -2439,7 +2809,9 @@ def reanalyze_memory(memory_id: int, db: Session = Depends(get_db)) -> MemoryEnt
     memory.transcript = transcript
     memory.event_description = event_description
     memory.estimated_date_text = estimated_date_text
-    parsed_memory_start, parsed_memory_end = parse_text_date_range(memory.estimated_date_text)
+    parsed_memory_start, parsed_memory_end = parse_text_date_range(
+        memory.estimated_date_text
+    )
     if parsed_memory_start is not None and parsed_memory_end is None:
         parsed_memory_end = parsed_memory_start
     memory.estimated_date_sort = estimated_date_sort or parsed_memory_start
@@ -2464,7 +2836,10 @@ def reanalyze_memory(memory_id: int, db: Session = Depends(get_db)) -> MemoryEnt
         Question.status == "pending",
     ).delete(synchronize_session=False)
 
-    if transcription_enabled and transcript not in ("Transcription failed.", "Transcription disabled."):
+    if transcription_enabled and transcript not in (
+        "Transcription failed.",
+        "Transcription disabled.",
+    ):
         add_unique_pending_questions(
             db,
             _generate_questions(transcript, event_description, metadata),
@@ -2490,17 +2865,25 @@ def research_memory(memory_id: int, db: Session = Depends(get_db)) -> MemoryEntr
     # Extract follow-up questions from the 'Questions worth exploring' section
     # already present in the research summary, rather than making a redundant Gemini call
     follow_up_questions = extract_questions_from_research(memory.research_summary or "")
-    logger.info("Extracted %d questions from research summary", len(follow_up_questions))
+    logger.info(
+        "Extracted %d questions from research summary", len(follow_up_questions)
+    )
     for question_text in follow_up_questions:
         logger.info("Adding question: %s", question_text[:80])
-        db.add(Question(text=question_text, source_memory_id=memory_id, status="pending"))
+        db.add(
+            Question(text=question_text, source_memory_id=memory_id, status="pending")
+        )
     db.commit()
 
     return memory
 
 
-@app.post("/api/memories/{memory_id}/apply-research-suggestion", response_model=MemoryResponse)
-def apply_research_suggestion(memory_id: int, db: Session = Depends(get_db)) -> MemoryEntry:
+@app.post(
+    "/api/memories/{memory_id}/apply-research-suggestion", response_model=MemoryResponse
+)
+def apply_research_suggestion(
+    memory_id: int, db: Session = Depends(get_db)
+) -> MemoryEntry:
     memory = db.get(MemoryEntry, memory_id)
     if not memory:
         raise HTTPException(status_code=404, detail="Memory not found")
@@ -2508,22 +2891,29 @@ def apply_research_suggestion(memory_id: int, db: Session = Depends(get_db)) -> 
         raise HTTPException(status_code=404, detail="No pending suggestion")
 
     suggestion = json.loads(memory.research_suggested_metadata_json)
-    memory.estimated_date_text = suggestion.get("estimated_date_text") or memory.estimated_date_text
+    memory.estimated_date_text = (
+        suggestion.get("estimated_date_text") or memory.estimated_date_text
+    )
     memory.date_precision = suggestion.get("date_precision") or memory.date_precision
     memory.date_year = suggestion.get("date_year")
     memory.date_month = suggestion.get("date_month")
     memory.date_day = suggestion.get("date_day")
     memory.date_decade = suggestion.get("date_decade")
-    parsed_memory_start, parsed_memory_end = parse_text_date_range(memory.estimated_date_text)
+    parsed_memory_start, parsed_memory_end = parse_text_date_range(
+        memory.estimated_date_text
+    )
     if parsed_memory_start is not None and parsed_memory_end is None:
         parsed_memory_end = parsed_memory_start
-    memory.estimated_date_sort = build_sort_date(
-        memory.date_precision,
-        memory.date_year,
-        memory.date_month,
-        memory.date_day,
-        memory.date_decade,
-    ) or parsed_memory_start
+    memory.estimated_date_sort = (
+        build_sort_date(
+            memory.date_precision,
+            memory.date_year,
+            memory.date_month,
+            memory.date_day,
+            memory.date_decade,
+        )
+        or parsed_memory_start
+    )
     memory.estimated_end_date_sort = parsed_memory_end
     memory.research_suggested_metadata_json = None
     db.commit()
@@ -2531,8 +2921,13 @@ def apply_research_suggestion(memory_id: int, db: Session = Depends(get_db)) -> 
     return memory
 
 
-@app.post("/api/memories/{memory_id}/dismiss-research-suggestion", response_model=MemoryResponse)
-def dismiss_research_suggestion(memory_id: int, db: Session = Depends(get_db)) -> MemoryEntry:
+@app.post(
+    "/api/memories/{memory_id}/dismiss-research-suggestion",
+    response_model=MemoryResponse,
+)
+def dismiss_research_suggestion(
+    memory_id: int, db: Session = Depends(get_db)
+) -> MemoryEntry:
     memory = db.get(MemoryEntry, memory_id)
     if not memory:
         raise HTTPException(status_code=404, detail="Memory not found")
@@ -2543,7 +2938,9 @@ def dismiss_research_suggestion(memory_id: int, db: Session = Depends(get_db)) -
 
 
 @app.patch("/api/memories/{memory_id}", response_model=MemoryResponse)
-def update_memory(memory_id: int, body: UpdateMemoryRequest, db: Session = Depends(get_db)) -> MemoryEntry:
+def update_memory(
+    memory_id: int, body: UpdateMemoryRequest, db: Session = Depends(get_db)
+) -> MemoryEntry:
     memory = db.get(MemoryEntry, memory_id)
     if not memory:
         raise HTTPException(status_code=404, detail="Memory not found")
@@ -2556,7 +2953,9 @@ def update_memory(memory_id: int, body: UpdateMemoryRequest, db: Session = Depen
 
     if "estimated_date_text" in body.model_fields_set:
         memory.estimated_date_text = clean_date_text(body.estimated_date_text)
-        parsed_memory_start, parsed_memory_end = parse_text_date_range(memory.estimated_date_text)
+        parsed_memory_start, parsed_memory_end = parse_text_date_range(
+            memory.estimated_date_text
+        )
         if parsed_memory_start is not None and parsed_memory_end is None:
             parsed_memory_end = parsed_memory_start
         memory.estimated_date_sort = parsed_memory_start
@@ -2598,15 +2997,27 @@ def delete_memory(memory_id: int, db: Session = Depends(get_db)) -> dict:
     if not memory:
         raise HTTPException(status_code=404, detail="Memory not found")
 
-    file_path = AUDIO_STORAGE_DIR / memory.audio_filename if memory.audio_filename else None
-    document_path = DOCUMENT_STORAGE_DIR / memory.document_filename if memory.document_filename else None
-    db.query(Question).filter(Question.source_memory_id == memory.id).delete(synchronize_session=False)
+    file_path = (
+        AUDIO_STORAGE_DIR / memory.audio_filename if memory.audio_filename else None
+    )
+    document_path = (
+        DOCUMENT_STORAGE_DIR / memory.document_filename
+        if memory.document_filename
+        else None
+    )
+    db.query(Question).filter(Question.source_memory_id == memory.id).delete(
+        synchronize_session=False
+    )
     db.query(Question).filter(Question.answer_memory_id == memory.id).update(
         {Question.answer_memory_id: None},
         synchronize_session=False,
     )
-    db.query(MemoryPerson).filter(MemoryPerson.memory_id == memory.id).delete(synchronize_session=False)
-    db.query(MemoryPlace).filter(MemoryPlace.memory_id == memory.id).delete(synchronize_session=False)
+    db.query(MemoryPerson).filter(MemoryPerson.memory_id == memory.id).delete(
+        synchronize_session=False
+    )
+    db.query(MemoryPlace).filter(MemoryPlace.memory_id == memory.id).delete(
+        synchronize_session=False
+    )
     db.delete(memory)
     db.commit()
 

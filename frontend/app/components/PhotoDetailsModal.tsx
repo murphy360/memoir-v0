@@ -30,7 +30,10 @@ type FaceImageSize = {
   height: number;
 };
 
-function getFaceBox(face: EventFaceEntry, imageSize: FaceImageSize): { x: number; y: number; w: number; h: number } | null {
+function getFaceBox(
+  face: EventFaceEntry,
+  imageSize: FaceImageSize,
+): { x: number; y: number; w: number; h: number } | null {
   const looksNormalized =
     face.bbox_x >= 0 &&
     face.bbox_y >= 0 &&
@@ -103,14 +106,24 @@ export function PhotoDetailsModal({
 
   const faceBoxes = useMemo(() => {
     if (!imageSize) {
-      return [] as Array<{ face: EventFaceEntry; box: { x: number; y: number; w: number; h: number } }>;
+      return [] as Array<{
+        face: EventFaceEntry;
+        box: { x: number; y: number; w: number; h: number };
+      }>;
     }
     return faces
       .map((face) => {
         const box = getFaceBox(face, imageSize);
         return box ? { face, box } : null;
       })
-      .filter((entry): entry is { face: EventFaceEntry; box: { x: number; y: number; w: number; h: number } } => Boolean(entry));
+      .filter(
+        (
+          entry,
+        ): entry is {
+          face: EventFaceEntry;
+          box: { x: number; y: number; w: number; h: number };
+        } => Boolean(entry),
+      );
   }, [faces, imageSize]);
 
   if (!isOpen) {
@@ -118,11 +131,21 @@ export function PhotoDetailsModal({
   }
 
   return (
-    <div className="assetPreviewOverlay" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="assetPreviewModal" onClick={(event) => event.stopPropagation()}>
+    <div
+      className="assetPreviewOverlay"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="assetPreviewModal"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="assetPreviewHeader">
           <h3>{title}</h3>
-          <button className="secondary" type="button" onClick={onClose}>Close</button>
+          <button className="secondary" type="button" onClick={onClose}>
+            Close
+          </button>
         </div>
 
         {(faces.length > 0 || topActions.length > 0) && (
@@ -176,7 +199,11 @@ export function PhotoDetailsModal({
                   y={box.y}
                   width={box.w}
                   height={box.h}
-                  className={face.id === focusFaceId ? "personFaceOverlayBox personFaceOverlayBoxFocus" : "personFaceOverlayBox personFaceOverlayBoxStrong"}
+                  className={
+                    face.id === focusFaceId
+                      ? "personFaceOverlayBox personFaceOverlayBoxFocus"
+                      : "personFaceOverlayBox personFaceOverlayBoxStrong"
+                  }
                 />
               ))}
             </svg>
@@ -184,11 +211,25 @@ export function PhotoDetailsModal({
         </div>
 
         <div className="assetPreviewMeta">
-          {filename && <p className="meta"><strong>Filename:</strong> {filename}</p>}
-          <p className="meta"><strong>Captured:</strong> {capturedText || "unknown"}</p>
-          <p className="meta"><strong>Position:</strong> {positionText || "Unavailable"}</p>
-          {dimensionsText && <p className="meta"><strong>Dimensions:</strong> {dimensionsText}</p>}
-          <p className="meta"><strong>Notes:</strong> {notes || "none"}</p>
+          {filename && (
+            <p className="meta">
+              <strong>Filename:</strong> {filename}
+            </p>
+          )}
+          <p className="meta">
+            <strong>Captured:</strong> {capturedText || "unknown"}
+          </p>
+          <p className="meta">
+            <strong>Position:</strong> {positionText || "Unavailable"}
+          </p>
+          {dimensionsText && (
+            <p className="meta">
+              <strong>Dimensions:</strong> {dimensionsText}
+            </p>
+          )}
+          <p className="meta">
+            <strong>Notes:</strong> {notes || "none"}
+          </p>
           {extraMeta}
         </div>
 

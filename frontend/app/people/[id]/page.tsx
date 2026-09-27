@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { formatAssetCaptureDate } from "../../lib/homePageHelpers";
 import {
   addPersonAlias,
@@ -24,7 +25,12 @@ import {
   resolveApiUrl,
 } from "../../lib/memoirApi";
 import { PhotoDetailsModal } from "../../components/PhotoDetailsModal";
-import { DirectoryEntry, EventFaceEntry, PersonActivity, PersonDetail } from "../../types";
+import {
+  DirectoryEntry,
+  EventFaceEntry,
+  PersonActivity,
+  PersonDetail,
+} from "../../types";
 
 type FaceImageSize = {
   width: number;
@@ -48,13 +54,16 @@ type PersonPhotoModalState = {
 
 export default function PersonDetailsPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const personId = Number(params?.id || 0);
 
   const [person, setPerson] = useState<PersonDetail | null>(null);
   const [activity, setActivity] = useState<PersonActivity | null>(null);
   const [peopleDirectory, setPeopleDirectory] = useState<DirectoryEntry[]>([]);
   const [suggestedFaces, setSuggestedFaces] = useState<EventFaceEntry[]>([]);
-  const [personEventFaces, setPersonEventFaces] = useState<EventFaceEntry[]>([]);
+  const [personEventFaces, setPersonEventFaces] = useState<EventFaceEntry[]>(
+    [],
+  );
   const [status, setStatus] = useState<string>("");
   const [isBusy, setIsBusy] = useState(false);
 
@@ -74,7 +83,9 @@ export default function PersonDetailsPage() {
   const [notes, setNotes] = useState("");
   const [birthdayText, setBirthdayText] = useState("");
   const [comprefaceSubjectName, setComprefaceSubjectName] = useState("");
-  const [faceImageSizes, setFaceImageSizes] = useState<Record<number, FaceImageSize>>({});
+  const [faceImageSizes, setFaceImageSizes] = useState<
+    Record<number, FaceImageSize>
+  >({});
   const [photoModal, setPhotoModal] = useState<PersonPhotoModalState>({
     isOpen: false,
     assetId: null,
@@ -133,7 +144,10 @@ export default function PersonDetailsPage() {
       activityData.events.map((event) => fetchEventFaces(event.id)),
     );
     const eventFaces = eventFaceResults
-      .filter((result): result is PromiseFulfilledResult<EventFaceEntry[]> => result.status === "fulfilled")
+      .filter(
+        (result): result is PromiseFulfilledResult<EventFaceEntry[]> =>
+          result.status === "fulfilled",
+      )
       .flatMap((result) => result.value);
 
     setPerson(personData);
@@ -148,12 +162,18 @@ export default function PersonDetailsPage() {
     setAddress(personData.contact.address ?? "");
     setNotes(personData.contact.notes ?? "");
     setBirthdayText(personData.contact.birthday_text ?? "");
-    setComprefaceSubjectName(personData.compreface_subject_id ?? personData.name);
+    setComprefaceSubjectName(
+      personData.compreface_subject_id ?? personData.name,
+    );
   }
 
   useEffect(() => {
     loadAll().catch((error) => {
-      setStatus(error instanceof Error ? error.message : "Failed to load person details");
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Failed to load person details",
+      );
     });
   }, [personId]);
 
@@ -189,7 +209,9 @@ export default function PersonDetailsPage() {
     });
   }
 
-  function getFaceOverlayBox(face: EventFaceEntry): { x: number; y: number; w: number; h: number } | null {
+  function getFaceOverlayBox(
+    face: EventFaceEntry,
+  ): { x: number; y: number; w: number; h: number } | null {
     const size = faceImageSizes[face.id];
     if (!size) {
       return null;
@@ -247,7 +269,9 @@ export default function PersonDetailsPage() {
   }
 
   function openAssetModal(assetId: number) {
-    const asset = (activity?.assets || []).find((entry) => entry.id === assetId);
+    const asset = (activity?.assets || []).find(
+      (entry) => entry.id === assetId,
+    );
     if (!asset) {
       return;
     }
@@ -260,10 +284,13 @@ export default function PersonDetailsPage() {
       title: asset.title || asset.original_filename || `Photo #${asset.id}`,
       filename: asset.original_filename,
       capturedText: formatAssetCaptureDate(asset) || null,
-      positionText: hasGps ? `${asset.gps_latitude!.toFixed(6)}, ${asset.gps_longitude!.toFixed(6)}` : null,
-      dimensionsText: (asset.image_width !== null || asset.image_height !== null)
-        ? `${asset.image_width || "?"} x ${asset.image_height || "?"}`
+      positionText: hasGps
+        ? `${asset.gps_latitude!.toFixed(6)}, ${asset.gps_longitude!.toFixed(6)}`
         : null,
+      dimensionsText:
+        asset.image_width !== null || asset.image_height !== null
+          ? `${asset.image_width || "?"} x ${asset.image_height || "?"}`
+          : null,
       notes: asset.notes,
       faces: facesByAssetDownloadUrl[asset.download_url] || [],
       focusFaceId: null,
@@ -271,11 +298,16 @@ export default function PersonDetailsPage() {
   }
 
   if (!personId || Number.isNaN(personId)) {
-    return <main><p>Invalid person id.</p></main>;
+    return (
+      <main>
+        <p>Invalid person id.</p>
+      </main>
+    );
   }
 
   const focusedModalFace = photoModal.focusFaceId
-    ? photoModal.faces.find((face) => face.id === photoModal.focusFaceId) || null
+    ? photoModal.faces.find((face) => face.id === photoModal.focusFaceId) ||
+      null
     : null;
 
   const modalTopActions = [
@@ -293,55 +325,71 @@ export default function PersonDetailsPage() {
         }, "Photo analysis refreshed.");
       },
     },
-    ...(focusedModalFace ? [
-    {
-      label: "Approve Face",
-      variant: "primary" as const,
-      disabled: isBusy,
-      onClick: () => {
-        runMutation(async () => {
-          await approvePersonFace(personId, focusedModalFace.id);
-          setPhotoModal((current) => ({ ...current, isOpen: false }));
-        }, "Face approved and synced to CompreFace.");
-      },
-    },
-    {
-      label: "Disapprove Face",
-      variant: "ghost" as const,
-      disabled: isBusy,
-      onClick: () => {
-        runMutation(async () => {
-          await deleteFace(focusedModalFace.id);
-          setPhotoModal((current) => ({ ...current, isOpen: false }));
-        }, "Face suggestion removed.");
-      },
-    },
-    ] : []),
+    ...(focusedModalFace
+      ? [
+          {
+            label: "Approve Face",
+            variant: "primary" as const,
+            disabled: isBusy,
+            onClick: () => {
+              runMutation(async () => {
+                await approvePersonFace(personId, focusedModalFace.id);
+                setPhotoModal((current) => ({ ...current, isOpen: false }));
+              }, "Face approved and synced to CompreFace.");
+            },
+          },
+          {
+            label: "Disapprove Face",
+            variant: "ghost" as const,
+            disabled: isBusy,
+            onClick: () => {
+              runMutation(async () => {
+                await deleteFace(focusedModalFace.id);
+                setPhotoModal((current) => ({ ...current, isOpen: false }));
+              }, "Face suggestion removed.");
+            },
+          },
+        ]
+      : []),
   ];
 
-  const modalFooterActions = photoModal.sourceDownloadPath ? [
-    {
-      label: "View",
-      variant: "secondary" as const,
-      onClick: () => {
-        window.open(resolveApiUrl(`${photoModal.sourceDownloadPath}?download=false`), "_blank", "noopener,noreferrer");
-      },
-    },
-    {
-      label: "Download",
-      variant: "secondary" as const,
-      onClick: () => {
-        window.open(resolveApiUrl(`${photoModal.sourceDownloadPath}?download=true`), "_blank", "noopener,noreferrer");
-      },
-    },
-  ] : [];
+  const modalFooterActions = photoModal.sourceDownloadPath
+    ? [
+        {
+          label: "View",
+          variant: "secondary" as const,
+          onClick: () => {
+            window.open(
+              resolveApiUrl(`${photoModal.sourceDownloadPath}?download=false`),
+              "_blank",
+              "noopener,noreferrer",
+            );
+          },
+        },
+        {
+          label: "Download",
+          variant: "secondary" as const,
+          onClick: () => {
+            window.open(
+              resolveApiUrl(`${photoModal.sourceDownloadPath}?download=true`),
+              "_blank",
+              "noopener,noreferrer",
+            );
+          },
+        },
+      ]
+    : [];
 
   return (
     <main>
       <div className="personDetailsHero">
-        <a href="/" className="ghost">Back to timeline</a>
+        <Link href="/" className="ghost">
+          Back to timeline
+        </Link>
         <h1>{person?.name ?? "Loading person..."}</h1>
-        <p className="meta">Manage profile, memories, events, photos, and face approvals.</p>
+        <p className="meta">
+          Manage profile, memories, events, photos, and face approvals.
+        </p>
         {status ? <p className="status">{status}</p> : null}
       </div>
 
@@ -350,36 +398,59 @@ export default function PersonDetailsPage() {
           <h2>Contact Details</h2>
           <label>
             Phone
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone number" />
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Phone number"
+            />
           </label>
           <label>
             Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+            />
           </label>
           <label>
             Address
-            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address" />
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Address"
+            />
           </label>
           <label>
             Birthday
-            <input value={birthdayText} onChange={(e) => setBirthdayText(e.target.value)} placeholder="e.g. 1958-04-22" />
+            <input
+              value={birthdayText}
+              onChange={(e) => setBirthdayText(e.target.value)}
+              placeholder="e.g. 1958-04-22"
+            />
           </label>
           <label>
             Notes
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes about this person" rows={4} />
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notes about this person"
+              rows={4}
+            />
           </label>
           <button
             className="primary"
             disabled={isBusy}
-            onClick={() => runMutation(async () => {
-              await updatePersonContact(personId, {
-                phone,
-                email,
-                address,
-                notes,
-                birthday_text: birthdayText,
-              });
-            }, "Contact details saved.")}
+            onClick={() =>
+              runMutation(async () => {
+                await updatePersonContact(personId, {
+                  phone,
+                  email,
+                  address,
+                  notes,
+                  birthday_text: birthdayText,
+                });
+              }, "Contact details saved.")
+            }
           >
             Save Contact Details
           </button>
@@ -389,14 +460,23 @@ export default function PersonDetailsPage() {
           <h2>Identity Actions</h2>
           <label>
             Name
-            <input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
+            <input
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+            />
           </label>
           <button
             className="secondary"
             disabled={isBusy || !renameValue.trim()}
-            onClick={() => runMutation(async () => {
-              await renameDirectoryEntry("people", personId, renameValue.trim());
-            }, "Name updated.")}
+            onClick={() =>
+              runMutation(async () => {
+                await renameDirectoryEntry(
+                  "people",
+                  personId,
+                  renameValue.trim(),
+                );
+              }, "Name updated.")
+            }
           >
             Rename
           </button>
@@ -410,10 +490,12 @@ export default function PersonDetailsPage() {
             <button
               className="secondary"
               disabled={isBusy || !newAlias.trim()}
-              onClick={() => runMutation(async () => {
-                await addPersonAlias(personId, newAlias.trim());
-                setNewAlias("");
-              }, "Alias added.")}
+              onClick={() =>
+                runMutation(async () => {
+                  await addPersonAlias(personId, newAlias.trim());
+                  setNewAlias("");
+                }, "Alias added.")
+              }
             >
               Add Alias
             </button>
@@ -426,9 +508,11 @@ export default function PersonDetailsPage() {
                 <button
                   className="aliasRemove"
                   disabled={isBusy}
-                  onClick={() => runMutation(async () => {
-                    await removePersonAlias(personId, alias);
-                  }, "Alias removed.")}
+                  onClick={() =>
+                    runMutation(async () => {
+                      await removePersonAlias(personId, alias);
+                    }, "Alias removed.")
+                  }
                 >
                   ×
                 </button>
@@ -447,49 +531,73 @@ export default function PersonDetailsPage() {
           <button
             className="secondary"
             disabled={isBusy || !comprefaceSubjectName.trim()}
-            onClick={() => runMutation(async () => {
-              await linkPersonToCompreface(personId, comprefaceSubjectName.trim());
-            }, "CompreFace link updated.")}
+            onClick={() =>
+              runMutation(async () => {
+                await linkPersonToCompreface(
+                  personId,
+                  comprefaceSubjectName.trim(),
+                );
+              }, "CompreFace link updated.")
+            }
           >
             Link CompreFace Subject
           </button>
 
           <label>
             Merge into
-            <select value={mergeTargetId} onChange={(e) => setMergeTargetId(e.target.value)}>
+            <select
+              value={mergeTargetId}
+              onChange={(e) => setMergeTargetId(e.target.value)}
+            >
               <option value="">Select person</option>
               {mergeTargets.map((entry) => (
-                <option key={entry.id} value={entry.id}>{entry.name}</option>
+                <option key={entry.id} value={entry.id}>
+                  {entry.name}
+                </option>
               ))}
             </select>
           </label>
           <button
             className="secondary"
             disabled={isBusy || !mergeTargetId}
-            onClick={() => runMutation(async () => {
-              await mergePeopleEntries(personId, Number(mergeTargetId));
-              window.location.href = `/people/${mergeTargetId}`;
-            }, "People merged.")}
+            onClick={() =>
+              runMutation(async () => {
+                await mergePeopleEntries(personId, Number(mergeTargetId));
+                router.push(`/people/${mergeTargetId}`);
+              }, "People merged.")
+            }
           >
             Merge Person
           </button>
 
           <label>
             Split into (comma-separated names)
-            <input value={splitNames} onChange={(e) => setSplitNames(e.target.value)} />
+            <input
+              value={splitNames}
+              onChange={(e) => setSplitNames(e.target.value)}
+            />
           </label>
           <label className="personCheckboxRow">
-            <input type="checkbox" checked={splitKeepAlias} onChange={(e) => setSplitKeepAlias(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={splitKeepAlias}
+              onChange={(e) => setSplitKeepAlias(e.target.checked)}
+            />
             Keep current name as alias on new people
           </label>
           <button
             className="secondary"
             disabled={isBusy || !splitNames.trim()}
-            onClick={() => runMutation(async () => {
-              const names = splitNames.split(",").map((n) => n.trim()).filter(Boolean);
-              await splitPersonEntry(personId, names, splitKeepAlias);
-              window.location.href = "/";
-            }, "Person split.")}
+            onClick={() =>
+              runMutation(async () => {
+                const names = splitNames
+                  .split(",")
+                  .map((n) => n.trim())
+                  .filter(Boolean);
+                await splitPersonEntry(personId, names, splitKeepAlias);
+                router.push("/");
+              }, "Person split.")
+            }
           >
             Split Person
           </button>
@@ -497,10 +605,12 @@ export default function PersonDetailsPage() {
           <button
             className="ghost"
             disabled={isBusy}
-            onClick={() => runMutation(async () => {
-              await deleteDirectoryEntry("people", personId);
-              window.location.href = "/";
-            }, "Person deleted.")}
+            onClick={() =>
+              runMutation(async () => {
+                await deleteDirectoryEntry("people", personId);
+                router.push("/");
+              }, "Person deleted.")
+            }
           >
             Delete Person
           </button>
@@ -518,10 +628,14 @@ export default function PersonDetailsPage() {
           <button
             className="secondary"
             disabled={isBusy || !quickMemoryText.trim()}
-            onClick={() => runMutation(async () => {
-              await createPersonQuickMemory(personId, { text: quickMemoryText.trim() });
-              setQuickMemoryText("");
-            }, "Quick memory added.")}
+            onClick={() =>
+              runMutation(async () => {
+                await createPersonQuickMemory(personId, {
+                  text: quickMemoryText.trim(),
+                });
+                setQuickMemoryText("");
+              }, "Quick memory added.")
+            }
           >
             Add Quick Memory
           </button>
@@ -542,14 +656,16 @@ export default function PersonDetailsPage() {
           <button
             className="secondary"
             disabled={isBusy || !fullMemoryText.trim()}
-            onClick={() => runMutation(async () => {
-              await createPersonQuickMemory(personId, {
-                text: fullMemoryText.trim(),
-                estimated_date_text: fullMemoryDateText.trim() || null,
-              });
-              setFullMemoryText("");
-              setFullMemoryDateText("");
-            }, "Memory saved.")}
+            onClick={() =>
+              runMutation(async () => {
+                await createPersonQuickMemory(personId, {
+                  text: fullMemoryText.trim(),
+                  estimated_date_text: fullMemoryDateText.trim() || null,
+                });
+                setFullMemoryText("");
+                setFullMemoryDateText("");
+              }, "Memory saved.")
+            }
           >
             Save Full Memory
           </button>
@@ -562,7 +678,9 @@ export default function PersonDetailsPage() {
               <p>{memory.transcript}</p>
             </div>
           ))}
-          {activity && activity.memories.length === 0 ? <p className="meta">No memories linked yet.</p> : null}
+          {activity && activity.memories.length === 0 ? (
+            <p className="meta">No memories linked yet.</p>
+          ) : null}
         </div>
       </section>
 
@@ -576,7 +694,9 @@ export default function PersonDetailsPage() {
               <p>{event.description || ""}</p>
             </div>
           ))}
-          {activity && activity.events.length === 0 ? <p className="meta">No events linked yet.</p> : null}
+          {activity && activity.events.length === 0 ? (
+            <p className="meta">No events linked yet.</p>
+          ) : null}
         </div>
       </section>
 
@@ -591,12 +711,19 @@ export default function PersonDetailsPage() {
                 onClick={() => openAssetModal(asset.id)}
                 title="Open full photo details"
               >
-                <img src={resolveApiUrl(`${asset.download_url}?download=false`)} alt={asset.title ?? "Linked photo"} />
+                <img
+                  src={resolveApiUrl(`${asset.download_url}?download=false`)}
+                  alt={asset.title ?? "Linked photo"}
+                />
               </button>
-              <figcaption>{asset.title || asset.original_filename || `Photo #${asset.id}`}</figcaption>
+              <figcaption>
+                {asset.title || asset.original_filename || `Photo #${asset.id}`}
+              </figcaption>
             </figure>
           ))}
-          {activity && activity.assets.length === 0 ? <p className="meta">No photos linked yet.</p> : null}
+          {activity && activity.assets.length === 0 ? (
+            <p className="meta">No photos linked yet.</p>
+          ) : null}
         </div>
       </section>
 
@@ -625,9 +752,13 @@ export default function PersonDetailsPage() {
                     >
                       <img
                         className="personFacePreview"
-                        src={resolveApiUrl(`${face.asset_download_url}?download=false`)}
+                        src={resolveApiUrl(
+                          `${face.asset_download_url}?download=false`,
+                        )}
                         alt="Suggested face"
-                        onLoad={(event) => onFaceImageLoad(face.id, event.currentTarget)}
+                        onLoad={(event) =>
+                          onFaceImageLoad(face.id, event.currentTarget)
+                        }
                       />
                       {(() => {
                         const box = getFaceOverlayBox(face);
@@ -656,15 +787,25 @@ export default function PersonDetailsPage() {
                   <td>
                     <strong>{face.compreface_subject || "Unknown"}</strong>
                   </td>
-                  <td>{typeof face.compreface_similarity === "number" ? `${Math.round(face.compreface_similarity * 100)}%` : "n/a"}</td>
-                  <td>{typeof face.confidence === "number" ? `${Math.round(face.confidence * 100)}%` : "n/a"}</td>
+                  <td>
+                    {typeof face.compreface_similarity === "number"
+                      ? `${Math.round(face.compreface_similarity * 100)}%`
+                      : "n/a"}
+                  </td>
+                  <td>
+                    {typeof face.confidence === "number"
+                      ? `${Math.round(face.confidence * 100)}%`
+                      : "n/a"}
+                  </td>
                   <td>
                     <button
                       className="secondary"
                       disabled={isBusy}
-                      onClick={() => runMutation(async () => {
-                        await approvePersonFace(personId, face.id);
-                      }, "Face approved and synced to CompreFace.")}
+                      onClick={() =>
+                        runMutation(async () => {
+                          await approvePersonFace(personId, face.id);
+                        }, "Face approved and synced to CompreFace.")
+                      }
                     >
                       Approve Face
                     </button>
@@ -673,7 +814,9 @@ export default function PersonDetailsPage() {
               ))}
             </tbody>
           </table>
-          {suggestedFaces.length === 0 ? <p className="meta">No pending suggested faces.</p> : null}
+          {suggestedFaces.length === 0 ? (
+            <p className="meta">No pending suggested faces.</p>
+          ) : null}
         </div>
       </section>
 
@@ -681,7 +824,9 @@ export default function PersonDetailsPage() {
         isOpen={photoModal.isOpen}
         imageUrl={photoModal.imageUrl}
         title={photoModal.title}
-        onClose={() => setPhotoModal((current) => ({ ...current, isOpen: false }))}
+        onClose={() =>
+          setPhotoModal((current) => ({ ...current, isOpen: false }))
+        }
         faces={photoModal.faces}
         focusFaceId={photoModal.focusFaceId}
         filename={photoModal.filename}

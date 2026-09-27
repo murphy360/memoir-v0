@@ -1,4 +1,9 @@
-import { useState, type ClipboardEventHandler, type DragEventHandler, type RefObject } from "react";
+import {
+  useState,
+  type ClipboardEventHandler,
+  type DragEventHandler,
+  type RefObject,
+} from "react";
 import type { Question } from "../types";
 
 type PendingRecording = {
@@ -91,7 +96,9 @@ export function CaptureSidebar({
         />
       )}
 
-      <aside className={`captureSidebar ${isCaptureDrawerOpen ? "isOpen" : ""}`}>
+      <aside
+        className={`captureSidebar ${isCaptureDrawerOpen ? "isOpen" : ""}`}
+      >
         <div className="captureSidebarHeader">
           <div>
             <h2>New Memory</h2>
@@ -109,7 +116,15 @@ export function CaptureSidebar({
           <h3 className="captureBlockTitle">Record Audio</h3>
           {/* Keep device controls optional so the default path stays focused on one-tap capture. */}
           <h4
-            style={{ cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: "0.4rem", margin: 0, padding: 0 }}
+            style={{
+              cursor: "pointer",
+              userSelect: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              margin: 0,
+              padding: 0,
+            }}
             onClick={() => setShowAdvancedAudio((current) => !current)}
             aria-expanded={showAdvancedAudio}
             aria-controls="quick-memory-audio-settings"
@@ -121,7 +136,9 @@ export function CaptureSidebar({
 
           {showAdvancedAudio && (
             <div className="inputSection" id="quick-memory-audio-settings">
-              <label className="meta" htmlFor="mic-select">Input device</label>
+              <label className="meta" htmlFor="mic-select">
+                Input device
+              </label>
               <select
                 id="mic-select"
                 className="micSelect"
@@ -137,7 +154,9 @@ export function CaptureSidebar({
                 }}
                 disabled={isRecording || isLoading || audioDevices.length === 0}
               >
-                {audioDevices.length === 0 && <option value="">No microphones found</option>}
+                {audioDevices.length === 0 && (
+                  <option value="">No microphones found</option>
+                )}
                 {audioDevices.map((device) => (
                   <option key={device.deviceId} value={device.deviceId}>
                     {device.label}
@@ -147,9 +166,14 @@ export function CaptureSidebar({
 
               <div className="levelWrap" aria-label="audio input level">
                 <div className="levelTrack">
-                  <div className="levelFill" style={{ width: `${Math.round(audioLevel * 100)}%` }} />
+                  <div
+                    className="levelFill"
+                    style={{ width: `${Math.round(audioLevel * 100)}%` }}
+                  />
                 </div>
-                <span className="meta levelText">Input level: {Math.round(audioLevel * 100)}%</span>
+                <span className="meta levelText">
+                  Input level: {Math.round(audioLevel * 100)}%
+                </span>
               </div>
             </div>
           )}
@@ -202,14 +226,22 @@ export function CaptureSidebar({
 
         <div className="captureBlock">
           <h3 className="captureBlockTitle">Upload a Document</h3>
-          <p className="meta">Upload a PDF, image, or text file, or paste a screen clipping. It will be saved as an asset in the unlinked inbox.</p>
+          <p className="meta">
+            Upload a PDF, image, or text file, or paste a screen clipping. It
+            will be saved as an asset in the unlinked inbox.
+          </p>
           <input
             className="directoryInput"
             type="text"
             placeholder="Captured date override (e.g. Apr 2, 1988 or 1988-04-02)"
             value={capturedDateOverride}
             onChange={(e) => setCapturedDateOverride(e.target.value)}
-            disabled={isUploadingDocument || isReadingClipboard || isRecording || isLoading}
+            disabled={
+              isUploadingDocument ||
+              isReadingClipboard ||
+              isRecording ||
+              isLoading
+            }
             style={{ marginBottom: "0.45rem" }}
           />
           <div className="controls">
@@ -217,7 +249,12 @@ export function CaptureSidebar({
               ref={documentFileInputRef}
               type="file"
               accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.txt"
-              disabled={isUploadingDocument || isReadingClipboard || isRecording || isLoading}
+              disabled={
+                isUploadingDocument ||
+                isReadingClipboard ||
+                isRecording ||
+                isLoading
+              }
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
@@ -230,7 +267,12 @@ export function CaptureSidebar({
               className="secondary"
               type="button"
               onClick={pasteImageFromClipboard}
-              disabled={isUploadingDocument || isReadingClipboard || isRecording || isLoading}
+              disabled={
+                isUploadingDocument ||
+                isReadingClipboard ||
+                isRecording ||
+                isLoading
+              }
             >
               Paste from Clipboard
             </button>
@@ -251,10 +293,19 @@ export function CaptureSidebar({
             aria-label="Paste image from clipboard"
           >
             <p className="pasteTargetTitle">Paste or Drop a File</p>
-            <p className="meta">Click this area and press Ctrl+V, or drag and drop a PDF, image, or text file here.</p>
+            <p className="meta">
+              Click this area and press Ctrl+V, or drag and drop a PDF, image,
+              or text file here.
+            </p>
           </div>
-          {(isUploadingDocument || isReadingClipboard) && <p className="status">Uploading file...</p>}
-          {documentUploadError && <p className="status" style={{ color: "var(--error, #c00)" }}>{documentUploadError}</p>}
+          {(isUploadingDocument || isReadingClipboard) && (
+            <p className="status">Uploading file...</p>
+          )}
+          {documentUploadError && (
+            <p className="status" style={{ color: "var(--error, #c00)" }}>
+              {documentUploadError}
+            </p>
+          )}
         </div>
 
         {pendingRecording && (
@@ -263,12 +314,23 @@ export function CaptureSidebar({
             <p className="meta">
               Status: <span className="badge">{pendingRecording.status}</span>
             </p>
-            <p className="meta">File size: {formatBytes(pendingRecording.sizeBytes)}</p>
-            <audio controls preload="metadata" src={pendingRecording.audioUrl} style={{ width: "100%" }} />
+            <p className="meta">
+              File size: {formatBytes(pendingRecording.sizeBytes)}
+            </p>
+            <audio
+              controls
+              preload="metadata"
+              src={pendingRecording.audioUrl}
+              style={{ width: "100%" }}
+            />
             {pendingRecording.sizeBytes === 0 && (
-              <p className="meta">This recording is empty (0 B), which explains silent playback.</p>
+              <p className="meta">
+                This recording is empty (0 B), which explains silent playback.
+              </p>
             )}
-            {pendingRecording.error && <p className="meta">{pendingRecording.error}</p>}
+            {pendingRecording.error && (
+              <p className="meta">{pendingRecording.error}</p>
+            )}
           </div>
         )}
       </aside>

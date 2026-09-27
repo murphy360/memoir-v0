@@ -25,10 +25,14 @@ def _guess_extension(filename: str, content_type: Optional[str]) -> str:
     return content_map.get((content_type or "").lower(), ".bin")
 
 
-def save_document_file(upload: UploadFile, file_bytes: bytes, storage_dir: Path) -> tuple[str, Optional[str], int, str]:
+def save_document_file(
+    upload: UploadFile, file_bytes: bytes, storage_dir: Path
+) -> tuple[str, Optional[str], int, str]:
     content_type = (upload.content_type or "").split(";")[0].strip().lower() or None
     extension = _guess_extension(upload.filename or "document", content_type)
-    stored_name = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid4().hex}{extension}"
+    stored_name = (
+        f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid4().hex}{extension}"
+    )
     file_path = storage_dir / stored_name
     file_path.write_bytes(file_bytes)
 

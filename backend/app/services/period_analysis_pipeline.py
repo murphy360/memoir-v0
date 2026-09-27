@@ -9,7 +9,11 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.models import LifeEvent, LifePeriod
-from app.services.event_analysis import collect_event_memories, refresh_event_summary_and_suggestion, research_memory_entry
+from app.services.event_analysis import (
+    collect_event_memories,
+    refresh_event_summary_and_suggestion,
+    research_memory_entry,
+)
 from app.services.photo_batch import process_event_photo_assets
 
 
@@ -33,7 +37,9 @@ def _event_signature(event: LifeEvent, db: Session) -> str:
                 "captured_at_text": asset.captured_at_text,
                 "fingerprint_sha256": asset.fingerprint_sha256,
                 "legacy_memory_id": asset.legacy_memory_id,
-                "created_at": asset.created_at.isoformat() if asset.created_at else None,
+                "created_at": asset.created_at.isoformat()
+                if asset.created_at
+                else None,
             }
         )
 
@@ -53,7 +59,9 @@ def _event_signature(event: LifeEvent, db: Session) -> str:
                 "research_summary": memory.research_summary,
                 "research_queries_json": memory.research_queries_json,
                 "research_sources_json": memory.research_sources_json,
-                "created_at": memory.created_at.isoformat() if memory.created_at else None,
+                "created_at": memory.created_at.isoformat()
+                if memory.created_at
+                else None,
             }
         )
 

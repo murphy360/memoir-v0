@@ -35,7 +35,9 @@ function dataTransferHasFiles(dataTransfer: DataTransfer | null): boolean {
   if (dataTransfer.files && dataTransfer.files.length > 0) {
     return true;
   }
-  return Array.from(dataTransfer.items || []).some((item) => item.kind === "file");
+  return Array.from(dataTransfer.items || []).some(
+    (item) => item.kind === "file",
+  );
 }
 
 type UseDocumentIntakeArgs = {
@@ -52,13 +54,18 @@ export function useDocumentIntake({
   uploadDocument,
 }: UseDocumentIntakeArgs) {
   const [isReadingClipboard, setIsReadingClipboard] = useState(false);
-  const [isDragOverDocumentTarget, setIsDragOverDocumentTarget] = useState(false);
-  const [documentUploadError, setDocumentUploadError] = useState<string | null>(null);
+  const [isDragOverDocumentTarget, setIsDragOverDocumentTarget] =
+    useState(false);
+  const [documentUploadError, setDocumentUploadError] = useState<string | null>(
+    null,
+  );
   const documentDragDepthRef = useRef(0);
 
   async function pasteImageFromClipboard() {
     if (!navigator.clipboard?.read) {
-      setDocumentUploadError("Clipboard image reading is not available in this browser. Click the paste box and press Ctrl+V instead.");
+      setDocumentUploadError(
+        "Clipboard image reading is not available in this browser. Click the paste box and press Ctrl+V instead.",
+      );
       return;
     }
 
@@ -79,20 +86,29 @@ export function useDocumentIntake({
       }
 
       if (!matchedBlob) {
-        setDocumentUploadError("No image found in clipboard. Copy a screen clipping, then try again.");
+        setDocumentUploadError(
+          "No image found in clipboard. Copy a screen clipping, then try again.",
+        );
         return;
       }
 
-      await uploadDocument(asClipboardImageFile(matchedBlob, "screen-clipping"));
+      await uploadDocument(
+        asClipboardImageFile(matchedBlob, "screen-clipping"),
+      );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not read from clipboard.";
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not read from clipboard.";
       setDocumentUploadError(message);
     } finally {
       setIsReadingClipboard(false);
     }
   }
 
-  const onDocumentPasteZonePaste: ClipboardEventHandler<HTMLDivElement> = (event) => {
+  const onDocumentPasteZonePaste: ClipboardEventHandler<HTMLDivElement> = (
+    event,
+  ) => {
     if (isUploadingDocument || isRecording || isLoading) {
       return;
     }
@@ -132,7 +148,10 @@ export function useDocumentIntake({
 
   const onDocumentDragLeave: DragEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault();
-    documentDragDepthRef.current = Math.max(0, documentDragDepthRef.current - 1);
+    documentDragDepthRef.current = Math.max(
+      0,
+      documentDragDepthRef.current - 1,
+    );
     if (documentDragDepthRef.current === 0) {
       setIsDragOverDocumentTarget(false);
     }
@@ -149,7 +168,9 @@ export function useDocumentIntake({
 
     const droppedFile = event.dataTransfer.files?.[0] || null;
     if (!droppedFile) {
-      setDocumentUploadError("No file detected. Drop a PDF, image, or text file.");
+      setDocumentUploadError(
+        "No file detected. Drop a PDF, image, or text file.",
+      );
       return;
     }
 

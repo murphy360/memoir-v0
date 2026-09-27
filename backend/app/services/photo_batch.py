@@ -18,7 +18,11 @@ from app.services.document_storage import save_document_file
 from app.services.faces import FACE_DETECTION_ON_INGEST, sync_asset_faces_for_photo
 from app.services.gemini_client import PhotoSummary, extract_text_from_photo_batch
 from app.services.geocoding import reverse_geocode
-from app.services.image_metadata import compress_photo_for_storage, extract_and_apply_image_metadata, extract_image_metadata
+from app.services.image_metadata import (
+    compress_photo_for_storage,
+    extract_and_apply_image_metadata,
+    extract_image_metadata,
+)
 from app.services.periods import refresh_period_summary
 
 
@@ -67,7 +71,9 @@ def _build_photo_metadata_hint(
     linked_memory_excerpt: Optional[str] = None,
     period_title: Optional[str] = None,
 ) -> str:
-    def _sanitize_metadata_value(value: Optional[str], *, max_length: int = 400) -> Optional[str]:
+    def _sanitize_metadata_value(
+        value: Optional[str], *, max_length: int = 400
+    ) -> Optional[str]:
         if value is None:
             return None
         cleaned = " ".join(str(value).replace(";", ",").split()).strip()
@@ -90,7 +96,9 @@ def _build_photo_metadata_hint(
         camera_label = " ".join(part for part in [camera_make, camera_model] if part)
         parts.append(f"camera={camera_label}")
 
-    normalized_people = [name.strip() for name in (recognized_people or []) if name and name.strip()]
+    normalized_people = [
+        name.strip() for name in (recognized_people or []) if name and name.strip()
+    ]
     if normalized_people:
         parts.append(f"people={','.join(normalized_people[:8])}")
 
@@ -100,11 +108,15 @@ def _build_photo_metadata_hint(
     cleaned_event_date_text = _sanitize_metadata_value(event_date_text, max_length=100)
     if cleaned_event_date_text:
         parts.append(f"event_date_text={cleaned_event_date_text}")
-    cleaned_event_description = _sanitize_metadata_value(event_description, max_length=500)
+    cleaned_event_description = _sanitize_metadata_value(
+        event_description, max_length=500
+    )
     if cleaned_event_description:
         parts.append(f"event_description={cleaned_event_description}")
 
-    cleaned_linked_memory_excerpt = _sanitize_metadata_value(linked_memory_excerpt, max_length=700)
+    cleaned_linked_memory_excerpt = _sanitize_metadata_value(
+        linked_memory_excerpt, max_length=700
+    )
     if cleaned_linked_memory_excerpt:
         parts.append(f"linked_memory_excerpt={cleaned_linked_memory_excerpt}")
 
@@ -124,7 +136,7 @@ def _derive_asset_context_hints(asset: Asset) -> dict[str, Optional[str]]:
     period_title: Optional[str] = None
 
     primary_event: Optional[LifeEvent] = None
-    for link in (getattr(asset, "event_links", []) or []):
+    for link in getattr(asset, "event_links", []) or []:
         event = getattr(link, "event", None)
         if event is not None:
             primary_event = event
@@ -143,7 +155,9 @@ def _derive_asset_context_hints(asset: Asset) -> dict[str, Optional[str]]:
             )
 
     if not linked_memory_excerpt and asset.legacy_memory is not None:
-        linked_memory_excerpt = asset.legacy_memory.event_description or asset.legacy_memory.transcript
+        linked_memory_excerpt = (
+            asset.legacy_memory.event_description or asset.legacy_memory.transcript
+        )
     if not period_title and asset.period is not None:
         period_title = asset.period.title
 
@@ -198,10 +212,15 @@ def process_queued_photo_uploads(
     payloads: list[tuple[str, bytes, str, str | None]] = []
     for item in queued:
         metadata = extract_image_metadata(item.file_bytes, item.content_type)
-        queued_event: Optional[LifeEvent] = db.get(LifeEvent, item.event_id) if item.event_id is not None else None
+        queued_event: Optional[LifeEvent] = (
+            db.get(LifeEvent, item.event_id) if item.event_id is not None else None
+        )
         queued_memory_excerpt: Optional[str] = None
         if queued_event is not None and queued_event.legacy_memory is not None:
-            queued_memory_excerpt = queued_event.legacy_memory.event_description or queued_event.legacy_memory.transcript
+            queued_memory_excerpt = (
+                queued_event.legacy_memory.event_description
+                or queued_event.legacy_memory.transcript
+            )
 
         metadata_hint = _build_photo_metadata_hint(
             captured_at_text=metadata.captured_at_text,
@@ -213,12 +232,22 @@ def process_queued_photo_uploads(
             camera_make=metadata.camera_make,
             camera_model=metadata.camera_model,
             event_title=queued_event.title if queued_event is not None else None,
-            event_date_text=queued_event.event_date_text if queued_event is not None else None,
-            event_description=queued_event.description if queued_event is not None else None,
+            event_date_text=queued_event.event_date_text
+            if queued_event is not None
+            else None,
+            event_description=queued_event.description
+            if queued_event is not None
+            else None,
             linked_memory_excerpt=queued_memory_excerpt,
-            period_title=(queued_event.period.title if queued_event is not None and queued_event.period is not None else None),
+            period_title=(
+                queued_event.period.title
+                if queued_event is not None and queued_event.period is not None
+                else None
+            ),
         )
-        payloads.append((item.filename, item.file_bytes, item.content_type, metadata_hint or None))
+        payloads.append(
+            (item.filename, item.file_bytes, item.content_type, metadata_hint or None)
+        )
     batch_summaries = extract_text_from_photo_batch(payloads)
 
     assets: list[Asset] = []
@@ -226,7 +255,9 @@ def process_queued_photo_uploads(
 
     for index, item in enumerate(queued, start=1):
         upload_like = _UploadLike(item.filename, item.content_type)
-        storage_bytes, storage_content_type = compress_photo_for_storage(item.file_bytes, item.content_type)
+        storage_bytes, storage_content_type = compress_photo_for_storage(
+            item.file_bytes, item.content_type
+        )
         (
             storage_filename,
             content_type,
@@ -245,7 +276,8 @@ def process_queued_photo_uploads(
             size_bytes=size_bytes,
             fingerprint_sha256=hashlib.sha256(item.file_bytes).hexdigest(),
             notes=item.notes,
-            text_excerpt=batch_summaries.get(index, PhotoSummary("")).excerpt_text() or None,
+            text_excerpt=batch_summaries.get(index, PhotoSummary("")).excerpt_text()
+            or None,
         )
         # Prefer Gemini's suggested title over the filename-derived one when available
         photo_result = batch_summaries.get(index)
@@ -265,7 +297,11 @@ def process_queued_photo_uploads(
         if item.event_id is not None:
             event = db.get(LifeEvent, item.event_id)
             if event is not None:
-                db.add(EventAsset(event_id=event.id, asset_id=asset.id, relation_type="evidence"))
+                db.add(
+                    EventAsset(
+                        event_id=event.id, asset_id=asset.id, relation_type="evidence"
+                    )
+                )
 
         period_for_summary: Optional[LifePeriod] = None
         if item.period_id is not None:
@@ -345,16 +381,36 @@ def analyze_photo_assets_stream(
         mime_type = (asset.content_type or "image/jpeg").strip().lower() or "image/jpeg"
 
         # Geocoding stage — run only if GPS present and not yet resolved
-        if asset.gps_latitude is not None and asset.gps_longitude is not None and not asset.reverse_geocode_location_name:
-            yield _sse({"asset_id": asset_id, "stage": "geocoding", "status": "running"})
+        if (
+            asset.gps_latitude is not None
+            and asset.gps_longitude is not None
+            and not asset.reverse_geocode_location_name
+        ):
+            yield _sse(
+                {"asset_id": asset_id, "stage": "geocoding", "status": "running"}
+            )
             place = reverse_geocode(asset.gps_latitude, asset.gps_longitude)
             if place:
                 asset.reverse_geocode_location_name = place
                 asset.location_name = place
                 db.flush()
-            yield _sse({"asset_id": asset_id, "stage": "geocoding", "status": "done", "place": place or ""})
+            yield _sse(
+                {
+                    "asset_id": asset_id,
+                    "stage": "geocoding",
+                    "status": "done",
+                    "place": place or "",
+                }
+            )
         else:
-            yield _sse({"asset_id": asset_id, "stage": "geocoding", "status": "skipped", "place": asset.reverse_geocode_location_name or ""})
+            yield _sse(
+                {
+                    "asset_id": asset_id,
+                    "stage": "geocoding",
+                    "status": "skipped",
+                    "place": asset.reverse_geocode_location_name or "",
+                }
+            )
 
         # CompreFace stage
         yield _sse({"asset_id": asset_id, "stage": "faces", "status": "running"})
@@ -363,7 +419,14 @@ def analyze_photo_assets_stream(
         # Expire the relationship so SQLAlchemy re-queries it before we read names below
         db.expire(asset, ["faces"])
         face_count = len(getattr(asset, "faces", []) or [])
-        yield _sse({"asset_id": asset_id, "stage": "faces", "status": "done", "face_count": face_count})
+        yield _sse(
+            {
+                "asset_id": asset_id,
+                "stage": "faces",
+                "status": "done",
+                "face_count": face_count,
+            }
+        )
 
         assets_for_gemini.append((asset, file_bytes, mime_type))
 
@@ -390,7 +453,14 @@ def analyze_photo_assets_stream(
                 period_title=context_hints.get("period_title"),
             )
             yield _sse({"asset_id": asset.id, "stage": "gemini", "status": "running"})
-            payloads.append((asset.original_filename or asset.storage_filename, file_bytes, mime_type, hint or None))
+            payloads.append(
+                (
+                    asset.original_filename or asset.storage_filename,
+                    file_bytes,
+                    mime_type,
+                    hint or None,
+                )
+            )
 
         summaries = extract_text_from_photo_batch(payloads)
 
@@ -405,14 +475,28 @@ def analyze_photo_assets_stream(
                 db.flush()
             if result:
                 title = result.suggested_title or ""
-                yield _sse({"asset_id": asset.id, "stage": "gemini", "status": "done", "title": title})
+                yield _sse(
+                    {
+                        "asset_id": asset.id,
+                        "stage": "gemini",
+                        "status": "done",
+                        "title": title,
+                    }
+                )
             else:
-                yield _sse({"asset_id": asset.id, "stage": "gemini", "status": "skipped", "title": ""})
+                yield _sse(
+                    {
+                        "asset_id": asset.id,
+                        "stage": "gemini",
+                        "status": "skipped",
+                        "title": "",
+                    }
+                )
 
         # Refresh period summaries for events linked to these assets
         period_ids: set[int] = set()
         for asset, _, _ in assets_for_gemini:
-            for link in (getattr(asset, "event_links", []) or []):
+            for link in getattr(asset, "event_links", []) or []:
                 event = getattr(link, "event", None)
                 if event and getattr(event, "period_id", None):
                     period_ids.add(event.period_id)
@@ -485,9 +569,16 @@ def process_single_photo_asset(
         period_title=context_hints.get("period_title"),
     )
 
-    summaries = extract_text_from_photo_batch([
-        (asset.original_filename or asset.storage_filename, file_bytes, mime_type, metadata_hint or None),
-    ])
+    summaries = extract_text_from_photo_batch(
+        [
+            (
+                asset.original_filename or asset.storage_filename,
+                file_bytes,
+                mime_type,
+                metadata_hint or None,
+            ),
+        ]
+    )
     photo_result = summaries.get(1)
     suggested_title: Optional[str] = None
     if photo_result:
@@ -572,7 +663,14 @@ def process_event_photo_assets(
             linked_memory_excerpt=context_hints.get("linked_memory_excerpt"),
             period_title=context_hints.get("period_title"),
         )
-        payloads.append((asset.original_filename or asset.storage_filename, file_bytes, mime_type, metadata_hint or None))
+        payloads.append(
+            (
+                asset.original_filename or asset.storage_filename,
+                file_bytes,
+                mime_type,
+                metadata_hint or None,
+            )
+        )
         valid_assets.append(asset)
 
     if not payloads:

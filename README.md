@@ -103,8 +103,12 @@ Current backend behavior:
 
 ## Run With Docker
 
-1. (Optional) Copy `.env.example` to `.env` and set `GEMINI_API_KEY` for preferred STT.
-2. Build and start services:
+Docker is the only requirement; nothing runs on the host.
+
+1. Copy `.env.example` to `.env`. Set `GEMINI_API_KEY` for transcription and analysis, and `COMPREFACE_API_KEY`
+   once you have created a Recognition service in the local CompreFace UI. Either may stay empty: that feature is
+   off until it is set.
+2. Build and start the services:
 
 ```bash
 docker compose up --build
@@ -114,44 +118,41 @@ docker compose up --build
 
 - Frontend: `http://localhost:3000`
 - API health: `http://localhost:8001/api/health`
+- CompreFace UI: `http://localhost:8080`
 
-4. Stop services:
+4. Stop the services with `docker compose down`. Data stays in the `memoir_data` volume.
 
-```bash
-docker compose down
-```
+## Development
 
-## Linting
+This project follows [murphy360/standards](https://github.com/murphy360/standards): the shared CI workflows, ruff
+and Prettier at their defaults, the code-rules ratchet, Dependabot, and `CLAUDE.md` for agent sessions.
 
-Use a single command to run backend and frontend lint checks:
+| Command | What it does |
+|---|---|
+| `make test` | Builds the `test` image targets and runs pytest (backend) and the typecheck plus tests (frontend) |
+| `make lint` | ruff and ESLint, with the formatting checks |
+| `make format` | `ruff format` and `prettier --write` |
+| `make baseline` | Rewrites the ratchet baselines after a clean-up (needs `../standards`) |
 
-- Windows (PowerShell):
+CI (`.github/workflows/ci.yml`) runs the same checks and publishes two images on `main`:
+`ghcr.io/murphy360/memoir-api` and `ghcr.io/murphy360/memoir-web`. The complexity and file-size limits are enforced
+against `code_rules_baseline.json` in `backend/` and `frontend/`: what is there today may only go down. The largest
+files (`backend/app/main.py`, `frontend/app/page.tsx`) are over the limit, so new code goes in new modules.
 
-```powershell
-./lint.ps1
-```
+## Hosting
 
-- Unix-like environments:
+The images are built for one deployment: the web app served under `/memoir` and the API on the same origin, so
+that a reverse proxy can put both behind one hostname and one login. The frontend's `NEXT_PUBLIC_BASE_PATH`
+(default `/memoir`) and `NEXT_PUBLIC_API_BASE_URL` (default empty, meaning same origin) are build arguments.
 
-```bash
-make lint
-```
+The owner's deployment lives in the dontpanic stack at `https://dontpanic.ddns.net/memoir`:
 
-Initial baseline rules are intentionally lenient to catch low-hanging issues without blocking current development:
-
-- Backend (Ruff):
-	- Syntax/runtime checks (`E9`, `F63`, `F7`, `F82`)
-- Backend (Pylint):
-	- Advisory line length (`line-too-long`) at 140 chars
-	- Advisory complexity (`too-complex`) max 25
-	- Advisory file size guardrail (`too-many-lines`) max 2500 lines per module
-- Frontend (ESLint):
-	- Max file lines: 3000 (skip blank/comment lines)
-	- Max function lines: 300 (skip blank/comment lines)
-	- Max line length: 140 chars (ignoring URLs/strings/templates/comments)
-	- Cyclomatic complexity: 25 (warning)
-
-These thresholds are designed as a starting point and can be tightened incrementally after large legacy files are split. Backend advisory checks are currently non-blocking so teams can chip away at low-hanging cleanup first.
+- Caddy asks for basic auth on everything under `/memoir`, strips `/memoir` from `/memoir/api/*` and proxies it to
+  `memoir-api:8000`, and proxies the rest to `memoir-web:3000`.
+- `memoir-api` keeps its data in `/docker/memoir/data` and reads its secrets (`GEMINI_API_KEY`,
+  `COMPREFACE_API_KEY`) from `/docker/memoir/memoir.env`. It uses the stack's shared CompreFace at
+  `http://compreface-api:8080`; the key is a Recognition service created for Memoir in that CompreFace UI.
+- Deploy a new build with `docker compose pull memoir-api memoir-web && docker compose up -d memoir-api memoir-web`.
 
 ## API Endpoints (MVP)
 

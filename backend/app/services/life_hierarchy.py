@@ -5,9 +5,16 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models import Asset, EventAsset, LifeEvent, LifePeriod, MemoryEntry
-from app.services.directory import assign_recorder_person, sync_memory_people, sync_memory_places
+from app.services.directory import (
+    assign_recorder_person,
+    sync_memory_people,
+    sync_memory_places,
+)
 from app.services.image_metadata import extract_and_apply_image_metadata
-from app.services.periods import ensure_event_asset_link, get_or_create_period_for_memory
+from app.services.periods import (
+    ensure_event_asset_link,
+    get_or_create_period_for_memory,
+)
 
 
 logger = logging.getLogger("memoir.life_hierarchy")
@@ -25,7 +32,9 @@ def _sync_document_asset_image_metadata(memory: MemoryEntry, asset: Asset) -> No
     try:
         file_bytes = document_path.read_bytes()
     except OSError as exc:
-        logger.warning("Could not read image asset bytes for memory %s: %s", memory.id, exc)
+        logger.warning(
+            "Could not read image asset bytes for memory %s: %s", memory.id, exc
+        )
         return
 
     if not file_bytes:
@@ -41,14 +50,14 @@ def _has_reliable_memory_date(memory: MemoryEntry) -> bool:
     return precision in {"day", "month", "year", "decade", "approximate"}
 
 
-def _find_canonical_event_from_memory_assets(db: Session, memory: MemoryEntry) -> tuple[LifeEvent | None, list[int]]:
+def _find_canonical_event_from_memory_assets(
+    db: Session, memory: MemoryEntry
+) -> tuple[LifeEvent | None, list[int]]:
     """Return the preferred linked event for this memory's assets and those asset ids."""
     memory_asset_ids = [
         row[0]
         for row in (
-            db.query(Asset.id)
-            .filter(Asset.legacy_memory_id == memory.id)
-            .all()
+            db.query(Asset.id).filter(Asset.legacy_memory_id == memory.id).all()
         )
     ]
     if not memory_asset_ids:
@@ -93,21 +102,27 @@ def _should_auto_create_event_for_memory(
 
     # For new document/photo memories with unknown timing, keep the asset unlinked
     # so it lands in the Unlinked Asset Inbox for manual event assignment.
-    if memory.document_filename and not memory.audio_filename and not _has_reliable_memory_date(memory):
+    if (
+        memory.document_filename
+        and not memory.audio_filename
+        and not _has_reliable_memory_date(memory)
+    ):
         return False
 
     return True
 
 
 def sync_life_hierarchy_for_memory(db: Session, memory: MemoryEntry) -> None:
-    event = (
-        db.query(LifeEvent)
-        .filter(LifeEvent.legacy_memory_id == memory.id)
-        .first()
+    event = db.query(LifeEvent).filter(LifeEvent.legacy_memory_id == memory.id).first()
+    canonical_asset_event, memory_asset_ids = _find_canonical_event_from_memory_assets(
+        db, memory
     )
-    canonical_asset_event, memory_asset_ids = _find_canonical_event_from_memory_assets(db, memory)
 
-    if event is not None and canonical_asset_event is not None and event.id != canonical_asset_event.id:
+    if (
+        event is not None
+        and canonical_asset_event is not None
+        and event.id != canonical_asset_event.id
+    ):
         # This memory is already represented by assets linked to a different event.
         # Clear the duplicate legacy pointer and remove duplicate asset links from
         # the auto-created event so the memory only appears under one event/period.
@@ -121,7 +136,9 @@ def sync_life_hierarchy_for_memory(db: Session, memory: MemoryEntry) -> None:
         event = canonical_asset_event
 
     period = None
-    should_create_event = _should_auto_create_event_for_memory(memory, event, canonical_asset_event)
+    should_create_event = _should_auto_create_event_for_memory(
+        memory, event, canonical_asset_event
+    )
 
     if not event and should_create_event:
         period = get_or_create_period_for_memory(db, memory)
@@ -198,7 +215,11 @@ def sync_life_hierarchy_for_memory(db: Session, memory: MemoryEntry) -> None:
             ensure_event_asset_link(db, event, audio_asset, relation_type="recording")
 
     if memory.document_filename:
-        asset_kind = "photo" if (memory.document_content_type or "").startswith("image/") else "document"
+        asset_kind = (
+            "photo"
+            if (memory.document_content_type or "").startswith("image/")
+            else "document"
+        )
         document_asset = (
             db.query(Asset)
             .filter(Asset.legacy_memory_id == memory.id, Asset.kind == asset_kind)

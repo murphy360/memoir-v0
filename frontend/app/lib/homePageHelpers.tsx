@@ -34,16 +34,23 @@ export function formatAssetGps(asset: AssetEntry): string | null {
   return coords;
 }
 
-export function renderImageMetadataBadges(asset: AssetEntry): JSX.Element | null {
-  const isImage = asset.kind === "photo" || (asset.content_type || "").startsWith("image/");
+export function renderImageMetadataBadges(
+  asset: AssetEntry,
+): JSX.Element | null {
+  const isImage =
+    asset.kind === "photo" || (asset.content_type || "").startsWith("image/");
   if (!isImage) {
     return null;
   }
 
-  const hasLocation = asset.gps_latitude !== null && asset.gps_longitude !== null;
+  const hasLocation =
+    asset.gps_latitude !== null && asset.gps_longitude !== null;
   const hasCapture = Boolean(asset.captured_at_text || asset.captured_at);
-  const hasCamera = Boolean(asset.camera_make || asset.camera_model || asset.lens_model);
-  const hasDimensions = asset.image_width !== null || asset.image_height !== null;
+  const hasCamera = Boolean(
+    asset.camera_make || asset.camera_model || asset.lens_model,
+  );
+  const hasDimensions =
+    asset.image_width !== null || asset.image_height !== null;
   const hasNonLocationMetadata = hasCapture || hasCamera || hasDimensions;
 
   let metadataLabel = "Metadata: none";
@@ -59,14 +66,19 @@ export function renderImageMetadataBadges(asset: AssetEntry): JSX.Element | null
   return (
     <div className="assetMetaBadgeRow">
       <span className={metadataClass}>{metadataLabel}</span>
-      <span className={`assetMetaBadge ${hasLocation ? "isPresent" : "isMissing"}`}>
+      <span
+        className={`assetMetaBadge ${hasLocation ? "isPresent" : "isMissing"}`}
+      >
         Location: {hasLocation ? "present" : "missing"}
       </span>
     </div>
   );
 }
 
-export function collectEventMemoryIds(event: LifeEvent, assets: AssetEntry[]): number[] {
+export function collectEventMemoryIds(
+  event: LifeEvent,
+  assets: AssetEntry[],
+): number[] {
   const ids = new Set<number>();
   for (const memoryId of event.linked_memory_ids) {
     ids.add(memoryId);
@@ -97,7 +109,9 @@ export function parsePeriodYearHint(value: string | null): number | null {
   return null;
 }
 
-export function parseOptionalDateTimestamp(value: string | null): number | null {
+export function parseOptionalDateTimestamp(
+  value: string | null,
+): number | null {
   if (!value) {
     return null;
   }
