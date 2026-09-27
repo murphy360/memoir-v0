@@ -16,7 +16,11 @@ type DirectoryManagerProps = {
   onRename: (itemId: number, name: string) => Promise<void>;
   onDelete: (itemId: number) => Promise<void>;
   onMerge?: (sourceId: number, intoId: number) => Promise<void>;
-  onSplit?: (sourceId: number, newNames: string[], keepAlias: boolean) => Promise<void>;
+  onSplit?: (
+    sourceId: number,
+    newNames: string[],
+    keepAlias: boolean,
+  ) => Promise<void>;
   onAddAlias?: (itemId: number, alias: string) => Promise<void>;
   onRemoveAlias?: (itemId: number, alias: string) => Promise<void>;
   onLinkCompreface?: (itemId: number, subjectName: string) => Promise<void>;
@@ -53,32 +57,39 @@ export function DirectoryManager({
   const [splitKeepAlias, setSplitKeepAlias] = useState(true);
   const [addingAliasId, setAddingAliasId] = useState<number | null>(null);
   const [newAlias, setNewAlias] = useState("");
-  const [linkingComprefaceId, setLinkingComprefaceId] = useState<number | null>(null);
+  const [linkingComprefaceId, setLinkingComprefaceId] = useState<number | null>(
+    null,
+  );
   const [comprefaceSubjectName, setComprefaceSubjectName] = useState("");
   const [comprefaceSubjects, setComprefaceSubjects] = useState<string[]>([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [subjectsError, setSubjectsError] = useState<string | null>(null);
 
   useEffect(() => {
-    const editingStillExists = editingId === null || items.some((item) => item.id === editingId);
+    const editingStillExists =
+      editingId === null || items.some((item) => item.id === editingId);
     if (!editingStillExists) {
       setEditingId(null);
       setEditingName("");
     }
 
-    const mergingStillExists = mergingId === null || items.some((item) => item.id === mergingId);
+    const mergingStillExists =
+      mergingId === null || items.some((item) => item.id === mergingId);
     if (!mergingStillExists) {
       setMergingId(null);
       setMergeTargetId("");
     }
 
-    const splittingStillExists = splittingId === null || items.some((item) => item.id === splittingId);
+    const splittingStillExists =
+      splittingId === null || items.some((item) => item.id === splittingId);
     if (!splittingStillExists) {
       setSplittingId(null);
       setSplitNames("");
     }
 
-    const linkingStillExists = linkingComprefaceId === null || items.some((item) => item.id === linkingComprefaceId);
+    const linkingStillExists =
+      linkingComprefaceId === null ||
+      items.some((item) => item.id === linkingComprefaceId);
     if (!linkingStillExists) {
       setLinkingComprefaceId(null);
       setComprefaceSubjectName("");
@@ -102,7 +113,9 @@ export function DirectoryManager({
           setComprefaceSubjectName(subjects[0]);
         }
       } catch (error) {
-        setSubjectsError(error instanceof Error ? error.message : "Failed to load subjects");
+        setSubjectsError(
+          error instanceof Error ? error.message : "Failed to load subjects",
+        );
         setComprefaceSubjects([]);
       } finally {
         setLoadingSubjects(false);
@@ -158,12 +171,16 @@ export function DirectoryManager({
                   <div className="directoryAvatar" aria-hidden="true">
                     {item.avatar_download_url ? (
                       <img
-                        src={(resolveApiUrl ?? ((path: string) => path))(`${item.avatar_download_url}?download=false`)}
+                        src={(resolveApiUrl ?? ((path: string) => path))(
+                          `${item.avatar_download_url}?download=false`,
+                        )}
                         alt=""
                         className="directoryAvatarImage"
                       />
                     ) : (
-                      <span className="directoryAvatarPlaceholder">{item.name.trim().charAt(0).toUpperCase() || "?"}</span>
+                      <span className="directoryAvatarPlaceholder">
+                        {item.name.trim().charAt(0).toUpperCase() || "?"}
+                      </span>
                     )}
                   </div>
                 )}
@@ -201,9 +218,11 @@ export function DirectoryManager({
                   </div>
                 )}
                 <span className="badge">{item.memory_count} memories</span>
-                {showAvatars && <span className="badge">{item.photo_count} photos</span>}
                 {showAvatars && (
-                  item.compreface_subject_id ? (
+                  <span className="badge">{item.photo_count} photos</span>
+                )}
+                {showAvatars &&
+                  (item.compreface_subject_id ? (
                     item.compreface_subject_url ? (
                       <a
                         className="badge badgeLink"
@@ -215,17 +234,23 @@ export function DirectoryManager({
                         CompreFace linked
                       </a>
                     ) : (
-                      <span className="badge" title={item.compreface_subject_id}>CompreFace linked</span>
+                      <span
+                        className="badge"
+                        title={item.compreface_subject_id}
+                      >
+                        CompreFace linked
+                      </span>
                     )
                   ) : (
                     <span className="badge">CompreFace unlinked</span>
-                  )
-                )}
+                  ))}
               </div>
 
               {isMerging && (
                 <div className="directoryMergeRow">
-                  <span className="meta">Merge <strong>{item.name}</strong> into:</span>
+                  <span className="meta">
+                    Merge <strong>{item.name}</strong> into:
+                  </span>
                   <select
                     className="directoryInput"
                     value={mergeTargetId}
@@ -235,7 +260,8 @@ export function DirectoryManager({
                     <option value="">Select target person</option>
                     {mergeTargets.map((target) => (
                       <option key={target.id} value={target.id}>
-                        {target.name} ({target.memory_count} memories, {target.photo_count} photos)
+                        {target.name} ({target.memory_count} memories,{" "}
+                        {target.photo_count} photos)
                       </option>
                     ))}
                   </select>
@@ -267,7 +293,10 @@ export function DirectoryManager({
 
               {isSplitting && (
                 <div className="directoryMergeRow">
-                  <span className="meta">Split <strong>{item.name}</strong> into (comma-separated names):</span>
+                  <span className="meta">
+                    Split <strong>{item.name}</strong> into (comma-separated
+                    names):
+                  </span>
                   <input
                     className="directoryInput"
                     type="text"
@@ -290,7 +319,10 @@ export function DirectoryManager({
                     type="button"
                     disabled={isBusy || !splitNames.trim()}
                     onClick={async () => {
-                      const names = splitNames.split(",").map((n) => n.trim()).filter(Boolean);
+                      const names = splitNames
+                        .split(",")
+                        .map((n) => n.trim())
+                        .filter(Boolean);
                       await onSplit!(item.id, names, splitKeepAlias);
                       setSplittingId(null);
                       setSplitNames("");
@@ -314,7 +346,9 @@ export function DirectoryManager({
 
               {isAddingAlias && onAddAlias && (
                 <div className="directoryMergeRow">
-                  <span className="meta">New alias for <strong>{item.name}</strong>:</span>
+                  <span className="meta">
+                    New alias for <strong>{item.name}</strong>:
+                  </span>
                   <input
                     className="directoryInput"
                     type="text"
@@ -351,18 +385,24 @@ export function DirectoryManager({
 
               {isLinkingCompreface && onLinkCompreface && (
                 <div className="directoryMergeRow">
-                  <span className="meta">Link <strong>{item.name}</strong> to CompreFace subject:</span>
+                  <span className="meta">
+                    Link <strong>{item.name}</strong> to CompreFace subject:
+                  </span>
                   {loadingSubjects ? (
                     <span className="meta">Loading subjects...</span>
                   ) : subjectsError ? (
-                    <span className="meta" style={{ color: "red" }}>{subjectsError}</span>
+                    <span className="meta" style={{ color: "red" }}>
+                      {subjectsError}
+                    </span>
                   ) : comprefaceSubjects.length === 0 ? (
                     <span className="meta">No CompreFace subjects found</span>
                   ) : (
                     <select
                       className="directoryInput"
                       value={comprefaceSubjectName}
-                      onChange={(event) => setComprefaceSubjectName(event.target.value)}
+                      onChange={(event) =>
+                        setComprefaceSubjectName(event.target.value)
+                      }
                       disabled={isBusy || loadingSubjects}
                       style={{ padding: "0.5rem", cursor: "pointer" }}
                     >
@@ -376,9 +416,16 @@ export function DirectoryManager({
                   <button
                     className="secondary"
                     type="button"
-                    disabled={isBusy || loadingSubjects || comprefaceSubjects.length === 0}
+                    disabled={
+                      isBusy ||
+                      loadingSubjects ||
+                      comprefaceSubjects.length === 0
+                    }
                     onClick={async () => {
-                      await onLinkCompreface(item.id, comprefaceSubjectName.trim());
+                      await onLinkCompreface(
+                        item.id,
+                        comprefaceSubjectName.trim(),
+                      );
                       setLinkingComprefaceId(null);
                       setComprefaceSubjectName("");
                     }}
@@ -462,7 +509,9 @@ export function DirectoryManager({
                         type="button"
                         disabled={isBusy}
                         onClick={() => {
-                          setLinkingComprefaceId(isLinkingCompreface ? null : item.id);
+                          setLinkingComprefaceId(
+                            isLinkingCompreface ? null : item.id,
+                          );
                           setComprefaceSubjectName(item.name);
                         }}
                       >

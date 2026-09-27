@@ -7,7 +7,11 @@ type LifePeriodCardProps = {
   children: ReactNode;
 };
 
-export function LifePeriodCard({ period, isHighlighted, children }: LifePeriodCardProps) {
+export function LifePeriodCard({
+  period,
+  isHighlighted,
+  children,
+}: LifePeriodCardProps) {
   return (
     <article
       id={`period-card-${period.id}`}

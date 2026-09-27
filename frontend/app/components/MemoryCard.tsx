@@ -53,28 +53,47 @@ export function MemoryCard({
   }, [memory.id, defaultExpanded, hideHeader]);
 
   useEffect(() => {
-    setSelectedRecorder(memory.recorder_person_id ? `${memory.recorder_person_id}` : "");
+    setSelectedRecorder(
+      memory.recorder_person_id ? `${memory.recorder_person_id}` : "",
+    );
   }, [memory.id, memory.recorder_person_id]);
 
   const canAssignRecorder = !memory.recorder_name && selectedRecorder;
 
   return (
-    <article id={containerId} className={`memory${isHighlighted ? " focusPulse" : ""}`}>
+    <article
+      id={containerId}
+      className={`memory${isHighlighted ? " focusPulse" : ""}`}
+    >
       {!hideHeader && (
         <div className="memoryHeader">
           <div className="memoryHeaderText">
             <h3>{memory.event_description}</h3>
             <div className="memoryDateSummary">
               <p className="meta">
-                Date: <span className="badge">{memory.estimated_date_text || "Unknown"}</span>
+                Date:{" "}
+                <span className="badge">
+                  {memory.estimated_date_text || "Unknown"}
+                </span>
               </p>
               <p className="meta">
-                Recorded: <span className="badge">{memory.date_recorded || "Unknown"}</span>
+                Recorded:{" "}
+                <span className="badge">
+                  {memory.date_recorded || "Unknown"}
+                </span>
               </p>
             </div>
           </div>
           <h4
-            style={{ cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: "0.4rem", margin: 0, padding: "0.2rem 0" }}
+            style={{
+              cursor: "pointer",
+              userSelect: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              margin: 0,
+              padding: "0.2rem 0",
+            }}
             onClick={() => setIsExpanded((current) => !current)}
             aria-expanded={isExpanded}
           >
@@ -89,23 +108,33 @@ export function MemoryCard({
           <strong>In response to:</strong> {memory.response_to_question_text}
         </p>
       )}
-      {isExpanded && <div className="metaList">
-        <p className="meta">
-          Date precision: <span className="badge">{memory.date_precision || "unknown"}</span>
-        </p>
-        <p className="meta">
-          Recorded by: <span className="badge">{memory.recorder_name || "Unknown"}</span>
-        </p>
-        <p className="meta">
-          Locations: <span className="badge">{asLabelList(memory.referenced_locations || [])}</span>
-        </p>
-        <p className="meta">
-          People: <span className="badge">{asLabelList(memory.referenced_people || [])}</span>
-        </p>
-        <p className="meta">
-          Tone: <span className="badge">{memory.emotional_tone}</span>
-        </p>
-      </div>}
+      {isExpanded && (
+        <div className="metaList">
+          <p className="meta">
+            Date precision:{" "}
+            <span className="badge">{memory.date_precision || "unknown"}</span>
+          </p>
+          <p className="meta">
+            Recorded by:{" "}
+            <span className="badge">{memory.recorder_name || "Unknown"}</span>
+          </p>
+          <p className="meta">
+            Locations:{" "}
+            <span className="badge">
+              {asLabelList(memory.referenced_locations || [])}
+            </span>
+          </p>
+          <p className="meta">
+            People:{" "}
+            <span className="badge">
+              {asLabelList(memory.referenced_people || [])}
+            </span>
+          </p>
+          <p className="meta">
+            Tone: <span className="badge">{memory.emotional_tone}</span>
+          </p>
+        </div>
+      )}
 
       {isExpanded && !memory.recorder_name && (
         <div className="recorderAssign">
@@ -130,20 +159,29 @@ export function MemoryCard({
             <button
               className="secondary"
               type="button"
-              onClick={() => onAssignRecorder(memory.id, Number(selectedRecorder))}
+              onClick={() =>
+                onAssignRecorder(memory.id, Number(selectedRecorder))
+              }
               disabled={!canAssignRecorder || isBusy}
             >
               Save Recorder
             </button>
           </div>
           {peopleOptions.length === 0 && (
-            <p className="meta">No known people are available yet to assign as the recorder.</p>
+            <p className="meta">
+              No known people are available yet to assign as the recorder.
+            </p>
           )}
         </div>
       )}
 
       {isExpanded && memory.audio_url && (
-        <audio controls preload="metadata" src={resolveApiUrl(memory.audio_url)} style={{ width: "100%" }} />
+        <audio
+          controls
+          preload="metadata"
+          src={resolveApiUrl(memory.audio_url)}
+          style={{ width: "100%" }}
+        />
       )}
       {isExpanded && <p>{memory.transcript}</p>}
       {isExpanded && memory.research_summary && (
@@ -153,11 +191,18 @@ export function MemoryCard({
           {memory.research_suggested_metadata && (
             <div className="suggestionBox">
               <p className="suggestionLabel">Suggested date update</p>
-              <p className="suggestionDate">{memory.research_suggested_metadata.estimated_date_text}</p>
-              <p className="suggestionMeta">
-                Precision: <strong>{memory.research_suggested_metadata.date_precision}</strong>
+              <p className="suggestionDate">
+                {memory.research_suggested_metadata.estimated_date_text}
               </p>
-              <p className="suggestionReasoning">{memory.research_suggested_metadata.reasoning}</p>
+              <p className="suggestionMeta">
+                Precision:{" "}
+                <strong>
+                  {memory.research_suggested_metadata.date_precision}
+                </strong>
+              </p>
+              <p className="suggestionReasoning">
+                {memory.research_suggested_metadata.reasoning}
+              </p>
               <div className="suggestionActions">
                 <button
                   className="primary"
@@ -183,7 +228,9 @@ export function MemoryCard({
               <p className="researchSubhead">Search queries used</p>
               <div className="researchQueryList">
                 {memory.research_queries.map((query) => (
-                  <span key={query} className="researchQueryChip">{query}</span>
+                  <span key={query} className="researchQueryChip">
+                    {query}
+                  </span>
                 ))}
               </div>
             </div>
@@ -204,24 +251,40 @@ export function MemoryCard({
           )}
           {linkedQuestions.length > 0 && (
             <div className="researchLinkedQuestions">
-              <p className="researchSubhead">Follow-up questions from research</p>
+              <p className="researchSubhead">
+                Follow-up questions from research
+              </p>
               <ul className="linkedQuestionList">
                 {linkedQuestions.map((q) => (
-                  <li key={q.id} className="linkedQuestionItem">{q.text}</li>
+                  <li key={q.id} className="linkedQuestionItem">
+                    {q.text}
+                  </li>
                 ))}
               </ul>
             </div>
           )}
         </section>
       )}
-      {isExpanded && <div className="memoryActions">
-        <button className="secondary" type="button" onClick={() => onReanalyze(memory.id)} disabled={isBusy}>
-          Reanalyze
-        </button>
-        <button className="ghost" type="button" onClick={() => onDelete(memory.id)} disabled={isBusy}>
-          Delete Memory
-        </button>
-      </div>}
+      {isExpanded && (
+        <div className="memoryActions">
+          <button
+            className="secondary"
+            type="button"
+            onClick={() => onReanalyze(memory.id)}
+            disabled={isBusy}
+          >
+            Reanalyze
+          </button>
+          <button
+            className="ghost"
+            type="button"
+            onClick={() => onDelete(memory.id)}
+            disabled={isBusy}
+          >
+            Delete Memory
+          </button>
+        </div>
+      )}
     </article>
   );
 }

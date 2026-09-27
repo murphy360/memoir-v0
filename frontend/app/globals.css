@@ -22,8 +22,7 @@ body {
   color: var(--ink);
   background:
     radial-gradient(circle at 15% 20%, #fff6ea 0%, transparent 40%),
-    radial-gradient(circle at 85% 10%, #dff7f3 0%, transparent 35%),
-    var(--bg);
+    radial-gradient(circle at 85% 10%, #dff7f3 0%, transparent 35%), var(--bg);
 }
 
 main {
@@ -1447,7 +1446,9 @@ a.ghost:hover {
   overflow: hidden;
   background: #fff;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .assetGridTile:hover {

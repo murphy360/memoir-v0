@@ -5,7 +5,17 @@ import { EventCapturePanel } from "./EventCapturePanel";
 import { EventLinkedMemories } from "./EventLinkedMemories";
 import { PhotoDetailsModal } from "./PhotoDetailsModal";
 import { UNASSIGNED_PERIOD_VALUE } from "../lib/homePageHelpers";
-import type { AssetEntry, DirectoryEntry, EventFaceEntry, LifeEpic, LifeEvent, LifePeriod, LifeThread, MemoryEntry, Question } from "../types";
+import type {
+  AssetEntry,
+  DirectoryEntry,
+  EventFaceEntry,
+  LifeEpic,
+  LifeEvent,
+  LifePeriod,
+  LifeThread,
+  MemoryEntry,
+  Question,
+} from "../types";
 
 function isUnknownCompreFaceSubject(subject: string | null): boolean {
   const normalized = (subject || "").trim().toLowerCase();
@@ -31,7 +41,12 @@ type EventDocumentUploadProgressItem = {
   isPhoto?: boolean;
   status: "uploading" | "saved" | "failed";
   error?: string;
-  stages?: Partial<Record<"geocoding" | "faces" | "gemini", "pending" | "running" | "done" | "skipped">>;
+  stages?: Partial<
+    Record<
+      "geocoding" | "faces" | "gemini",
+      "pending" | "running" | "done" | "skipped"
+    >
+  >;
   stageDetails?: Partial<Record<"geocoding" | "faces" | "gemini", string>>;
 };
 
@@ -102,11 +117,21 @@ type EventCardProps = {
   startRecordingForAsset: (assetId: number, eventId: number) => Promise<void>;
   eventDocumentUploadingId: number | null;
   eventDocumentErrors: Record<number, string | null>;
-  eventDocumentUploadProgressByEventId: Record<number, EventDocumentUploadProgressItem[]>;
-  uploadDocumentsToEvent: (files: File[], eventId: number, capturedDateText: string | null) => Promise<void>;
+  eventDocumentUploadProgressByEventId: Record<
+    number,
+    EventDocumentUploadProgressItem[]
+  >;
+  uploadDocumentsToEvent: (
+    files: File[],
+    eventId: number,
+    capturedDateText: string | null,
+  ) => Promise<void>;
   eventAssetInputRef: RefObject<HTMLInputElement>;
   isUploadingAsset: boolean;
-  uploadAssetToActiveEvent: (file: File, capturedDateText: string | null) => Promise<void>;
+  uploadAssetToActiveEvent: (
+    file: File,
+    capturedDateText: string | null,
+  ) => Promise<void>;
   activeEventAssets: AssetEntry[];
   eventFaces: EventFaceEntry[];
   highlightedElementId: string | null;
@@ -117,19 +142,31 @@ type EventCardProps = {
   editingAssetTitleValue: string;
   setEditingAssetTitleValue: (value: string) => void;
   assetTitleSavingId: number | null;
-  saveAssetTitle: (assetId: number, eventId?: number, nextTitle?: string) => Promise<void>;
+  saveAssetTitle: (
+    assetId: number,
+    eventId?: number,
+    nextTitle?: string,
+  ) => Promise<void>;
   editingAssetNotesId: number | null;
   setEditingAssetNotesId: (id: number | null) => void;
   editingAssetNotesValue: string;
   setEditingAssetNotesValue: (value: string) => void;
   assetNotesSavingId: number | null;
-  saveAssetNotes: (assetId: number, eventId?: number, nextNotes?: string) => Promise<void>;
+  saveAssetNotes: (
+    assetId: number,
+    eventId?: number,
+    nextNotes?: string,
+  ) => Promise<void>;
   editingAssetCapturedDateId: number | null;
   setEditingAssetCapturedDateId: (id: number | null) => void;
   editingAssetCapturedDateValue: string;
   setEditingAssetCapturedDateValue: (value: string) => void;
   assetCapturedDateSavingId: number | null;
-  saveAssetCapturedDate: (assetId: number, eventId?: number, nextCapturedDateText?: string) => Promise<void>;
+  saveAssetCapturedDate: (
+    assetId: number,
+    eventId?: number,
+    nextCapturedDateText?: string,
+  ) => Promise<void>;
   resolveApiUrl: (path: string) => string;
   formatBytes: (bytes: number) => string;
   deleteAsset: (assetId: number, eventId?: number) => Promise<void>;
@@ -139,11 +176,19 @@ type EventCardProps = {
     eventId: number,
     options?: { promoteUnknownSubject?: boolean },
   ) => Promise<void>;
-  createAndAssignFacePerson: (faceId: number, name: string, eventId: number) => Promise<void>;
-  renameFaceSubject: (faceId: number, newSubjectName: string, eventId: number) => Promise<void>;
+  createAndAssignFacePerson: (
+    faceId: number,
+    name: string,
+    eventId: number,
+  ) => Promise<void>;
+  renameFaceSubject: (
+    faceId: number,
+    newSubjectName: string,
+    eventId: number,
+  ) => Promise<void>;
   assigningFaceId: number | null;
   timeline: MemoryEntry[];
-    discardFace: (faceId: number, eventId: number) => Promise<void>;
+  discardFace: (faceId: number, eventId: number) => Promise<void>;
   editingMemoryTitleId: number | null;
   setEditingMemoryTitleId: (id: number | null) => void;
   editingMemoryTitleValue: string;
@@ -262,7 +307,7 @@ export function EventCard({
   renameFaceSubject,
   assigningFaceId,
   timeline,
-    discardFace,
+  discardFace,
   editingMemoryTitleId,
   setEditingMemoryTitleId,
   editingMemoryTitleValue,
@@ -282,8 +327,12 @@ export function EventCard({
   threads,
   onAssignThread,
 }: EventCardProps) {
-  const [faceAssignTargets, setFaceAssignTargets] = useState<Record<number, string>>({});
-  const [faceCreateNames, setFaceCreateNames] = useState<Record<number, string>>({});
+  const [faceAssignTargets, setFaceAssignTargets] = useState<
+    Record<number, string>
+  >({});
+  const [faceCreateNames, setFaceCreateNames] = useState<
+    Record<number, string>
+  >({});
   const [isPeopleOpen, setIsPeopleOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isResearchOpen, setIsResearchOpen] = useState(false);
@@ -291,14 +340,19 @@ export function EventCard({
   const [showMergeWorkflow, setShowMergeWorkflow] = useState(false);
   const [previewFace, setPreviewFace] = useState<EventFaceEntry | null>(null);
   const assignedThread = threads.find((t) => t.id === event.thread_id) ?? null;
-  const mergeOptions = mergeCandidates.filter((candidate) => candidate.id !== event.id);
+  const mergeOptions = mergeCandidates.filter(
+    (candidate) => candidate.id !== event.id,
+  );
   // Keep photo analysis visibility on the event card so users can track progress without opening Add Memory.
-  const photoProgressRows = eventDocumentUploadProgressByEventId[event.id] ?? [];
-  const completedPhotoCount = photoProgressRows.filter((row) => row.stages?.gemini === "done" || row.stages?.gemini === "skipped").length;
+  const photoProgressRows =
+    eventDocumentUploadProgressByEventId[event.id] ?? [];
+  const completedPhotoCount = photoProgressRows.filter(
+    (row) => row.stages?.gemini === "done" || row.stages?.gemini === "skipped",
+  ).length;
   const isAnalyzed = Boolean(
-    event.analysis_last_analyzed_at
-    || event.analysis_status === "completed"
-    || event.analysis_status === "skipped",
+    event.analysis_last_analyzed_at ||
+    event.analysis_status === "completed" ||
+    event.analysis_status === "skipped",
   );
 
   return (
@@ -311,12 +365,23 @@ export function EventCard({
           <p className="entitySectionLabel" style={{ marginBottom: "0.2rem" }}>
             <span className="entityPill entityPillEvent">Event</span>
             {assignedThread && (
-              <span className="entityPill entityPillThread" style={{ marginLeft: "0.35rem", fontSize: "0.75rem" }}>
+              <span
+                className="entityPill entityPillThread"
+                style={{ marginLeft: "0.35rem", fontSize: "0.75rem" }}
+              >
                 {assignedThread.title}
               </span>
             )}
             {isAnalyzed && (
-              <span className="entityPill" style={{ marginLeft: "0.35rem", background: "#dff6e8", color: "#0b6b36", border: "1px solid #93d5ad" }}>
+              <span
+                className="entityPill"
+                style={{
+                  marginLeft: "0.35rem",
+                  background: "#dff6e8",
+                  color: "#0b6b36",
+                  border: "1px solid #93d5ad",
+                }}
+              >
                 Analyzed
               </span>
             )}
@@ -330,23 +395,50 @@ export function EventCard({
                 autoFocus
                 onChange={(e) => setEditingEventTitleValue(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") void renameEvent(event.id, editingEventTitleValue);
-                  if (e.key === "Escape") { setEditingEventTitleId(null); setEditingEventTitleValue(""); }
+                  if (e.key === "Enter")
+                    void renameEvent(event.id, editingEventTitleValue);
+                  if (e.key === "Escape") {
+                    setEditingEventTitleId(null);
+                    setEditingEventTitleValue("");
+                  }
                 }}
                 style={{ flex: 1 }}
               />
-              <button className="primary" type="button" onClick={() => void renameEvent(event.id, editingEventTitleValue)} disabled={!editingEventTitleValue.trim()}>Save</button>
-              <button className="secondary" type="button" onClick={() => { setEditingEventTitleId(null); setEditingEventTitleValue(""); }}>Cancel</button>
+              <button
+                className="primary"
+                type="button"
+                onClick={() =>
+                  void renameEvent(event.id, editingEventTitleValue)
+                }
+                disabled={!editingEventTitleValue.trim()}
+              >
+                Save
+              </button>
+              <button
+                className="secondary"
+                type="button"
+                onClick={() => {
+                  setEditingEventTitleId(null);
+                  setEditingEventTitleValue("");
+                }}
+              >
+                Cancel
+              </button>
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            >
               <p style={{ margin: 0, fontWeight: 700 }}>{event.title}</p>
               <button
                 className="secondary"
                 type="button"
                 title="Edit title"
                 style={{ padding: "0.1rem 0.45rem", fontSize: "0.8rem" }}
-                onClick={() => { setEditingEventTitleId(event.id); setEditingEventTitleValue(event.title); }}
+                onClick={() => {
+                  setEditingEventTitleId(event.id);
+                  setEditingEventTitleValue(event.title);
+                }}
               >
                 ✏️
               </button>
@@ -364,8 +456,18 @@ export function EventCard({
             </div>
           )}
           {showThreadPicker && (
-            <div className="controls" style={{ marginTop: "0.25rem", flexWrap: "wrap", gap: "0.4rem" }}>
-              <span style={{ fontSize: "0.85rem", color: "var(--text-muted, #888)" }}>Tag thread:</span>
+            <div
+              className="controls"
+              style={{ marginTop: "0.25rem", flexWrap: "wrap", gap: "0.4rem" }}
+            >
+              <span
+                style={{
+                  fontSize: "0.85rem",
+                  color: "var(--text-muted, #888)",
+                }}
+              >
+                Tag thread:
+              </span>
               {threads.map((t) => (
                 <button
                   key={t.id}
@@ -384,8 +486,15 @@ export function EventCard({
                 <button
                   className="secondary"
                   type="button"
-                  style={{ fontSize: "0.8rem", padding: "0.15rem 0.5rem", color: "var(--danger, #c0392b)" }}
-                  onClick={() => { onAssignThread(null); setShowThreadPicker(false); }}
+                  style={{
+                    fontSize: "0.8rem",
+                    padding: "0.15rem 0.5rem",
+                    color: "var(--danger, #c0392b)",
+                  }}
+                  onClick={() => {
+                    onAssignThread(null);
+                    setShowThreadPicker(false);
+                  }}
                 >
                   Clear
                 </button>
@@ -402,24 +511,62 @@ export function EventCard({
                 placeholder="Event date text"
                 onChange={(e) => setEditingEventDateValue(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") void saveEventDate(event.id, editingEventDateValue);
-                  if (e.key === "Escape") { setEditingEventDateId(null); setEditingEventDateValue(""); }
+                  if (e.key === "Enter")
+                    void saveEventDate(event.id, editingEventDateValue);
+                  if (e.key === "Escape") {
+                    setEditingEventDateId(null);
+                    setEditingEventDateValue("");
+                  }
                 }}
                 style={{ flex: 1 }}
               />
-              <button className="primary" type="button" onClick={() => void saveEventDate(event.id, editingEventDateValue)}>Save</button>
-              <button className="secondary" type="button" onClick={() => { setEditingEventDateId(null); setEditingEventDateValue(""); }}>Cancel</button>
+              <button
+                className="primary"
+                type="button"
+                onClick={() =>
+                  void saveEventDate(event.id, editingEventDateValue)
+                }
+              >
+                Save
+              </button>
+              <button
+                className="secondary"
+                type="button"
+                onClick={() => {
+                  setEditingEventDateId(null);
+                  setEditingEventDateValue("");
+                }}
+              >
+                Cancel
+              </button>
             </div>
           ) : (
-            <div className="controls" style={{ justifyContent: "space-between", gap: "0.4rem", marginTop: "0.2rem" }}>
+            <div
+              className="controls"
+              style={{
+                justifyContent: "space-between",
+                gap: "0.4rem",
+                marginTop: "0.2rem",
+              }}
+            >
               <p className="meta" style={{ margin: 0, flex: 1 }}>
-                Date: {event.event_date_text || "unknown"} | Linked assets: {event.linked_asset_count}{questionsForEvent.length > 0 && ` | Questions: ${questionsForEvent.length}`}
+                Date: {event.event_date_text || "unknown"} | Linked assets:{" "}
+                {event.linked_asset_count}
+                {questionsForEvent.length > 0 &&
+                  ` | Questions: ${questionsForEvent.length}`}
               </p>
               <button
                 className="secondary"
                 type="button"
-                style={{ padding: "0.1rem 0.45rem", fontSize: "0.8rem", flexShrink: 0 }}
-                onClick={() => { setEditingEventDateId(event.id); setEditingEventDateValue(event.event_date_text || ""); }}
+                style={{
+                  padding: "0.1rem 0.45rem",
+                  fontSize: "0.8rem",
+                  flexShrink: 0,
+                }}
+                onClick={() => {
+                  setEditingEventDateId(event.id);
+                  setEditingEventDateValue(event.event_date_text || "");
+                }}
               >
                 Edit Date
               </button>
@@ -435,33 +582,83 @@ export function EventCard({
                 placeholder="Location"
                 onChange={(e) => setEditingEventLocationValue(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") void saveEventLocation(event.id, editingEventLocationValue);
-                  if (e.key === "Escape") { setEditingEventLocationId(null); setEditingEventLocationValue(""); }
+                  if (e.key === "Enter")
+                    void saveEventLocation(event.id, editingEventLocationValue);
+                  if (e.key === "Escape") {
+                    setEditingEventLocationId(null);
+                    setEditingEventLocationValue("");
+                  }
                 }}
                 style={{ flex: 1 }}
               />
-              <button className="primary" type="button" onClick={() => void saveEventLocation(event.id, editingEventLocationValue)}>Save</button>
-              <button className="secondary" type="button" onClick={() => { setEditingEventLocationId(null); setEditingEventLocationValue(""); }}>Cancel</button>
+              <button
+                className="primary"
+                type="button"
+                onClick={() =>
+                  void saveEventLocation(event.id, editingEventLocationValue)
+                }
+              >
+                Save
+              </button>
+              <button
+                className="secondary"
+                type="button"
+                onClick={() => {
+                  setEditingEventLocationId(null);
+                  setEditingEventLocationValue("");
+                }}
+              >
+                Cancel
+              </button>
             </div>
           ) : (
-            <div className="controls" style={{ justifyContent: "space-between", gap: "0.4rem", marginTop: "0.2rem" }}>
+            <div
+              className="controls"
+              style={{
+                justifyContent: "space-between",
+                gap: "0.4rem",
+                marginTop: "0.2rem",
+              }}
+            >
               <p className="meta" style={{ margin: 0, flex: 1 }}>
                 Location: {event.location || "-"}
               </p>
               <button
                 className="secondary"
                 type="button"
-                style={{ padding: "0.1rem 0.45rem", fontSize: "0.8rem", flexShrink: 0 }}
-                onClick={() => { setEditingEventLocationId(event.id); setEditingEventLocationValue(event.location || ""); }}
+                style={{
+                  padding: "0.1rem 0.45rem",
+                  fontSize: "0.8rem",
+                  flexShrink: 0,
+                }}
+                onClick={() => {
+                  setEditingEventLocationId(event.id);
+                  setEditingEventLocationValue(event.location || "");
+                }}
               >
                 Edit Location
               </button>
             </div>
           )}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", alignItems: "stretch" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.3rem",
+            alignItems: "stretch",
+          }}
+        >
           <h3
-            style={{ cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: "0.4rem", margin: 0, padding: 0 }}
+            style={{
+              cursor: "pointer",
+              userSelect: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              margin: 0,
+              padding: 0,
+            }}
             onClick={() => void onToggleOpen()}
           >
             <span>{isOpen ? "▾" : "▸"}</span>
@@ -481,8 +678,17 @@ export function EventCard({
             type="button"
             style={{ whiteSpace: "nowrap" }}
             onClick={() => setShowMergeWorkflow((current) => !current)}
-            disabled={isSavingLifeStructure || isRecording || isLoading || mergeOptions.length === 0}
-            title={mergeOptions.length === 0 ? "No other events available to merge into" : "Merge this event into another event"}
+            disabled={
+              isSavingLifeStructure ||
+              isRecording ||
+              isLoading ||
+              mergeOptions.length === 0
+            }
+            title={
+              mergeOptions.length === 0
+                ? "No other events available to merge into"
+                : "Merge this event into another event"
+            }
           >
             {showMergeWorkflow ? "Cancel Merge" : "Merge Event"}
           </button>
@@ -490,16 +696,31 @@ export function EventCard({
       </div>
       {isOpen && (
         <>
-          <div className="lifeEventManagementRow" style={{ marginBottom: "0.55rem" }}>
+          <div
+            className="lifeEventManagementRow"
+            style={{ marginBottom: "0.55rem" }}
+          >
             <select
               className="directoryInput"
-              value={eventMoveTargets[event.id] || (event.period_id === null ? UNASSIGNED_PERIOD_VALUE : `${event.period_id}`)}
-              onChange={(e) => setEventMoveTargets((current) => ({ ...current, [event.id]: e.target.value }))}
+              value={
+                eventMoveTargets[event.id] ||
+                (event.period_id === null
+                  ? UNASSIGNED_PERIOD_VALUE
+                  : `${event.period_id}`)
+              }
+              onChange={(e) =>
+                setEventMoveTargets((current) => ({
+                  ...current,
+                  [event.id]: e.target.value,
+                }))
+              }
               disabled={isSavingLifeStructure}
             >
               <option value={UNASSIGNED_PERIOD_VALUE}>Unassigned</option>
               {sortedLifePeriods.map((periodOption) => (
-                <option key={periodOption.id} value={periodOption.id}>{periodOption.title}</option>
+                <option key={periodOption.id} value={periodOption.id}>
+                  {periodOption.title}
+                </option>
               ))}
             </select>
             <button
@@ -512,7 +733,10 @@ export function EventCard({
             </button>
           </div>
           {epicsInPeriod.length > 0 && (
-            <div className="lifeEventManagementRow" style={{ marginBottom: "0.55rem" }}>
+            <div
+              className="lifeEventManagementRow"
+              style={{ marginBottom: "0.55rem" }}
+            >
               <select
                 className="directoryInput"
                 value={event.epic_id ?? ""}
@@ -524,7 +748,9 @@ export function EventCard({
               >
                 <option value="">No epic (ungrouped)</option>
                 {epicsInPeriod.map((ep) => (
-                  <option key={ep.id} value={ep.id}>{ep.title}</option>
+                  <option key={ep.id} value={ep.id}>
+                    {ep.title}
+                  </option>
                 ))}
               </select>
               <button
@@ -539,16 +765,26 @@ export function EventCard({
             </div>
           )}
           {showMergeWorkflow && (
-            <div className="lifeEventManagementRow" style={{ marginBottom: "0.55rem" }}>
+            <div
+              className="lifeEventManagementRow"
+              style={{ marginBottom: "0.55rem" }}
+            >
               <select
                 className="directoryInput"
                 value={eventMergeTargets[event.id] || ""}
-                onChange={(e) => setEventMergeTargets((current) => ({ ...current, [event.id]: e.target.value }))}
+                onChange={(e) =>
+                  setEventMergeTargets((current) => ({
+                    ...current,
+                    [event.id]: e.target.value,
+                  }))
+                }
                 disabled={isSavingLifeStructure || mergeOptions.length === 0}
               >
                 <option value="">Merge into another event</option>
                 {mergeOptions.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id}>{candidate.title}</option>
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.title}
+                  </option>
                 ))}
               </select>
               <button
@@ -570,12 +806,20 @@ export function EventCard({
               </button>
             </div>
           )}
-          <div className="controls" style={{ marginBottom: "0.55rem", flexWrap: "wrap" }}>
+          <div
+            className="controls"
+            style={{ marginBottom: "0.55rem", flexWrap: "wrap" }}
+          >
             <button
               className="secondary"
               type="button"
               onClick={() => void summarizeEvent(event.id)}
-              disabled={eventActionId === event.id || isRecording || isLoading || isSavingLifeStructure}
+              disabled={
+                eventActionId === event.id ||
+                isRecording ||
+                isLoading ||
+                isSavingLifeStructure
+              }
             >
               {event.summary ? "Refresh Event Summary" : "Summarize Event"}
             </button>
@@ -583,37 +827,77 @@ export function EventCard({
               className="secondary"
               type="button"
               onClick={() => void deepResearchEvent(event.id)}
-              disabled={eventActionId === event.id || isRecording || isLoading || isSavingLifeStructure}
+              disabled={
+                eventActionId === event.id ||
+                isRecording ||
+                isLoading ||
+                isSavingLifeStructure
+              }
             >
-              {event.research_summary ? "Refresh Deep Research" : "Deep Research"}
+              {event.research_summary
+                ? "Refresh Deep Research"
+                : "Deep Research"}
             </button>
             <button
               className="secondary"
               type="button"
               onClick={() => void processEventPhotos(event.id)}
-              disabled={processingEventPhotosId === event.id || isRecording || isLoading || isSavingLifeStructure}
+              disabled={
+                processingEventPhotosId === event.id ||
+                isRecording ||
+                isLoading ||
+                isSavingLifeStructure
+              }
             >
-              {processingEventPhotosId === event.id ? "Processing Photos..." : "Process Event Photos"}
+              {processingEventPhotosId === event.id
+                ? "Processing Photos..."
+                : "Process Event Photos"}
             </button>
           </div>
           {photoProgressRows.length > 0 && (
-            <section className="eventPhotoProgressPanel" style={{ marginBottom: "0.55rem" }}>
+            <section
+              className="eventPhotoProgressPanel"
+              style={{ marginBottom: "0.55rem" }}
+            >
               <div className="eventPhotoProgressHeader">
-                <p className="researchLabel" style={{ margin: 0 }}>Photo Analysis Progress</p>
-                <span className="badge">{completedPhotoCount}/{photoProgressRows.length} complete</span>
+                <p className="researchLabel" style={{ margin: 0 }}>
+                  Photo Analysis Progress
+                </p>
+                <span className="badge">
+                  {completedPhotoCount}/{photoProgressRows.length} complete
+                </span>
               </div>
               <ul className="eventPhotoProgressList">
                 {photoProgressRows.map((item, index) => {
-                  const stageEntries: Array<{ key: "geocoding" | "faces" | "gemini"; label: string }> = [
+                  const stageEntries: Array<{
+                    key: "geocoding" | "faces" | "gemini";
+                    label: string;
+                  }> = [
                     { key: "geocoding", label: "Geo" },
                     { key: "faces", label: "Faces" },
                     { key: "gemini", label: "AI" },
                   ];
                   return (
-                    <li key={`${item.assetId ?? item.fileName}-${index}`} className="eventPhotoProgressItem">
+                    <li
+                      key={`${item.assetId ?? item.fileName}-${index}`}
+                      className="eventPhotoProgressItem"
+                    >
                       <div className="eventPhotoProgressTopRow">
-                        <span className="eventPhotoProgressFileName" title={item.fileName}>{item.fileName}</span>
-                        <span className={`eventPhotoUploadState uploadState-${item.status}`}>{item.status === "saved" ? "Saved" : item.status === "failed" ? "Failed" : "Uploading"}</span>
+                        <span
+                          className="eventPhotoProgressFileName"
+                          title={item.fileName}
+                        >
+                          {item.fileName}
+                        </span>
+                        <span
+                          className={`eventPhotoUploadState uploadState-${item.status}`}
+                        >
+                          {item.status === "saved"
+                            ? "Saved"
+                            : item.status === "failed"
+                              ? "Failed"
+                              : "Uploading"}
+                        </span>
                       </div>
                       <div className="eventPhotoStageRow">
                         {stageEntries.map((stage) => {
@@ -639,9 +923,20 @@ export function EventCard({
             </section>
           )}
           {event.summary && (
-            <section className="researchPanel" style={{ marginBottom: "0.55rem" }}>
-              <div className="controls" style={{ justifyContent: "space-between", marginBottom: "0.35rem" }}>
-                <p className="researchLabel" style={{ margin: 0 }}>Event Summary</p>
+            <section
+              className="researchPanel"
+              style={{ marginBottom: "0.55rem" }}
+            >
+              <div
+                className="controls"
+                style={{
+                  justifyContent: "space-between",
+                  marginBottom: "0.35rem",
+                }}
+              >
+                <p className="researchLabel" style={{ margin: 0 }}>
+                  Event Summary
+                </p>
                 <button
                   className="secondary"
                   type="button"
@@ -651,13 +946,26 @@ export function EventCard({
                   {isSummaryOpen ? "Collapse" : "Expand"}
                 </button>
               </div>
-              {isSummaryOpen && <pre className="researchSummary">{event.summary}</pre>}
+              {isSummaryOpen && (
+                <pre className="researchSummary">{event.summary}</pre>
+              )}
             </section>
           )}
           {event.research_summary && (
-            <section className="researchPanel" style={{ marginBottom: "0.55rem" }}>
-              <div className="controls" style={{ justifyContent: "space-between", marginBottom: "0.35rem" }}>
-                <p className="researchLabel" style={{ margin: 0 }}>Deep Research</p>
+            <section
+              className="researchPanel"
+              style={{ marginBottom: "0.55rem" }}
+            >
+              <div
+                className="controls"
+                style={{
+                  justifyContent: "space-between",
+                  marginBottom: "0.35rem",
+                }}
+              >
+                <p className="researchLabel" style={{ margin: 0 }}>
+                  Deep Research
+                </p>
                 <button
                   className="secondary"
                   type="button"
@@ -669,13 +977,20 @@ export function EventCard({
               </div>
               {isResearchOpen && (
                 <>
-                  <pre className="researchSummary">{event.research_summary}</pre>
+                  <pre className="researchSummary">
+                    {event.research_summary}
+                  </pre>
                   {(event.research_queries || []).length > 0 && (
                     <div className="researchQueries">
                       <p className="researchSubhead">Search queries used</p>
                       <div className="researchQueryList">
                         {(event.research_queries || []).map((query) => (
-                          <span key={`${event.id}-query-${query}`} className="researchQueryChip">{query}</span>
+                          <span
+                            key={`${event.id}-query-${query}`}
+                            className="researchQueryChip"
+                          >
+                            {query}
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -686,7 +1001,11 @@ export function EventCard({
                       <ul className="researchSourceList">
                         {(event.research_sources || []).map((source) => (
                           <li key={`${event.id}-source-${source.url}`}>
-                            <a href={source.url} target="_blank" rel="noreferrer">
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
                               {source.title}
                             </a>
                           </li>
@@ -699,24 +1018,40 @@ export function EventCard({
             </section>
           )}
           {event.research_suggested_edit && (
-            <section className="suggestionBox" style={{ marginBottom: "0.55rem" }}>
+            <section
+              className="suggestionBox"
+              style={{ marginBottom: "0.55rem" }}
+            >
               <p className="suggestionLabel">Suggested event edits</p>
               {event.research_suggested_edit.title && (
-                <p className="suggestionMeta">Title: <strong>{event.research_suggested_edit.title}</strong></p>
+                <p className="suggestionMeta">
+                  Title: <strong>{event.research_suggested_edit.title}</strong>
+                </p>
               )}
               {event.research_suggested_edit.event_date_text && (
-                <p className="suggestionMeta">Date: <strong>{event.research_suggested_edit.event_date_text}</strong></p>
+                <p className="suggestionMeta">
+                  Date:{" "}
+                  <strong>
+                    {event.research_suggested_edit.event_date_text}
+                  </strong>
+                </p>
               )}
               {event.research_suggested_edit.description && (
-                <p className="suggestionReasoning">Description: {event.research_suggested_edit.description}</p>
+                <p className="suggestionReasoning">
+                  Description: {event.research_suggested_edit.description}
+                </p>
               )}
-              <p className="suggestionReasoning">{event.research_suggested_edit.reasoning}</p>
+              <p className="suggestionReasoning">
+                {event.research_suggested_edit.reasoning}
+              </p>
               <div className="suggestionActions">
                 <button
                   className="primary"
                   type="button"
                   onClick={() => void acceptEventResearchSuggestion(event.id)}
-                  disabled={eventActionId === event.id || isRecording || isLoading}
+                  disabled={
+                    eventActionId === event.id || isRecording || isLoading
+                  }
                 >
                   Apply
                 </button>
@@ -724,7 +1059,9 @@ export function EventCard({
                   className="ghost"
                   type="button"
                   onClick={() => void dismissEventResearchSuggestion(event.id)}
-                  disabled={eventActionId === event.id || isRecording || isLoading}
+                  disabled={
+                    eventActionId === event.id || isRecording || isLoading
+                  }
                 >
                   Dismiss
                 </button>
@@ -735,171 +1072,307 @@ export function EventCard({
           {eventFaces.length > 0 && (
             <section className="memory" style={{ marginBottom: "0.55rem" }}>
               <h3
-                style={{ marginTop: 0, cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: "0.4rem" }}
+                style={{
+                  marginTop: 0,
+                  cursor: "pointer",
+                  userSelect: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                }}
                 onClick={() => setIsPeopleOpen((prev) => !prev)}
               >
                 <span>{isPeopleOpen ? "▾" : "▸"}</span>
                 People in Photos
-                <span className="meta" style={{ fontWeight: "normal", fontSize: "0.82em", marginLeft: "0.25rem" }}>
-                  {eventFaces.filter((face) => face.person_id !== null).length} tagged, {eventFaces.filter((face) => face.person_id === null).length} untagged
+                <span
+                  className="meta"
+                  style={{
+                    fontWeight: "normal",
+                    fontSize: "0.82em",
+                    marginLeft: "0.25rem",
+                  }}
+                >
+                  {eventFaces.filter((face) => face.person_id !== null).length}{" "}
+                  tagged,{" "}
+                  {eventFaces.filter((face) => face.person_id === null).length}{" "}
+                  untagged
                 </span>
               </h3>
-              {isPeopleOpen && <div className="controls" style={{ flexWrap: "wrap" }}>
-                {eventFaces.map((face, index) => {
-                  const faceCx = face.bbox_x + face.bbox_w / 2;
-                  const faceCy = face.bbox_y + face.bbox_h / 2;
-                  const similarityText = face.compreface_similarity !== null
-                    ? `${Math.round(face.compreface_similarity * 100)}%`
-                    : null;
-                  const ageText = face.compreface_age_low !== null && face.compreface_age_high !== null
-                    ? `${face.compreface_age_low}-${face.compreface_age_high}`
-                    : null;
-                  const detectedName = face.person_name || face.compreface_subject;
-                  // Scale so the face bbox fills ~60% of the thumbnail height; cap to avoid distortion
-                  const previewScale = Math.max(1.5, Math.min(4.0, 0.6 / Math.max(face.bbox_h, 0.08)));
-                  const originX = `${Math.round(faceCx * 100)}%`;
-                  const originY = `${Math.round(faceCy * 100)}%`;
-                  const selectedPerson = faceAssignTargets[face.id] || "";
-                  const createName = faceCreateNames[face.id] || "";
-                  const isUnknownSubject = isUnknownCompreFaceSubject(face.compreface_subject);
-                  return (
-                    <div key={face.id} className="assetNotesRow" style={{ alignItems: "center", gap: "0.6rem", width: "100%" }}>
-                      <button
-                        type="button"
-                        className="faceThumbButton"
-                        title="Open larger photo details"
-                        onClick={() => setPreviewFace(face)}
+              {isPeopleOpen && (
+                <div className="controls" style={{ flexWrap: "wrap" }}>
+                  {eventFaces.map((face, index) => {
+                    const faceCx = face.bbox_x + face.bbox_w / 2;
+                    const faceCy = face.bbox_y + face.bbox_h / 2;
+                    const similarityText =
+                      face.compreface_similarity !== null
+                        ? `${Math.round(face.compreface_similarity * 100)}%`
+                        : null;
+                    const ageText =
+                      face.compreface_age_low !== null &&
+                      face.compreface_age_high !== null
+                        ? `${face.compreface_age_low}-${face.compreface_age_high}`
+                        : null;
+                    const detectedName =
+                      face.person_name || face.compreface_subject;
+                    // Scale so the face bbox fills ~60% of the thumbnail height; cap to avoid distortion
+                    const previewScale = Math.max(
+                      1.5,
+                      Math.min(4.0, 0.6 / Math.max(face.bbox_h, 0.08)),
+                    );
+                    const originX = `${Math.round(faceCx * 100)}%`;
+                    const originY = `${Math.round(faceCy * 100)}%`;
+                    const selectedPerson = faceAssignTargets[face.id] || "";
+                    const createName = faceCreateNames[face.id] || "";
+                    const isUnknownSubject = isUnknownCompreFaceSubject(
+                      face.compreface_subject,
+                    );
+                    return (
+                      <div
+                        key={face.id}
+                        className="assetNotesRow"
                         style={{
-                          width: "58px",
-                          height: "58px",
-                          borderRadius: "10px",
-                          overflow: "hidden",
-                          border: "1px solid rgba(0,0,0,0.15)",
-                          flexShrink: 0,
-                          padding: 0,
-                          background: "#fff",
-                          cursor: "zoom-in",
+                          alignItems: "center",
+                          gap: "0.6rem",
+                          width: "100%",
                         }}
                       >
-                        <img
-                          src={resolveApiUrl(`${face.asset_download_url}?download=false`)}
-                          alt={`Detected face ${index + 1}`}
+                        <button
+                          type="button"
+                          className="faceThumbButton"
+                          title="Open larger photo details"
+                          onClick={() => setPreviewFace(face)}
                           style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            objectPosition: `${originX} ${originY}`,
-                            transform: `scale(${previewScale})`,
-                            transformOrigin: `${originX} ${originY}`,
+                            width: "58px",
+                            height: "58px",
+                            borderRadius: "10px",
+                            overflow: "hidden",
+                            border: "1px solid rgba(0,0,0,0.15)",
+                            flexShrink: 0,
+                            padding: 0,
+                            background: "#fff",
+                            cursor: "zoom-in",
                           }}
-                        />
-                      </button>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p className="meta" style={{ margin: 0 }}>
-                          {face.person_name ? `Tagged: ${face.person_name}` : detectedName ? `Detected: ${detectedName}` : "Unknown person"}
-                          {face.asset_title ? ` · ${face.asset_title}` : ""}
-                        </p>
-                        {(similarityText || face.compreface_gender || ageText) && (
-                          <p className="meta" style={{ margin: "0.15rem 0 0" }}>
-                            {similarityText ? `Similarity ${similarityText}` : ""}
-                            {face.compreface_gender ? `${similarityText ? " · " : ""}${face.compreface_gender}` : ""}
-                            {ageText ? `${similarityText || face.compreface_gender ? " · " : ""}Age ${ageText}` : ""}
+                        >
+                          <img
+                            src={resolveApiUrl(
+                              `${face.asset_download_url}?download=false`,
+                            )}
+                            alt={`Detected face ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              objectPosition: `${originX} ${originY}`,
+                              transform: `scale(${previewScale})`,
+                              transformOrigin: `${originX} ${originY}`,
+                            }}
+                          />
+                        </button>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p className="meta" style={{ margin: 0 }}>
+                            {face.person_name
+                              ? `Tagged: ${face.person_name}`
+                              : detectedName
+                                ? `Detected: ${detectedName}`
+                                : "Unknown person"}
+                            {face.asset_title ? ` · ${face.asset_title}` : ""}
                           </p>
-                        )}
-                        <div className="controls" style={{ marginTop: "0.25rem", flexWrap: "wrap" }}>
-                          {face.person_id === null && (
-                            <>
-                              <select
-                                className="directoryInput"
-                                value={selectedPerson}
-                                onChange={(e) => setFaceAssignTargets((current) => ({ ...current, [face.id]: e.target.value }))}
-                                disabled={peopleDirectory.length === 0 || assigningFaceId === face.id}
-                              >
-                                <option value="">Select person</option>
-                                {peopleDirectory.map((person) => (
-                                  <option key={person.id} value={person.id}>{person.name}</option>
-                                ))}
-                              </select>
-                              <button
-                                className="secondary"
-                                type="button"
-                                disabled={!selectedPerson || assigningFaceId === face.id}
-                                onClick={() => void assignFaceToPerson(
-                                  face.id,
-                                  Number(selectedPerson),
-                                  event.id,
-                                  { promoteUnknownSubject: isUnknownSubject },
-                                )}
-                                title={isUnknownSubject ? "Assigning will promote this unknown CompreFace subject to the selected person name." : "Assign this detected face to the selected person."}
-                              >
-                                {assigningFaceId === face.id ? "Saving..." : (isUnknownSubject ? "Assign & Promote" : "Assign")}
-                              </button>
-                              {isUnknownSubject && (
-                                <p className="meta" style={{ margin: "0.1rem 0 0", width: "100%" }}>
-                                  Assigning this face will promote the unknown CompreFace subject to the selected person's name for future matches.
-                                </p>
-                              )}
-                              <div className="controls" style={{ width: "100%", marginTop: "0.2rem", flexWrap: "wrap" }}>
-                                <input
-                                  className="directoryInput"
-                                  type="text"
-                                  placeholder="Add new person here"
-                                  value={createName}
-                                  onChange={(e) => setFaceCreateNames((current) => ({ ...current, [face.id]: e.target.value }))}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" && createName.trim() && assigningFaceId !== face.id) {
-                                      void createAndAssignFacePerson(face.id, createName, event.id)
-                                        .then(() => {
-                                          setFaceCreateNames((current) => ({ ...current, [face.id]: "" }));
-                                          setFaceAssignTargets((current) => ({ ...current, [face.id]: "" }));
-                                        });
-                                    }
-                                  }}
-                                  disabled={assigningFaceId === face.id}
-                                />
-                                <button
-                                  className="primary"
-                                  type="button"
-                                  disabled={!createName.trim() || assigningFaceId === face.id}
-                                  onClick={() => {
-                                    void createAndAssignFacePerson(face.id, createName, event.id)
-                                      .then(() => {
-                                        setFaceCreateNames((current) => ({ ...current, [face.id]: "" }));
-                                        setFaceAssignTargets((current) => ({ ...current, [face.id]: "" }));
-                                      });
-                                  }}
-                                  title="Create person and assign this face in one step"
-                                >
-                                  {assigningFaceId === face.id ? "Saving..." : "Add + Assign"}
-                                </button>
-                              </div>
-                            </>
+                          {(similarityText ||
+                            face.compreface_gender ||
+                            ageText) && (
+                            <p
+                              className="meta"
+                              style={{ margin: "0.15rem 0 0" }}
+                            >
+                              {similarityText
+                                ? `Similarity ${similarityText}`
+                                : ""}
+                              {face.compreface_gender
+                                ? `${similarityText ? " · " : ""}${face.compreface_gender}`
+                                : ""}
+                              {ageText
+                                ? `${similarityText || face.compreface_gender ? " · " : ""}Age ${ageText}`
+                                : ""}
+                            </p>
                           )}
-                          {face.person_id !== null && (
+                          <div
+                            className="controls"
+                            style={{ marginTop: "0.25rem", flexWrap: "wrap" }}
+                          >
+                            {face.person_id === null && (
+                              <>
+                                <select
+                                  className="directoryInput"
+                                  value={selectedPerson}
+                                  onChange={(e) =>
+                                    setFaceAssignTargets((current) => ({
+                                      ...current,
+                                      [face.id]: e.target.value,
+                                    }))
+                                  }
+                                  disabled={
+                                    peopleDirectory.length === 0 ||
+                                    assigningFaceId === face.id
+                                  }
+                                >
+                                  <option value="">Select person</option>
+                                  {peopleDirectory.map((person) => (
+                                    <option key={person.id} value={person.id}>
+                                      {person.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  className="secondary"
+                                  type="button"
+                                  disabled={
+                                    !selectedPerson ||
+                                    assigningFaceId === face.id
+                                  }
+                                  onClick={() =>
+                                    void assignFaceToPerson(
+                                      face.id,
+                                      Number(selectedPerson),
+                                      event.id,
+                                      {
+                                        promoteUnknownSubject: isUnknownSubject,
+                                      },
+                                    )
+                                  }
+                                  title={
+                                    isUnknownSubject
+                                      ? "Assigning will promote this unknown CompreFace subject to the selected person name."
+                                      : "Assign this detected face to the selected person."
+                                  }
+                                >
+                                  {assigningFaceId === face.id
+                                    ? "Saving..."
+                                    : isUnknownSubject
+                                      ? "Assign & Promote"
+                                      : "Assign"}
+                                </button>
+                                {isUnknownSubject && (
+                                  <p
+                                    className="meta"
+                                    style={{
+                                      margin: "0.1rem 0 0",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    Assigning this face will promote the unknown
+                                    CompreFace subject to the selected person's
+                                    name for future matches.
+                                  </p>
+                                )}
+                                <div
+                                  className="controls"
+                                  style={{
+                                    width: "100%",
+                                    marginTop: "0.2rem",
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  <input
+                                    className="directoryInput"
+                                    type="text"
+                                    placeholder="Add new person here"
+                                    value={createName}
+                                    onChange={(e) =>
+                                      setFaceCreateNames((current) => ({
+                                        ...current,
+                                        [face.id]: e.target.value,
+                                      }))
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (
+                                        e.key === "Enter" &&
+                                        createName.trim() &&
+                                        assigningFaceId !== face.id
+                                      ) {
+                                        void createAndAssignFacePerson(
+                                          face.id,
+                                          createName,
+                                          event.id,
+                                        ).then(() => {
+                                          setFaceCreateNames((current) => ({
+                                            ...current,
+                                            [face.id]: "",
+                                          }));
+                                          setFaceAssignTargets((current) => ({
+                                            ...current,
+                                            [face.id]: "",
+                                          }));
+                                        });
+                                      }
+                                    }}
+                                    disabled={assigningFaceId === face.id}
+                                  />
+                                  <button
+                                    className="primary"
+                                    type="button"
+                                    disabled={
+                                      !createName.trim() ||
+                                      assigningFaceId === face.id
+                                    }
+                                    onClick={() => {
+                                      void createAndAssignFacePerson(
+                                        face.id,
+                                        createName,
+                                        event.id,
+                                      ).then(() => {
+                                        setFaceCreateNames((current) => ({
+                                          ...current,
+                                          [face.id]: "",
+                                        }));
+                                        setFaceAssignTargets((current) => ({
+                                          ...current,
+                                          [face.id]: "",
+                                        }));
+                                      });
+                                    }}
+                                    title="Create person and assign this face in one step"
+                                  >
+                                    {assigningFaceId === face.id
+                                      ? "Saving..."
+                                      : "Add + Assign"}
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                            {face.person_id !== null && (
+                              <button
+                                className="ghost"
+                                type="button"
+                                disabled={assigningFaceId === face.id}
+                                onClick={() =>
+                                  void assignFaceToPerson(
+                                    face.id,
+                                    null,
+                                    event.id,
+                                  )
+                                }
+                              >
+                                Clear
+                              </button>
+                            )}
                             <button
                               className="ghost"
                               type="button"
                               disabled={assigningFaceId === face.id}
-                              onClick={() => void assignFaceToPerson(face.id, null, event.id)}
+                              onClick={() =>
+                                void discardFace(face.id, event.id)
+                              }
+                              title="Not a face - remove this detection"
                             >
-                              Clear
+                              Discard
                             </button>
-                          )}
-                          <button
-                            className="ghost"
-                            type="button"
-                            disabled={assigningFaceId === face.id}
-                            onClick={() => void discardFace(face.id, event.id)}
-                            title="Not a face - remove this detection"
-                          >
-                            Discard
-                          </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>}
+                    );
+                  })}
+                </div>
+              )}
             </section>
           )}
 
@@ -933,18 +1406,28 @@ export function EventCard({
 
           {questionsForEvent.length > 0 && (
             <div className="inlineQuestionList">
-              <p className="inlineQuestionListLabel">Open questions for this event</p>
+              <p className="inlineQuestionListLabel">
+                Open questions for this event
+              </p>
               {questionsForEvent.map(({ question, sourceMemory }) => (
-                <article key={question.id} className="questionCard inlineQuestionCard">
+                <article
+                  key={question.id}
+                  className="questionCard inlineQuestionCard"
+                >
                   <p className="questionText">{question.text}</p>
                   {sourceMemory && (
-                    <p className="questionSource">From: <em>{sourceMemory.event_description}</em></p>
+                    <p className="questionSource">
+                      From: <em>{sourceMemory.event_description}</em>
+                    </p>
                   )}
                   <div className="questionActions">
                     <button
                       className="primary"
                       type="button"
-                      onClick={() => { setActiveQuestion(question); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                      onClick={() => {
+                        setActiveQuestion(question);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
                       disabled={isRecording || isLoading}
                     >
                       Answer this
@@ -967,14 +1450,19 @@ export function EventCard({
             <button
               className="secondary"
               type="button"
-              onClick={() => setEventCapturePanelOpenIds((prev) => {
-                const next = new Set(prev);
-                if (next.has(event.id)) next.delete(event.id); else next.add(event.id);
-                return next;
-              })}
+              onClick={() =>
+                setEventCapturePanelOpenIds((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(event.id)) next.delete(event.id);
+                  else next.add(event.id);
+                  return next;
+                })
+              }
               disabled={isRecording && recordingForEventId !== event.id}
             >
-              {eventCapturePanelOpenIds.has(event.id) ? "Close Add Memory" : "+ Add Memory"}
+              {eventCapturePanelOpenIds.has(event.id)
+                ? "Close Add Memory"
+                : "+ Add Memory"}
             </button>
           </div>
 
@@ -988,18 +1476,26 @@ export function EventCard({
               selectedDeviceId={selectedDeviceId}
               setSelectedDeviceId={setSelectedDeviceId}
               audioLevel={audioLevel}
-              startRecording={(eventId) => { void startRecording(eventId); }}
+              startRecording={(eventId) => {
+                void startRecording(eventId);
+              }}
               stopRecording={stopRecording}
               cancelRecording={cancelRecording}
               eventRecordingPending={eventRecordingPending}
               eventDocumentUploadingId={eventDocumentUploadingId}
               eventDocumentErrors={eventDocumentErrors}
-              eventDocumentUploadProgress={eventDocumentUploadProgressByEventId[event.id] ?? []}
-              uploadDocumentsToEvent={(files, eventId, capturedDateText) => { void uploadDocumentsToEvent(files, eventId, capturedDateText); }}
+              eventDocumentUploadProgress={
+                eventDocumentUploadProgressByEventId[event.id] ?? []
+              }
+              uploadDocumentsToEvent={(files, eventId, capturedDateText) => {
+                void uploadDocumentsToEvent(files, eventId, capturedDateText);
+              }}
               eventAssetInputRef={eventAssetInputRef}
               isUploadingAsset={isUploadingAsset}
               isSavingLifeStructure={isSavingLifeStructure}
-              uploadAssetToActiveEvent={(file, capturedDateText) => { void uploadAssetToActiveEvent(file, capturedDateText); }}
+              uploadAssetToActiveEvent={(file, capturedDateText) => {
+                void uploadAssetToActiveEvent(file, capturedDateText);
+              }}
             />
           )}
 
@@ -1031,7 +1527,9 @@ export function EventCard({
                 editingAssetCapturedDateId={editingAssetCapturedDateId}
                 setEditingAssetCapturedDateId={setEditingAssetCapturedDateId}
                 editingAssetCapturedDateValue={editingAssetCapturedDateValue}
-                setEditingAssetCapturedDateValue={setEditingAssetCapturedDateValue}
+                setEditingAssetCapturedDateValue={
+                  setEditingAssetCapturedDateValue
+                }
                 assetCapturedDateSavingId={assetCapturedDateSavingId}
                 saveAssetCapturedDate={saveAssetCapturedDate}
                 resolveApiUrl={resolveApiUrl}
@@ -1058,10 +1556,22 @@ export function EventCard({
 
       <PhotoDetailsModal
         isOpen={Boolean(previewFace)}
-        imageUrl={previewFace ? resolveApiUrl(`${previewFace.asset_download_url}?download=false`) : ""}
-        title={previewFace?.asset_title || previewFace?.compreface_subject || "Photo"}
+        imageUrl={
+          previewFace
+            ? resolveApiUrl(`${previewFace.asset_download_url}?download=false`)
+            : ""
+        }
+        title={
+          previewFace?.asset_title || previewFace?.compreface_subject || "Photo"
+        }
         onClose={() => setPreviewFace(null)}
-        faces={previewFace ? eventFaces.filter((face) => face.asset_id === previewFace.asset_id) : []}
+        faces={
+          previewFace
+            ? eventFaces.filter(
+                (face) => face.asset_id === previewFace.asset_id,
+              )
+            : []
+        }
         focusFaceId={previewFace?.id || null}
         filename={previewFace?.asset_title || null}
       />

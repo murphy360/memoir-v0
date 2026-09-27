@@ -78,7 +78,9 @@ def backfill_asset_location_names(db: "Session") -> None:
     if not rows:
         return
 
-    logger.info("Backfilling reverse_geocode_location_name for %d asset(s)...", len(rows))
+    logger.info(
+        "Backfilling reverse_geocode_location_name for %d asset(s)...", len(rows)
+    )
     updated = 0
     for row in rows:
         asset_id, lat, lon = row[0], row[1], row[2]

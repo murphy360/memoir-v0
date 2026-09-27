@@ -81,7 +81,9 @@ def _coerce_text(value: Any, max_len: int = 120) -> Optional[str]:
     return text
 
 
-def _parse_exif_datetime(raw: Optional[str], offset_raw: Optional[str]) -> tuple[Optional[datetime], Optional[str]]:
+def _parse_exif_datetime(
+    raw: Optional[str], offset_raw: Optional[str]
+) -> tuple[Optional[datetime], Optional[str]]:
     if not raw:
         return None, None
 
@@ -106,8 +108,12 @@ def _parse_exif_datetime(raw: Optional[str], offset_raw: Optional[str]) -> tuple
         if len(normalized_offset) == 6 and normalized_offset[3] == ":":
             if normalized_offset[0] in {"+", "-"}:
                 try:
-                    parsed_with_tz = datetime.fromisoformat(f"{parsed.isoformat()}{normalized_offset}")
-                    utc_value = parsed_with_tz.astimezone(timezone.utc).replace(tzinfo=None)
+                    parsed_with_tz = datetime.fromisoformat(
+                        f"{parsed.isoformat()}{normalized_offset}"
+                    )
+                    utc_value = parsed_with_tz.astimezone(timezone.utc).replace(
+                        tzinfo=None
+                    )
                     return utc_value, parsed_with_tz.isoformat()
                 except ValueError:
                     pass
@@ -168,7 +174,11 @@ def compress_photo_for_storage(
             exif_bytes = img.info.get("exif", b"")
 
             buf = BytesIO()
-            save_kwargs: dict = {"format": "JPEG", "quality": jpeg_quality, "optimize": True}
+            save_kwargs: dict = {
+                "format": "JPEG",
+                "quality": jpeg_quality,
+                "optimize": True,
+            }
             if exif_bytes:
                 save_kwargs["exif"] = exif_bytes
             img.save(buf, **save_kwargs)
@@ -178,7 +188,9 @@ def compress_photo_for_storage(
         return file_bytes, content_type or "image/jpeg"
 
 
-def extract_image_metadata(file_bytes: bytes, content_type: Optional[str], *, skip_geocoding: bool = False) -> ImageMetadata:
+def extract_image_metadata(
+    file_bytes: bytes, content_type: Optional[str], *, skip_geocoding: bool = False
+) -> ImageMetadata:
     if not (content_type or "").lower().startswith("image/"):
         return ImageMetadata()
 
@@ -206,7 +218,9 @@ def extract_image_metadata(file_bytes: bytes, content_type: Optional[str], *, sk
             if isinstance(orientation_value, int):
                 metadata.orientation = orientation_value
 
-            raw_capture = _coerce_text(exif.get("DateTimeOriginal"), max_len=64) or _coerce_text(exif.get("DateTime"), max_len=64)
+            raw_capture = _coerce_text(
+                exif.get("DateTimeOriginal"), max_len=64
+            ) or _coerce_text(exif.get("DateTime"), max_len=64)
             raw_offset = _coerce_text(exif.get("OffsetTimeOriginal"), max_len=12)
             captured_at, captured_text = _parse_exif_datetime(raw_capture, raw_offset)
             metadata.captured_at = captured_at
@@ -220,12 +234,26 @@ def extract_image_metadata(file_bytes: bytes, content_type: Optional[str], *, sk
                     gps_name = GPS_TAGS.get(gps_tag_id, str(gps_tag_id))
                     gps[gps_name] = value
 
-                metadata.gps_latitude = _dms_to_decimal(gps.get("GPSLatitude"), _coerce_text(gps.get("GPSLatitudeRef"), max_len=2))
-                metadata.gps_longitude = _dms_to_decimal(gps.get("GPSLongitude"), _coerce_text(gps.get("GPSLongitudeRef"), max_len=2))
-                metadata.exif_place_name = _coerce_text(gps.get("GPSAreaInformation"), max_len=200)
+                metadata.gps_latitude = _dms_to_decimal(
+                    gps.get("GPSLatitude"),
+                    _coerce_text(gps.get("GPSLatitudeRef"), max_len=2),
+                )
+                metadata.gps_longitude = _dms_to_decimal(
+                    gps.get("GPSLongitude"),
+                    _coerce_text(gps.get("GPSLongitudeRef"), max_len=2),
+                )
+                metadata.exif_place_name = _coerce_text(
+                    gps.get("GPSAreaInformation"), max_len=200
+                )
 
-                if metadata.gps_latitude is not None and metadata.gps_longitude is not None and not skip_geocoding:
-                    metadata.reverse_geocode_location_name = reverse_geocode(metadata.gps_latitude, metadata.gps_longitude)
+                if (
+                    metadata.gps_latitude is not None
+                    and metadata.gps_longitude is not None
+                    and not skip_geocoding
+                ):
+                    metadata.reverse_geocode_location_name = reverse_geocode(
+                        metadata.gps_latitude, metadata.gps_longitude
+                    )
 
                 if gps:
                     exif["GPSInfo"] = {key: str(value) for key, value in gps.items()}
@@ -245,7 +273,9 @@ def apply_image_metadata_to_asset(asset: Any, metadata: ImageMetadata) -> None:
     asset.gps_longitude = metadata.gps_longitude
     asset.exif_place_name = metadata.exif_place_name
     asset.reverse_geocode_location_name = metadata.reverse_geocode_location_name
-    asset.location_name = metadata.reverse_geocode_location_name or metadata.exif_place_name
+    asset.location_name = (
+        metadata.reverse_geocode_location_name or metadata.exif_place_name
+    )
     asset.camera_make = metadata.camera_make
     asset.camera_model = metadata.camera_model
     asset.lens_model = metadata.lens_model
@@ -255,6 +285,14 @@ def apply_image_metadata_to_asset(asset: Any, metadata: ImageMetadata) -> None:
     asset.exif_json = metadata.exif_json
 
 
-def extract_and_apply_image_metadata(asset: Any, file_bytes: bytes, content_type: Optional[str], *, skip_geocoding: bool = False) -> None:
-    metadata = extract_image_metadata(file_bytes, content_type, skip_geocoding=skip_geocoding)
+def extract_and_apply_image_metadata(
+    asset: Any,
+    file_bytes: bytes,
+    content_type: Optional[str],
+    *,
+    skip_geocoding: bool = False,
+) -> None:
+    metadata = extract_image_metadata(
+        file_bytes, content_type, skip_geocoding=skip_geocoding
+    )
     apply_image_metadata_to_asset(asset, metadata)

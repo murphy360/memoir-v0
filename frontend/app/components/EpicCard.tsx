@@ -72,7 +72,11 @@ export function EpicCard({
             >
               Save
             </button>
-            <button className="secondary" type="button" onClick={onCancelRenameTitle}>
+            <button
+              className="secondary"
+              type="button"
+              onClick={onCancelRenameTitle}
+            >
               Cancel
             </button>
           </div>
@@ -80,24 +84,45 @@ export function EpicCard({
           <>
             <h4 className="epicTitle">{epic.title}</h4>
             {assignedThread && (
-              <span className="entityPill entityPillThread" style={{ fontSize: "0.75rem", marginLeft: "0.4rem" }}>
+              <span
+                className="entityPill entityPillThread"
+                style={{ fontSize: "0.75rem", marginLeft: "0.4rem" }}
+              >
                 {assignedThread.title}
               </span>
             )}
             {epic.start_date_text && (
-              <span className="badge" style={{ marginLeft: "0.4rem", fontSize: "0.8rem" }}>
+              <span
+                className="badge"
+                style={{ marginLeft: "0.4rem", fontSize: "0.8rem" }}
+              >
                 {epic.start_date_text}
-                {epic.end_date_text && epic.end_date_text !== epic.start_date_text
+                {epic.end_date_text &&
+                epic.end_date_text !== epic.start_date_text
                   ? ` – ${epic.end_date_text}`
                   : ""}
               </span>
             )}
-            <span className="badge" style={{ marginLeft: "0.4rem", fontSize: "0.8rem" }}>
+            <span
+              className="badge"
+              style={{ marginLeft: "0.4rem", fontSize: "0.8rem" }}
+            >
               {epic.event_count} event{epic.event_count === 1 ? "" : "s"}
             </span>
-            <div className="controls" style={{ marginLeft: "auto", gap: "0.3rem" }}>
+            <div
+              className="controls"
+              style={{ marginLeft: "auto", gap: "0.3rem" }}
+            >
               <h4
-                style={{ cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: "0.4rem", margin: 0, fontSize: "0.8rem" }}
+                style={{
+                  cursor: "pointer",
+                  userSelect: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  margin: 0,
+                  fontSize: "0.8rem",
+                }}
                 onClick={onToggleOpen}
               >
                 <span>{isOpen ? "▾" : "▸"}</span>
@@ -137,7 +162,11 @@ export function EpicCard({
                 className="secondary"
                 type="button"
                 title="Delete epic"
-                style={{ padding: "0.1rem 0.45rem", fontSize: "0.8rem", color: "var(--danger, #c0392b)" }}
+                style={{
+                  padding: "0.1rem 0.45rem",
+                  fontSize: "0.8rem",
+                  color: "var(--danger, #c0392b)",
+                }}
                 onClick={onDelete}
                 disabled={isBusy}
               >
@@ -148,8 +177,15 @@ export function EpicCard({
         )}
       </div>
       {isOpen && showThreadPicker && (
-        <div className="controls" style={{ padding: "0.4rem 0.8rem", gap: "0.4rem", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "0.85rem", color: "var(--text-muted, #888)" }}>Tag thread:</span>
+        <div
+          className="controls"
+          style={{ padding: "0.4rem 0.8rem", gap: "0.4rem", flexWrap: "wrap" }}
+        >
+          <span
+            style={{ fontSize: "0.85rem", color: "var(--text-muted, #888)" }}
+          >
+            Tag thread:
+          </span>
           {threads.map((t) => (
             <button
               key={t.id}
@@ -169,7 +205,11 @@ export function EpicCard({
             <button
               className="secondary"
               type="button"
-              style={{ fontSize: "0.8rem", padding: "0.15rem 0.5rem", color: "var(--danger, #c0392b)" }}
+              style={{
+                fontSize: "0.8rem",
+                padding: "0.15rem 0.5rem",
+                color: "var(--danger, #c0392b)",
+              }}
               onClick={() => {
                 onAssignThread(null);
                 setShowThreadPicker(false);
@@ -182,8 +222,15 @@ export function EpicCard({
         </div>
       )}
       {isOpen && showPeriodPicker && (
-        <div className="controls" style={{ padding: "0.4rem 0.8rem", gap: "0.4rem", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "0.85rem", color: "var(--text-muted, #888)" }}>Move to period:</span>
+        <div
+          className="controls"
+          style={{ padding: "0.4rem 0.8rem", gap: "0.4rem", flexWrap: "wrap" }}
+        >
+          <span
+            style={{ fontSize: "0.85rem", color: "var(--text-muted, #888)" }}
+          >
+            Move to period:
+          </span>
           {periods.map((period) => (
             <button
               key={period.id}
@@ -206,7 +253,10 @@ export function EpicCard({
       {isOpen && (
         <>
           <div className="epicEventList">{children}</div>
-          <div className="controls" style={{ padding: "0.4rem 0.8rem", gap: "0.4rem" }}>
+          <div
+            className="controls"
+            style={{ padding: "0.4rem 0.8rem", gap: "0.4rem" }}
+          >
             <input
               className="directoryInput"
               type="text"
@@ -215,7 +265,9 @@ export function EpicCard({
               onChange={(e) => setNewEventDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newEventDraft.trim()) {
-                  void onCreateEvent(newEventDraft.trim()).then(() => setNewEventDraft(""));
+                  void onCreateEvent(newEventDraft.trim()).then(() =>
+                    setNewEventDraft(""),
+                  );
                 }
               }}
               disabled={isBusy}
@@ -226,7 +278,9 @@ export function EpicCard({
               type="button"
               onClick={() => {
                 if (newEventDraft.trim()) {
-                  void onCreateEvent(newEventDraft.trim()).then(() => setNewEventDraft(""));
+                  void onCreateEvent(newEventDraft.trim()).then(() =>
+                    setNewEventDraft(""),
+                  );
                 }
               }}
               disabled={!newEventDraft.trim() || isBusy}

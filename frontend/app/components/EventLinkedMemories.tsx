@@ -1,7 +1,13 @@
 import type { Dispatch, SetStateAction } from "react";
 import { MemoryCard } from "./MemoryCard";
 import { collectEventMemoryIds } from "../lib/homePageHelpers";
-import type { AssetEntry, DirectoryEntry, LifeEvent, MemoryEntry, Question } from "../types";
+import type {
+  AssetEntry,
+  DirectoryEntry,
+  LifeEvent,
+  MemoryEntry,
+  Question,
+} from "../types";
 
 type EventLinkedMemoriesProps = {
   event: LifeEvent;
@@ -58,7 +64,10 @@ export function EventLinkedMemories({
   memoryActionId,
   isRecording,
 }: EventLinkedMemoriesProps) {
-  const memoryIds = collectEventMemoryIds(event, activeEventId === event.id ? activeEventAssets : []);
+  const memoryIds = collectEventMemoryIds(
+    event,
+    activeEventId === event.id ? activeEventAssets : [],
+  );
   const linkedMemories = memoryIds
     .map((memoryId) => timeline.find((memory) => memory.id === memoryId))
     .filter((memory): memory is MemoryEntry => memory !== undefined);
@@ -81,12 +90,19 @@ export function EventLinkedMemories({
         >
           <div className="assetRowHeader">
             <span style={{ flex: 1, minWidth: 0 }}>
-              <strong>{linkedMemory.event_description || `Memory ${linkedMemory.id}`}</strong>
+              <strong>
+                {linkedMemory.event_description || `Memory ${linkedMemory.id}`}
+              </strong>
               <span className="meta">
-                {linkedMemory.estimated_date_text ? ` · ${linkedMemory.estimated_date_text}` : ""}
+                {linkedMemory.estimated_date_text
+                  ? ` · ${linkedMemory.estimated_date_text}`
+                  : ""}
               </span>
             </span>
-            <div className="controls" style={{ gap: "0.4rem", justifyContent: "flex-end" }}>
+            <div
+              className="controls"
+              style={{ gap: "0.4rem", justifyContent: "flex-end" }}
+            >
               {editingMemoryTitleId === linkedMemory.id ? (
                 <>
                   <input
@@ -106,31 +122,70 @@ export function EventLinkedMemories({
                     }}
                     style={{ minWidth: "14rem", maxWidth: "18rem" }}
                   />
-                  <button className="primary" type="button" onClick={() => void saveMemoryTitle(linkedMemory.id, event.id)} disabled={memoryTitleSavingId === linkedMemory.id}>Save</button>
-                  <button className="secondary" type="button" onClick={() => { setEditingMemoryTitleId(null); setEditingMemoryTitleValue(""); }}>Cancel</button>
+                  <button
+                    className="primary"
+                    type="button"
+                    onClick={() =>
+                      void saveMemoryTitle(linkedMemory.id, event.id)
+                    }
+                    disabled={memoryTitleSavingId === linkedMemory.id}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="secondary"
+                    type="button"
+                    onClick={() => {
+                      setEditingMemoryTitleId(null);
+                      setEditingMemoryTitleValue("");
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </>
               ) : (
                 <button
                   className="secondary"
                   type="button"
-                  style={{ padding: "0.1rem 0.55rem", fontSize: "0.8rem", flexShrink: 0 }}
+                  style={{
+                    padding: "0.1rem 0.55rem",
+                    fontSize: "0.8rem",
+                    flexShrink: 0,
+                  }}
                   onClick={() => {
                     setEditingMemoryTitleId(linkedMemory.id);
-                    setEditingMemoryTitleValue(linkedMemory.event_description || "");
+                    setEditingMemoryTitleValue(
+                      linkedMemory.event_description || "",
+                    );
                   }}
                 >
                   Edit Title
                 </button>
               )}
               <h4
-                style={{ cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: "0.4rem", margin: 0, padding: "0.1rem 0.55rem", fontSize: "0.8rem", flexShrink: 0 }}
-                onClick={() => setExpandedMemoryRowIds((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(linkedMemory.id)) next.delete(linkedMemory.id); else next.add(linkedMemory.id);
-                  return next;
-                })}
+                style={{
+                  cursor: "pointer",
+                  userSelect: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  margin: 0,
+                  padding: "0.1rem 0.55rem",
+                  fontSize: "0.8rem",
+                  flexShrink: 0,
+                }}
+                onClick={() =>
+                  setExpandedMemoryRowIds((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(linkedMemory.id)) next.delete(linkedMemory.id);
+                    else next.add(linkedMemory.id);
+                    return next;
+                  })
+                }
               >
-                <span>{expandedMemoryRowIds.has(linkedMemory.id) ? "▾" : "▸"}</span>
+                <span>
+                  {expandedMemoryRowIds.has(linkedMemory.id) ? "▾" : "▸"}
+                </span>
                 Details
               </h4>
             </div>
@@ -138,9 +193,13 @@ export function EventLinkedMemories({
           {expandedMemoryRowIds.has(linkedMemory.id) && (
             <MemoryCard
               containerId={`memory-card-${linkedMemory.id}`}
-              isHighlighted={highlightedElementId === `memory-card-${linkedMemory.id}`}
+              isHighlighted={
+                highlightedElementId === `memory-card-${linkedMemory.id}`
+              }
               memory={linkedMemory}
-              linkedQuestions={questions.filter((q) => q.source_memory_id === linkedMemory.id)}
+              linkedQuestions={questions.filter(
+                (q) => q.source_memory_id === linkedMemory.id,
+              )}
               peopleOptions={peopleDirectory}
               formatBytes={formatBytes}
               resolveApiUrl={resolveApiUrl}
@@ -149,7 +208,9 @@ export function EventLinkedMemories({
               onReanalyze={reanalyzeMemory}
               onDelete={deleteMemory}
               onAssignRecorder={assignRecorder}
-              isBusy={isLoading || memoryActionId === linkedMemory.id || isRecording}
+              isBusy={
+                isLoading || memoryActionId === linkedMemory.id || isRecording
+              }
               hideHeader
             />
           )}

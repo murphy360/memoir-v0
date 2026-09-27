@@ -12,7 +12,18 @@ from urllib.parse import quote
 
 from sqlalchemy.orm import Session
 
-from app.models import Asset, AssetFace, EventAsset, LifeEvent, MemoryEntry, MemoryPerson, MemoryPlace, Person, PersonAlias, Place
+from app.models import (
+    Asset,
+    AssetFace,
+    EventAsset,
+    LifeEvent,
+    MemoryEntry,
+    MemoryPerson,
+    MemoryPlace,
+    Person,
+    PersonAlias,
+    Place,
+)
 from app.schemas import DirectoryEntryResponse
 from app.services.periods import normalize_directory_name
 
@@ -47,7 +58,10 @@ def _merge_person_aliases(db: Session, source: Person, target: Person) -> None:
         existing_aliases.add(alias_key)
 
     source_name_key = source.name.casefold()
-    if source_name_key != target.name.casefold() and source_name_key not in existing_aliases:
+    if (
+        source_name_key != target.name.casefold()
+        and source_name_key not in existing_aliases
+    ):
         db.add(PersonAlias(person_id=target.id, alias=source.name))
 
 
@@ -65,8 +79,12 @@ def merge_people_records(db: Session, source: Person, target: Person) -> None:
         if memory.recorder_person_id == source.id:
             assign_recorder_person(db, memory, target.name)
 
-        already_linked = any(link.person_id == target.id for link in memory.people_links)
-        has_source_link = any(link.person_id == source.id for link in memory.people_links)
+        already_linked = any(
+            link.person_id == target.id for link in memory.people_links
+        )
+        has_source_link = any(
+            link.person_id == source.id for link in memory.people_links
+        )
 
         if has_source_link:
             for link in list(memory.people_links):
@@ -74,7 +92,9 @@ def merge_people_records(db: Session, source: Person, target: Person) -> None:
                     memory.people_links.remove(link)
                     db.delete(link)
             if not already_linked:
-                memory.people_links.append(MemoryPerson(person_id=target.id, role="mentioned"))
+                memory.people_links.append(
+                    MemoryPerson(person_id=target.id, role="mentioned")
+                )
             memory.people_json = json.dumps(memory.referenced_people)
 
     source_faces = db.query(AssetFace).filter(AssetFace.person_id == source.id).all()
@@ -88,7 +108,11 @@ def merge_people_records(db: Session, source: Person, target: Person) -> None:
         target.compreface_subject_id = source_subject
         target_subject = source_subject
 
-    if source_subject and target_subject and source_subject.casefold() != target_subject.casefold():
+    if (
+        source_subject
+        and target_subject
+        and source_subject.casefold() != target_subject.casefold()
+    ):
         subject_faces = (
             db.query(AssetFace)
             .filter(AssetFace.compreface_subject == source_subject)
@@ -102,7 +126,11 @@ def merge_people_records(db: Session, source: Person, target: Person) -> None:
         try:
             delete_compreface_subject(source_subject)
         except Exception as exc:  # pragma: no cover - fail-open sync to upstream
-            logger.warning("Failed to remove merged source CompreFace subject %s: %s", source_subject, exc)
+            logger.warning(
+                "Failed to remove merged source CompreFace subject %s: %s",
+                source_subject,
+                exc,
+            )
 
     source.compreface_subject_id = None
 
@@ -118,9 +146,7 @@ def detach_person_compreface_link(db: Session, person: Person) -> None:
         return
 
     subject_faces = (
-        db.query(AssetFace)
-        .filter(AssetFace.compreface_subject == subject)
-        .all()
+        db.query(AssetFace).filter(AssetFace.compreface_subject == subject).all()
     )
     for face in subject_faces:
         face.compreface_subject = None
@@ -130,7 +156,11 @@ def detach_person_compreface_link(db: Session, person: Person) -> None:
     try:
         delete_compreface_subject(subject)
     except Exception as exc:  # pragma: no cover - fail-open sync to upstream
-        logger.warning("Failed to delete CompreFace subject %s during person removal: %s", subject, exc)
+        logger.warning(
+            "Failed to delete CompreFace subject %s during person removal: %s",
+            subject,
+            exc,
+        )
 
     person.compreface_subject_id = None
 
@@ -146,11 +176,7 @@ def get_or_create_person(db: Session, raw_name: Optional[str]) -> Optional[Perso
                 person.name = name
             return person
 
-    alias_row = (
-        db.query(PersonAlias)
-        .filter(PersonAlias.alias.ilike(name))
-        .first()
-    )
+    alias_row = db.query(PersonAlias).filter(PersonAlias.alias.ilike(name)).first()
     if alias_row:
         return alias_row.person
 
@@ -224,7 +250,9 @@ def sync_memory_people(db: Session, memory: MemoryEntry, names: list[str]) -> No
 
     for person in ordered_people:
         if person.id not in existing_links:
-            memory.people_links.append(MemoryPerson(person_id=person.id, role="mentioned"))
+            memory.people_links.append(
+                MemoryPerson(person_id=person.id, role="mentioned")
+            )
 
     memory.people_json = json.dumps([person.name for person in ordered_people])
 
@@ -258,7 +286,9 @@ def sync_memory_places(db: Session, memory: MemoryEntry, names: list[str]) -> No
     memory.locations_json = json.dumps([place.name for place in ordered_places])
 
 
-def assign_recorder_person(db: Session, memory: MemoryEntry, raw_name: Optional[str]) -> None:
+def assign_recorder_person(
+    db: Session, memory: MemoryEntry, raw_name: Optional[str]
+) -> None:
     person = get_or_create_person(db, raw_name)
     if not person:
         memory.recorder_person = None
@@ -289,7 +319,10 @@ def build_directory_response(
         aliases=aliases or [],
         avatar_download_url=avatar_download_url,
         compreface_subject_id=_normalized_compreface_subject(compreface_subject_id),
-        compreface_subject_url=(compreface_subject_url or _build_compreface_subject_url(compreface_subject_id)),
+        compreface_subject_url=(
+            compreface_subject_url
+            or _build_compreface_subject_url(compreface_subject_id)
+        ),
     )
 
 
@@ -404,7 +437,10 @@ def list_person_events(db: Session, person_id: int) -> list[LifeEvent]:
     if memory_ids:
         legacy_events = (
             db.query(LifeEvent.id)
-            .filter(LifeEvent.legacy_memory_id.isnot(None), LifeEvent.legacy_memory_id.in_(memory_ids))
+            .filter(
+                LifeEvent.legacy_memory_id.isnot(None),
+                LifeEvent.legacy_memory_id.in_(memory_ids),
+            )
             .all()
         )
         event_ids.update(event_id for (event_id,) in legacy_events)
@@ -436,7 +472,9 @@ def list_person_assets(db: Session, person_id: int) -> list[Asset]:
     """Return distinct photo assets where this person is face-tagged."""
     direct_asset_ids = {
         asset_id
-        for (asset_id,) in db.query(AssetFace.asset_id).filter(AssetFace.person_id == person_id).all()
+        for (asset_id,) in db.query(AssetFace.asset_id)
+        .filter(AssetFace.person_id == person_id)
+        .all()
     }
 
     event_asset_ids = {

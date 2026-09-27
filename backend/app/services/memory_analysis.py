@@ -107,7 +107,9 @@ def fallback_metadata_from_transcript(transcript: str) -> MemoryMetadata:
 
 def detect_emotional_tone(transcript: str) -> str:
     lowered = transcript.lower()
-    if any(word in lowered for word in ["happy", "joy", "joyful", "excited", "grateful"]):
+    if any(
+        word in lowered for word in ["happy", "joy", "joyful", "excited", "grateful"]
+    ):
         return "positive"
     if any(word in lowered for word in ["sad", "angry", "upset", "scared", "afraid"]):
         return "negative"
@@ -132,7 +134,9 @@ def build_default_narration_title(recorder_name: Optional[str]) -> str:
     return f"{name}'s Narration of this memory"
 
 
-def generate_follow_up_question(transcript: str, event_description: str, metadata: MemoryMetadata) -> str:
+def generate_follow_up_question(
+    transcript: str, event_description: str, metadata: MemoryMetadata
+) -> str:
     if not metadata.recorder_name:
         return "What name would you like attached to this memory card as the recorder?"
     if not metadata.locations:
@@ -146,33 +150,54 @@ def generate_follow_up_question(transcript: str, event_description: str, metadat
     lowered = transcript.lower()
     if "car" in lowered:
         return "You mentioned that car memory. What detail from the trip still feels vivid today?"
-    return (
-        f"You shared: '{event_description}'. Who else was there, and how did they shape this memory?"
-    )
+    return f"You shared: '{event_description}'. Who else was there, and how did they shape this memory?"
 
 
 RELATIONSHIP_PATTERNS: list[tuple[str, str]] = [
     (r"\bson\b", "You mentioned your son. What is his name, and when was he born?"),
-    (r"\bdaughter\b", "You mentioned your daughter. What is her name, and when was she born?"),
-    (r"\bwife\b", "You mentioned your wife. How did you two meet, and when did you get married?"),
-    (r"\bhusband\b", "You mentioned your husband. How did you two meet, and when did you get married?"),
-    (r"\bmother\b|\bmom\b|\bmum\b", "You mentioned your mother. Where was she from and what was she like?"),
-    (r"\bfather\b|\bdad\b", "You mentioned your father. What do you remember most about him?"),
+    (
+        r"\bdaughter\b",
+        "You mentioned your daughter. What is her name, and when was she born?",
+    ),
+    (
+        r"\bwife\b",
+        "You mentioned your wife. How did you two meet, and when did you get married?",
+    ),
+    (
+        r"\bhusband\b",
+        "You mentioned your husband. How did you two meet, and when did you get married?",
+    ),
+    (
+        r"\bmother\b|\bmom\b|\bmum\b",
+        "You mentioned your mother. Where was she from and what was she like?",
+    ),
+    (
+        r"\bfather\b|\bdad\b",
+        "You mentioned your father. What do you remember most about him?",
+    ),
 ]
 
 
-def generate_questions_from_memory(transcript: str, event_description: str, metadata: MemoryMetadata) -> list[str]:
+def generate_questions_from_memory(
+    transcript: str, event_description: str, metadata: MemoryMetadata
+) -> list[str]:
     questions: list[str] = []
     lowered = transcript.lower()
 
     if not metadata.recorder_name:
-        questions.append("Before we continue, what should we call you on your memory cards?")
+        questions.append(
+            "Before we continue, what should we call you on your memory cards?"
+        )
 
     if not metadata.locations:
-        questions.append("Where did this memory happen, or which place does it belong to?")
+        questions.append(
+            "Where did this memory happen, or which place does it belong to?"
+        )
 
     if metadata.date_precision == "unknown":
-        questions.append("When was this memory from as best you can remember: day, month, year, or decade?")
+        questions.append(
+            "When was this memory from as best you can remember: day, month, year, or decade?"
+        )
 
     for pattern, question in RELATIONSHIP_PATTERNS:
         if len(questions) >= 3:
@@ -204,10 +229,41 @@ def extract_recorder_name(transcript: str) -> Optional[str]:
 
 def extract_people(transcript: str) -> list[str]:
     common = {
-        "I", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
-        "January", "February", "March", "April", "May", "June", "July", "August",
-        "September", "October", "November", "December", "The", "A", "An", "We", "He",
-        "She", "They", "It", "But", "And", "Or", "So", "Yet", "For", "Nor",
+        "I",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+        "The",
+        "A",
+        "An",
+        "We",
+        "He",
+        "She",
+        "They",
+        "It",
+        "But",
+        "And",
+        "Or",
+        "So",
+        "Yet",
+        "For",
+        "Nor",
     }
     names: list[str] = []
     for word in transcript.split():
@@ -219,6 +275,8 @@ def extract_people(transcript: str) -> list[str]:
 
 def extract_locations(transcript: str) -> list[str]:
     locations: list[str] = []
-    for match in re.finditer(r"\b(?:in|at|to|from|near)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", transcript):
+    for match in re.finditer(
+        r"\b(?:in|at|to|from|near)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", transcript
+    ):
         locations.append(match.group(1))
     return normalize_string_list(locations)

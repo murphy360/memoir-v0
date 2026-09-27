@@ -4,7 +4,10 @@ from typing import Optional
 
 from fastapi import HTTPException
 
-from app.services.gemini_client import extract_metadata_with_gemini_function_call, transcribe_audio
+from app.services.gemini_client import (
+    extract_metadata_with_gemini_function_call,
+    transcribe_audio,
+)
 from app.services.memory_analysis import (
     build_default_narration_title,
     MemoryMetadata,
@@ -32,7 +35,9 @@ def analyze_memory_audio(
             estimated_date_sort = metadata.sort_date
             emotional_tone = detect_emotional_tone(transcript)
             event_description = build_default_narration_title(metadata.recorder_name)
-            follow_up_question = generate_follow_up_question(transcript, event_description, metadata)
+            follow_up_question = generate_follow_up_question(
+                transcript, event_description, metadata
+            )
             return (
                 transcript,
                 event_description,
