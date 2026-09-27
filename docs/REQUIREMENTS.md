@@ -325,8 +325,8 @@ Requirements:
   closeness series (one value per month), recomputed by a job when events, participants or spans change.
 - **Export** includes each person's timeline and the relationship spans (section 10).
 
-Decide: whether the braid is the default home for a signed-in user or a second tab beside their own timeline. The
-storyteller's home stays the single Record button either way (section 11.2).
+Where the braid sits depends on the screen (owner's decision, section 11.2): on a phone the home is Record and the
+braid is a tab; on a wide screen the home is the review view with the braid or the personal timeline first.
 
 ## 6. AI processing
 
@@ -607,11 +607,19 @@ Concrete rules:
 - No dead ends: wherever a list is empty or a thing is missing, the way to create it is right there.
 - Confirmation of destination after capture, with one tap to change it.
 
-### 11.2 Screens
+### 11.2 Screens and the two postures
+
+One application, two postures chosen by screen size (owner's decision). A **phone is for capturing**: the home is
+Record, Add photos and "Questions for you", and everything else is a tab or a tap away. A **wide screen is for
+reviewing**: the home is the review workspace with the braid or the personal timeline first, the inbox, people to
+name and jobs beside it, and Record still one click away in the header. The breakpoint is a layout choice, not a
+feature switch: every capability exists in both postures, arranged differently. A storyteller on a laptop still sees a
+large Record button; an archivist on a phone can still place a photo.
 
 | Screen | Purpose |
 |---|---|
-| **Home** | Record and Add photos, "Questions for you", recent memories, and the entry to the timeline. Fits a phone. |
+| **Home (phone)** | Record, Add photos, "Questions for you", the last few memories with a "Saved to" line each. One hand, one thumb. |
+| **Home (wide)** | The review workspace: braid or personal timeline, inbox count, people to name, running jobs, recent activity by others. |
 | **My timeline** | The signed-in person's periods, epics and events with zoom (weights), expand and collapse that survives navigation, thread filter, search. Any person's timeline opens the same way. |
 | **Braid** | Lanes for chosen people over time, close or apart by relationship spans and shared events, knots for shared events (section 5.5). |
 | **Archive timeline** | The union of everyone's timelines, for the archivist. |
@@ -635,8 +643,11 @@ Concrete rules:
 
 ### 11.4 Mobile
 
-- Works on a phone screen first. Recording, adding photos, answering a question, browsing the timeline and playing
-  memories are all one-hand tasks.
+- The phone posture is capture first. Recording, adding photos, answering a question, playing a memory and fixing a
+  "Saved to" are one-hand tasks. The timeline, the braid and the directory are there, in a tab bar, sized for
+  browsing rather than curating.
+- The wide posture is review first. Multi-column layouts, keyboard shortcuts, drag to place an inbox item on the
+  timeline or the braid, bulk actions on faces and inbox items.
 - Installable as a PWA with a home-screen icon and, should, a share target for photos.
 
 ### 11.5 Accessibility
@@ -720,10 +731,9 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
 | HEIC | Version 1 |
 | Photo analysis | photo-analysis owns everything about a photo: metadata (EXIF, GPS, reverse geocoding), triage, faces and description |
 | Face identities | Shared with the cameras (one CompreFace subject per family member) |
+| Home screen | Depends on the screen: a phone is capture first (Record, Add photos, questions), a wide screen is review first (braid or timeline, inbox, people to name, jobs). One app, two postures |
 | Personal timelines | Every Person has a timeline; events have participants and appear on each participant's line; relationships with closeness spans drive a braid view (section 5.5, owner direction 2026-09-27) |
 | Deep photo analysis | photo-analysis #5: several analysts answer where, who and when from the picture alone and discuss to a consensus; then the metadata, then the storyteller's account, each reviewed and applied only where it earns it, every version kept; cameras untouched |
-
-Still open: whether the braid or the personal timeline is a signed-in user's home (section 5.5).
 
 ## Appendix A. v0 API surface, for reference
 
