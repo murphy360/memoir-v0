@@ -23,6 +23,10 @@ works out when and where it happened and who was there, files it on a life timel
 question so the next story goes deeper. Photos and documents attach to the events they show. Over time the timeline
 becomes a biography with evidence.
 
+Every person in the family has a timeline of their own, and the timelines braid together (section 5.5). A marriage
+joins two lines. A deployment draws them apart for a year. A child's line leaves the parents' when college starts and
+runs closer to new friends. Shared stories and events are the knots that tie people together.
+
 ### 1.2 Goals (from the v0 README, still valid)
 
 1. Capture is effortless: one tap to record, on a phone, in under fifteen seconds.
@@ -52,7 +56,8 @@ becomes a biography with evidence.
 Keep:
 
 - The domain model. Periods, epics, events, threads, memories, assets, people, places, faces and questions all earned
-  their place. Section 3 defines them cleanly.
+  their place. Section 3 defines them cleanly, and makes periods belong to a person and events to their participants,
+  so every person has a timeline of their own (section 5.5).
 - Free-text dates with a parsed sortable range behind them ("Summer 1968", "the 1960s", "1998 to 2002").
 - "No key means the feature is off" for every external service, failing soft with an empty result and a visible
   notice, never a low-quality fallback (the OpenCV lesson).
@@ -92,26 +97,42 @@ archive per deployment; the column exists so a second household is a data change
 
 **Person.** Someone in the family's life. Fields: `name` (unique within the archive, case-insensitive), aliases (any
 number, case-insensitive; one alias may point at several people, so "the kids" fans out), contact details (phone,
-email, address, notes, birthday as free text), an optional link to the archive's own user account, and an optional
-face identity (section 7). Derived, never stored: memory count, photo count, avatar (a recent confirmed face).
+email, address, notes, birthday as free text plus a parsed date, and a death date the same way), an optional link to
+the archive's own user account, and an optional face identity (section 7). Every Person has a timeline (section 5.5),
+whether or not they have a login. Derived, never stored: memory count, photo count, avatar (a recent confirmed
+face).
 
 **Place.** A named location. `name` unique within the archive. Should carry optional coordinates so a photo's GPS,
 an event's location and a place can meet. v0 kept three unlinked free-text location fields; the rewrite links them.
 
-**Period.** A chapter of life ("Childhood", "Navy years"). Title, free-text start and end, parsed sortable start and
-end, summary (typed or generated, with a flag saying which). Slug for stable URLs.
+**Period.** A chapter of one person's life ("Childhood", "Navy years"). Belongs to exactly one Person. Title,
+free-text start and end, parsed sortable start and end, summary (typed or generated, with a flag saying which). Slug
+for stable URLs. Two people's chapters may be linked as the same chapter seen from two sides ("Our marriage" on both
+lines); the link is a relation, not a shared row, so each keeps their own dates and summary.
 
-**Epic.** An arc inside one period ("Building the house"). Belongs to exactly one period. Title, description, weight
-1 to 10, free-text dates with parsed range, optional thread.
+**Epic.** An arc inside one period ("Building the house"). Belongs to exactly one period, and so to one Person.
+Title, description, weight 1 to 10, free-text dates with parsed range, optional thread.
 
-**Event.** A moment or episode. The unit that evidence attaches to. Belongs to at most one period and at most one
-epic; the epic decides the period. Title, description, weight 1 to 10, free-text date with parsed start and end and
-a precision (day, month, year, decade, approximate, unknown), location text and optional Place, optional thread,
-generated summary, research results, a pending suggested edit (section 6.6), and the analysis state (section 6.8).
+**Event.** A moment or episode. The unit that evidence attaches to, and the knot that ties people's timelines
+together. An event has **participants**: the people who were there, each with a role (`participant`, `storyteller`,
+`mentioned`, `in photo`) and a source (confirmed by a person, from a transcript, from a face). An event appears on
+the timeline of every participant. It is placed in at most one period and at most one epic **per participant** (a
+wedding sits in "Our marriage" on one line and "Navy years" on the other); the epic decides the period. Title,
+description, weight 1 to 10, free-text date with parsed start and end and a precision (day, month, year, decade,
+approximate, unknown), location text and optional Place, optional thread, generated summary, research results, a
+pending suggested edit (section 6.6), and the analysis state (section 6.8). An event may declare a **relationship
+effect** for a pair of participants (section 5.5): "kept apart" for a deployment, "brought together" for a wedding.
 
 **Thread.** A theme across time ("Faith", "The farm", "Grandpa Joe"). Title unique in the archive, slug, summary.
 Tags epics and events, never periods (v0 tried periods and moved off it). Deleting a thread untags; it deletes
 nothing.
+
+**Relationship.** How two people stand to each other over time: a kind (`spouse`, `parent`, `child`, `sibling`,
+`friend`, `partner`, `other`, with a free label) and any number of **spans**, each with a start and end (free text
+plus parsed) and a **closeness**: `household` (living together), `close` (regular contact), `distant` (apart by
+circumstance: deployment, moved away), `estranged`, `none`. Spans come from three places: typed by a person, declared
+by an event's relationship effect, or proposed by the system from shared events (section 5.5) and confirmed. A
+relationship is symmetric; `parent` and `child` are the two readings of one row.
 
 **Memory.** One told story: the narration. A memory has a transcript (or typed text), a title, a description, the
 storyteller (a Person), the account that uploaded it, the recording date, the story's own free-text date with parsed
@@ -141,12 +162,18 @@ timestamps.
 
 ### 3.2 Relationships and rules
 
-- Period 1:N Epic (required parent). Period 1:N Event (optional). Epic 1:N Event (optional).
+- Person 1:N Period. Period 1:N Epic (required parent). Event N:M Person as participants; an event's placement in a
+  period or epic is per participant, and an event with no participant placed anywhere sits in the inbox.
+- Person N:M Person through Relationship, each with its spans. Deleting a person soft-deletes their periods and their
+  side of every relationship; events they took part in stay on everyone else's line.
 - An event with an epic takes the epic's period. Moving an epic moves its events. Deleting an epic detaches its
   events to the period. Deleting a period asks what to do with its epics and events: move them to another period or
   unassign them. Nothing is deleted silently.
 - Thread 1:N Epic, Thread 1:N Event, optional both ways.
 - Event 1:N Memory. Event N:M Asset with a relation type. A memory may reference assets it is about (its photo).
+- A memory's storyteller and every person it mentions become participants of its event (source `transcript`,
+  unconfirmed until a person confirms). A confirmed face in an event's photo makes that person a participant
+  (source `face`). Confirming or removing participants is a one-tap action on the event.
 - Memory N:M Person (mentioned), Memory N:1 Person (storyteller). Memory N:M Place.
 - Asset 1:N Face. Face N:1 Person (optional). Person 1:1 face identity (the recogniser subject).
 - Merging two events moves memories, assets and faces to the target and fills the target's empty fields from the
@@ -257,6 +284,50 @@ item shows what it is, when it was captured, the suggested destination, and a on
 placement step. An item can be placed on an event or a period, or a new one made inline. An "Add your story" prompt
 sits on any photo without a narration.
 
+### 5.5 Personal timelines and the braid
+
+Every Person has a timeline: their periods, epics and the events they took part in, in their order. A signed-in user
+lands on the timeline of the Person their account is linked to. From there they can open anyone else's, or the
+archive's whole timeline (the union of everyone's).
+
+**The braid.** A view with time on one axis and one lane per chosen person. Lanes run close together when two people
+were close and drift apart when life kept them apart. Shared events are knots where the lanes touch. Reading it, the
+owner sees their lane join their wife's in 2008 at the wedding, run beside it as one household, pull away for 2020
+and rejoin, while the children's lanes leave the household lane when college starts and run closer to new friends
+who appear as lanes of their own.
+
+Requirements:
+
+- **Lane distance** between two people at a point in time comes from, in order of precedence: a relationship span
+  in effect (household is touching, close is near, distant is far, estranged farther, none is off the page), then,
+  where no span says otherwise, shared events: the more events the two share in a window (default plus or minus six
+  months, weighted by event weight), the closer the lanes. The window and the weighting are settings.
+- **Relationship effects on events** create spans. Marking a deployment "kept Corey and his wife apart" opens a
+  `distant` span for its dates and closes it after; marking a wedding "brought together" opens `household`. The
+  system proposes such effects when an event's title or transcript suggests them (married, deployed, moved, divorced,
+  born, died, started college) and a person confirms.
+- **System proposals for spans.** When two people share many events in a stretch with no span, the system proposes a
+  `close` span for that stretch; when a pair with a `household` span shares nothing for a year, it asks whether they
+  were apart. Proposals are never applied without a tap.
+- **Choosing lanes.** The user picks who is on the braid: me and my household, my parents and me, the whole family,
+  or any set of people, including people without logins. A friend who appears at college shows up as a lane from the
+  first shared event. Lanes can be pinned in an order or left to the layout.
+- **Zoom.** The braid honours event weight like the timeline does: zoomed out, only the knots that matter; zoomed in,
+  everything. A stretch of a lane can be clicked to open that person's period covering it.
+- **Birth and death** bound a lane: a lane starts at the birth date (or the first known event) and ends at the death
+  date if there is one. Before the first known event a lane is drawn faint.
+- **Everything on the braid is a link**: a knot opens the event, a lane segment opens the period, a lane label opens
+  the person. Hovering or tapping a stretch shows why the lanes are where they are ("household since the wedding,
+  2008"; "12 shared events in 1998"; "kept apart: deployment, 2020").
+- **Privacy.** A viewer sees a lane only for people and events they may see (section 9). A memory marked "only me"
+  places its event on the storyteller's lane only.
+- **Performance.** The braid for six people over eighty years renders in under a second from a precomputed per-pair
+  closeness series (one value per month), recomputed by a job when events, participants or spans change.
+- **Export** includes each person's timeline and the relationship spans (section 10).
+
+Decide: whether the braid is the default home for a signed-in user or a second tab beside their own timeline. The
+storyteller's home stays the single Record button either way (section 11.2).
+
 ## 6. AI processing
 
 ### 6.1 General
@@ -289,7 +360,10 @@ From the transcript, by structured (function-call) output, one call:
 
 - When it happened: date text, precision (day, month, year, decade, approximate, unknown), and the numeric parts.
 - Who told it (the storyteller's name if they say it), who is mentioned, where it happened. Names are trimmed,
-  capped and de-duplicated case-insensitively, then resolved against people and places, aliases included.
+  capped and de-duplicated case-insensitively, then resolved against people and places, aliases included. Resolved
+  people become unconfirmed participants of the event (section 3.2).
+- Relationship effects the story implies (married, deployed, moved, born, started college), as proposals for spans
+  (section 5.5).
 - A short title (4 to 10 words) and a one-paragraph description. v0's "Name's narration of this memory" title is
   gone.
 - Emotional tone from a fixed list (positive, negative, reflective, neutral, mixed), by the model, not keywords.
@@ -298,8 +372,9 @@ If extraction fails the memory is saved with what exists and flagged "needs deta
 
 ### 6.4 Placement suggestion
 
-Given the memory's date range, people and places, suggest the event: the closest event by date in the matching
-period, higher weight winning ties (v0's rule), then the period alone, then "new". For a one-tap quick memory the suggestion is
+Given the memory's date range, people and places, suggest the event: the closest event by date on the storyteller's
+timeline in the matching period, higher weight winning ties (v0's rule), then the period alone, then "new". Events on
+other participants' timelines in the same window are offered too ("this sounds like Mary's 'Move to Erie', 1998"). For a one-tap quick memory the suggestion is
 applied at once and stated in plain words ("Saved to 1960s, Summer job") with one tap to change it (owner's
 decision). For every other capture the suggestion is shown first and confirmed with a tap. Auto-created events and periods are labelled as such and are ordinary rows afterwards, never
 re-created by a background process.
@@ -537,7 +612,9 @@ Concrete rules:
 | Screen | Purpose |
 |---|---|
 | **Home** | Record and Add photos, "Questions for you", recent memories, and the entry to the timeline. Fits a phone. |
-| **Timeline** | Periods, epics, events with zoom (weights), expand and collapse that survives navigation, thread filter, search. |
+| **My timeline** | The signed-in person's periods, epics and events with zoom (weights), expand and collapse that survives navigation, thread filter, search. Any person's timeline opens the same way. |
+| **Braid** | Lanes for chosen people over time, close or apart by relationship spans and shared events, knots for shared events (section 5.5). |
+| **Archive timeline** | The union of everyone's timelines, for the archivist. |
 | **Event** | Its own page: summary, memories with players, photos, people in photos, questions, actions. Shareable URL. |
 | **Waiting to be placed** | The inbox (5.4). |
 | **People**, **Person** | Directory and page (7.1). |
@@ -615,6 +692,8 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
   redirects the old URL; the deployed v0 images keep their names). The new repository starts with the standards.
 - **Times are UTC** in the database; the UI shows the archive's time zone.
 - **Observability.** Structured logs with request and job ids, a metrics endpoint, and a jobs page in the UI.
+- **Closeness series.** The per-pair, per-month closeness behind the braid is a materialised table maintained by a
+  job, not computed in the request.
 
 ## 13. Out of scope for version 1
 
@@ -641,7 +720,10 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
 | HEIC | Version 1 |
 | Photo analysis | photo-analysis owns everything about a photo: metadata (EXIF, GPS, reverse geocoding), triage, faces and description |
 | Face identities | Shared with the cameras (one CompreFace subject per family member) |
+| Personal timelines | Every Person has a timeline; events have participants and appear on each participant's line; relationships with closeness spans drive a braid view (section 5.5, owner direction 2026-09-27) |
 | Deep photo analysis | photo-analysis #5: several analysts answer where, who and when from the picture alone and discuss to a consensus; then the metadata, then the storyteller's account, each reviewed and applied only where it earns it, every version kept; cameras untouched |
+
+Still open: whether the braid or the personal timeline is a signed-in user's home (section 5.5).
 
 ## Appendix A. v0 API surface, for reference
 
