@@ -58,6 +58,7 @@ Keep:
   notice, never a low-quality fallback (the OpenCV lesson).
 - Quick Memory, the one-tap recording with technical choices hidden behind "Advanced".
 - The photo pipeline stages: compress, EXIF and GPS, reverse geocode, faces, two-pass AI analysis with context.
+  They move into the photo-analysis service (section 6.7), but the stages and their thresholds stay.
 - Self-hosted CompreFace for faces so biometric data stays home.
 - The standards tooling from PR #1 (section 12).
 
@@ -263,8 +264,8 @@ sits on any photo without a narration.
 - Text and audio AI (transcription, extraction, questions, summaries, research) goes through a provider interface
   inside Memoir. Gemini is the first provider (`gemini-2.5-flash` default, with per-task model overrides, as v0 had).
   Prompts, parsing and limits live in the service that owns the task, not in the provider adapter.
-- **All photo AI and all face work is delegated to the owner's photo-analysis service** (section 6.7). Memoir has no
-  CompreFace client and no vision prompts of its own.
+- **All photo work is delegated to the owner's photo-analysis service** (section 6.7): metadata, faces and the
+  vision analysis. Memoir has no EXIF parser, no CompreFace client and no vision prompts of its own.
 - Every AI task is a job (section 12) with a timeout, a retry policy, a cost record (model, tokens, duration) and a
   result stored with provenance: which model, which prompt version, when.
 - The output of an AI task is a proposal until the storyteller or archivist accepts it, except for the transcript,
@@ -273,8 +274,7 @@ sits on any photo without a narration.
 - No API key: the feature is off, the UI says "AI is off" where the feature would appear, and nothing fails.
 - Payload limits are respected: audio and photos are chunked or batched so one request never exceeds the provider's
   inline limit (v0 sent everything inline in one call). API keys travel in headers, never in URLs.
-- Third-party calls are rate limited and cached where the provider asks for it (Nominatim: one request per second,
-  results cached by coordinates rounded to three decimals).
+- Third-party calls are rate limited and cached where the provider asks for it.
 
 ### 6.2 Transcription
 
@@ -335,22 +335,27 @@ re-created by a background process.
 
 The owner's photo-analysis service (`murphy360/photo-analysis`, running on dontpanic as `photo_analysis_app`) owns
 every photo: local object triage, CompreFace face identification with auto-enrolment, and vision-LLM description from
-several providers with a per-source cost policy. Memoir is one more client of it, like Home Assistant. Memoir does
-EXIF and geocoding itself (they are metadata, not analysis) and sends the photo on.
+several providers with a per-source cost policy. Memoir is one more client of it, like Home Assistant. Photo
+metadata (EXIF, GPS, reverse geocoding) is pulled there too (owner's decision), so Memoir holds no image-parsing code
+at all and the cameras get the same metadata for free.
 
 Memoir's pipeline, one order, whatever triggered it:
 
-1. **EXIF** (in Memoir). Dimensions, camera, lens, orientation, capture time (offset handled to UTC), GPS, EXIF place
-   name. Raw EXIF kept. Runs once at upload; a manual capture-date override is never overwritten by re-runs.
-2. **Reverse geocoding** (in Memoir) when GPS exists and no place name yet. "locality, region, country". Resolves to
-   a Place when one is within a configurable distance.
-3. **Submit to photo-analysis** with `source=memoir`, the asset id as metadata, a callback URL, and the context
-   below. Store the job id. Faces and description come back in one result.
-4. **Apply the result.** Faces become Face rows (section 7). The description, suggested title, assessed place,
-   evidence and discrepancy notes become the asset's excerpt and proposals.
+1. **Store the blob** and compute its SHA-256 (duplicate check).
+2. **Submit to photo-analysis** with `source=memoir`, the asset id as metadata, a callback URL, and the context
+   below. Store the job id. Metadata, faces and description come back in one result.
+3. **Apply the result.** Metadata fills the asset's capture time, GPS, place names, camera fields and dimensions,
+   except where a person has set a value by hand; a manual capture-date override is never overwritten by a re-run.
+   The place name resolves to a Place when one is within a configurable distance. Faces become Face rows (section 7).
+   The description, suggested title, assessed place, evidence and discrepancy notes become the asset's excerpt and
+   proposals.
 
 What Memoir needs from photo-analysis that it does not have today (these become photo-analysis tickets):
 
+- **Metadata extraction** returned on every job: dimensions, camera make and model, lens, orientation, capture time
+  as text and as UTC (EXIF offset handled), GPS as decimal degrees, the EXIF place name, and the raw EXIF as JSON.
+  Plus **reverse geocoding** of the GPS to "locality, region, country", rate limited to Nominatim's one request per
+  second and cached by coordinates rounded to three decimals. HEIC is decoded there as well.
 - **An archive endpoint**, separate from the camera path, for photos that deserve real attention. Called with a
   photo, optional context and a requested depth. The camera sources and their deer keep their cheap policy.
 - **Several analysts.** The archive endpoint runs more than one vision provider on the same photo and returns each
@@ -596,9 +601,9 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
 - **Hosting.** One image per process (api, web, worker), same origin under a base path (`/memoir`) behind Caddy on
   dontpanic, health checks, data in `/docker/memoir`. The deployment shape from PR #1 stays valid; Caddy's basic
   auth goes once the app's own login is live.
-- **Providers behind interfaces.** Text AI (Gemini first), photos and faces (the photo-analysis service, section
-  6.7), geocoding (Nominatim first), each a small adapter with a fake for tests. Memoir never imports a CompreFace or
-  vision client.
+- **Providers behind interfaces.** Text AI (Gemini first) and photos (the photo-analysis service, section 6.7, for
+  metadata, faces and description), each a small adapter with a fake for tests. Memoir never imports an EXIF,
+  geocoding, CompreFace or vision client.
 - **Repository.** The rewrite is `murphy360/memoir`. The version 0 repository is renamed `memoir-v0` first (GitHub
   redirects the old URL; the deployed v0 images keep their names). The new repository starts with the standards.
 - **Times are UTC** in the database; the UI shows the archive's time zone.
@@ -627,7 +632,7 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
 | Quick capture | Auto-file, show "Saved to", one tap to change |
 | Original audio | Kept forever |
 | HEIC | Version 1 |
-| Photo analysis | photo-analysis owns triage, faces and description; Memoir keeps EXIF and geocoding |
+| Photo analysis | photo-analysis owns everything about a photo: metadata (EXIF, GPS, reverse geocoding), triage, faces and description |
 | Face identities | Shared with the cameras (one CompreFace subject per family member) |
 | Deep photo analysis | A new archive endpoint in photo-analysis: several analysts, picture first, then a review against the supplied context that may disagree with it; cameras untouched |
 
