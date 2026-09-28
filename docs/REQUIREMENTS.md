@@ -381,6 +381,8 @@ re-created by a background process.
 
 ### 6.5 Follow-up questions
 
+The interviewer (section 16) is the strong form of this. What follows is the baseline that ships first.
+
 - After each new memory, generate two to three questions that probe feeling, significance, people and themes, from
   the transcript with the storyteller, date, people and places as context. Never the fixed heuristics of v0.
 - Questions are de-duplicated against every pending question by normalised text at write time, not read time.
@@ -563,6 +565,7 @@ A memoir is a shared family archive, so the unit of sharing is the archive, not 
 | Owner | Everything, plus manage users, invitations, settings, API keys, export and delete the archive |
 | Contributor | Record, upload, edit and organise memories, people, places and events; answer questions; review faces |
 | Viewer | Browse and listen; nothing changes |
+| Executor | An owner-granted role for one or two people: opens the sealed queue (section 15), decides on sensitive imported items, carries out a storyteller's digital legacy wishes |
 
 - One archive per deployment to start. Keep `archive_id` on every table so a second household later is a data
   change, not a rewrite.
@@ -709,12 +712,15 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
 ## 13. Out of scope for version 1
 
 - Multiple archives in one deployment (the column exists; the UI does not).
-- Embeddings and semantic search (the v0 README planned pgvector; full-text search is enough for now).
+- Semantic search and "ask the archive" until imports ship (section 15.5); full-text search until then.
 - Notifications beyond the optional weekly question.
 - PDF export (HTML export ships first).
 - Native mobile apps (PWA instead).
 - Public sharing links.
 - Encryption at rest, passkeys, magic links, the per-memory visibility switch in the UI.
+- Live platform hooks (Gmail API, Meta API); imports use export bundles (section 15).
+- Reading stories back in a storyteller's cloned voice. Only ever with consent recorded while alive, revocable; not
+  planned for any early release.
 
 ## 14. Decisions made (owner, 2026-09-27)
 
@@ -733,7 +739,111 @@ Carried over from the standards overhaul (PR #1) and the state of the v0 code.
 | Face identities | Shared with the cameras (one CompreFace subject per family member) |
 | Home screen | Depends on the screen: a phone is capture first (Record, Add photos, questions), a wide screen is review first (braid or timeline, inbox, people to name, jobs). One app, two postures |
 | Personal timelines | Every Person has a timeline; events have participants and appear on each participant's line; relationships with closeness spans drive a braid view (section 5.5, owner direction 2026-09-27) |
+| Sequence | Capture first (login, Record on a phone, turn-based interviewer, "Saved to"), then the live interviewer, photos, the braid, imports. Judged by stories recorded per month |
+| Imports | Export bundles (Takeout, Facebook DYI, GEDCOM), staged with provenance, a sensitivity pass into a sealed queue for owner and executor, include / seal / delete, digital legacy wishes recorded while alive |
 | Deep photo analysis | photo-analysis #5: several analysts answer where, who and when from the picture alone and discuss to a consensus; then the metadata, then the storyteller's account, each reviewed and applied only where it earns it, every version kept; cameras untouched |
+
+## 15. Imports, sensitivity and digital legacy
+
+The volume of a life is not in what someone tells a microphone. It is in their email, their posts, their photo library
+and where their phone has been. Importing it is legitimate when the account holder does it or arranged for it. It
+changes what the archive can do, and it brings the family things it did not know. Both are designed for here.
+
+### 15.1 Sources
+
+- **Export bundles, not live hooks.** Google Takeout (Gmail as mbox, Photos, Location History, Contacts, Calendar)
+  and Facebook's Download Your Information (posts, photos, comments, messages, events, check-ins). A bundle is an
+  explicit, consented, one-time act by the account holder, it holds what an API would not, and ingesting a ZIP is a
+  job. Other bundles later: Apple (iCloud Photos, Messages), Instagram, SMS backups. Live hooks may come later for
+  the living.
+- **Family tree.** GEDCOM from Ancestry or FamilySearch populates people, births, deaths, marriages and
+  parent-child relationships in one import (section 3.1, Relationship).
+- **Location history** feeds the braid (section 5.5): where each person was, month by month, and how often two
+  people were in the same place. It is the best closeness signal available and replaces event counting where present.
+- **Old media.** Digitised cassettes, VHS and letters go through the normal audio and document pipelines; the source
+  is recorded.
+
+### 15.2 Staging and provenance
+
+- An import is a job with progress. It parses the bundle into candidate items (an email, a post, a photo, a message
+  thread, a check-in, a calendar entry) with a date, people, a place and the original text or file.
+- **Nothing imported lands on a timeline directly.** Candidates go to a staging area labelled with the source, the
+  account, the import date and "imported, not reviewed." From staging, an item becomes an event, a memory, an asset
+  or a relationship span, or is discarded, by a person or by a rule the person set ("all my public posts: include").
+- Every imported row keeps its provenance forever: source, original id, import job, who reviewed it and what they
+  decided.
+- Duplicates across sources (the same photo in Google Photos and Facebook) are detected by hash and by near-duplicate
+  image match and merged into one asset with two provenances.
+- People named in imports are resolved against the directory with aliases; unknown names become unconfirmed people
+  in a review list, never silently created as directory entries.
+
+### 15.3 The sensitivity pass and the sealed queue
+
+- Every imported item passes through a classifier before a person sees it. It sorts items into plain categories:
+  health, finances, relationships, conflict, legal, substance, sexuality, politics, and "mentions a living person by
+  name." It is a flag, not a judgement. It counts and labels; it never writes a sentence about what it thinks
+  happened.
+- Flagged items go to a **sealed queue** visible only to the owner and to the executor role. The rest go to normal
+  staging.
+- Three outcomes per item, none of them silent: **include** on the timeline; **seal**, kept in a vault invisible to
+  the family and available to the owner, the executor and whoever inherits those roles; **delete**, gone, with a log
+  line that an item from that source and date was deleted. The default for anything unreviewed is sealed.
+- **Rose-coloured glasses are a viewer setting, not a truth setting.** The family reads the memoir, which has always
+  been a curated telling. The record stays in the building for whoever holds the keys later. Nothing is destroyed to
+  make the story kinder unless a person chooses delete.
+- The classifier is wrong in both directions. A person is always in the loop, and sampling of the unflagged pile is
+  offered ("review 20 random unflagged items") so misses are found.
+- **Living third parties.** Emails contain other people's words; an affair involves someone else. Items that name a
+  living person outside the archive are flagged, and the visibility rules (section 9) allow "executor only,
+  permanently" as an outcome.
+
+### 15.4 Digital legacy
+
+- Every storyteller records their wishes in the app while alive, in plain choices: when I am gone, import
+  everything I posted publicly / my posts and photos only / my messages too / nothing; my private messages: seal
+  everything / let my executor decide / do not import; who my executor is.
+- The app gives a checklist for the platform side: set a Facebook legacy contact with download permission, set
+  Google's Inactive Account Manager to a trusted contact, note where passwords are kept. Without these, the export
+  cannot be obtained later.
+- The wishes are a signed record (who, when) and are the first rule applied when an import of a deceased person's
+  data is run. They rank above the owner's preferences.
+- Asking a parent these questions is itself a memoir conversation. The interviewer (section 16) has it as a prompt.
+
+### 15.5 Ask the archive
+
+- Once imports exist, full-text search is not enough. Every transcript, message, post, excerpt and summary is
+  embedded (pgvector) and a question in plain words ("what did Dad say about the farm?") returns the passages with
+  their sources and a short answer that cites them. Sealed items are excluded for anyone but the executor.
+- Conflicting accounts are shown side by side, not resolved: two siblings' Christmas 1974 are both true to them.
+
+## 16. The interviewer
+
+The v0 design treats AI as a post-processor. The change that matters is that the AI can ask.
+
+- **Turn-based first.** After a recording is saved, the next question appears at once with one Record button, and it
+  is about what was just said ("You said your brother drove. Which brother? What car?"). The loop continues until the
+  storyteller stops. This ships in the first milestone.
+- **Live conversation second.** A real-time voice conversation in the browser, and by telephone (a number the
+  storyteller can call), in which the interviewer listens, asks, and follows up in the moment like an oral historian.
+  The transcript is one memory per topic, split by the interviewer. The storyteller can always say "stop" or hang up
+  and everything said so far is saved.
+- **The archive drives the interview.** The interviewer's questions come from the gaps: unnamed faces, undated
+  photos, a decade with three events, a relationship span nobody has explained, a question another family member
+  asked. "Here is a photo from about 1971. Who are these people?" A photo can be shown on screen during the
+  conversation and the answer names the faces.
+- **Style rules.** One question at a time. Short. Never leading. Never corrects the storyteller during the
+  conversation; discrepancies with the record are noted for the archivist afterwards (section 6.7's third pass is the
+  model). Comfortable with silence and with "I don't remember." Ends every session by thanking and saying what was
+  saved.
+- **Nudges.** An opt-in weekly question by text, email or phone call, with one tap or one call to answer.
+- **Consent and recording.** The storyteller is told, once, that the conversation is recorded and kept, and can ask
+  for a session to be deleted.
+
+## 17. Roadmap
+
+The order is capture first, then the interviewer, then photos, then the braid, then imports. Stories recorded per
+month is the number each milestone is judged by. The milestones and their tickets live on GitHub in
+`murphy360/memoir`, each with a RUN ORDER. Photo-analysis carries a "Memoir integration" milestone of its own.
 
 ## Appendix A. v0 API surface, for reference
 
