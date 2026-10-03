@@ -41,7 +41,7 @@ jobs:
     needs: [lint-api, test-api]
     uses: murphy360/standards/.github/workflows/image.yml@v1
     with:
-      image: memoir-api
+      image: memoir-v0-api
       context: backend
       file: backend/Dockerfile
       push: ${{ github.event_name != 'pull_request' }}
@@ -52,7 +52,7 @@ jobs:
     needs: [lint-web, test-web]
     uses: murphy360/standards/.github/workflows/image.yml@v1
     with:
-      image: memoir-web
+      image: memoir-v0-web
       context: frontend
       file: frontend/Dockerfile
       push: ${{ github.event_name != 'pull_request' }}
