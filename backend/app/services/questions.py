@@ -15,7 +15,9 @@ def normalize_question_text(value: str | None) -> str:
     return " ".join((value or "").split()).strip().casefold()
 
 
-def add_unique_pending_questions(db: Session, question_texts: list[str], source_memory_id: int) -> None:
+def add_unique_pending_questions(
+    db: Session, question_texts: list[str], source_memory_id: int
+) -> None:
     existing_pending = db.query(Question).filter(Question.status == "pending").all()
     seen_pending = {
         normalized
@@ -28,7 +30,11 @@ def add_unique_pending_questions(db: Session, question_texts: list[str], source_
         normalized = normalize_question_text(question_text)
         if not normalized or normalized in seen_pending:
             continue
-        db.add(Question(text=question_text, source_memory_id=source_memory_id, status="pending"))
+        db.add(
+            Question(
+                text=question_text, source_memory_id=source_memory_id, status="pending"
+            )
+        )
         seen_pending.add(normalized)
 
 

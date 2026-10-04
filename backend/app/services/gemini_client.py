@@ -10,7 +10,11 @@ from typing import Optional
 import requests
 from fastapi import HTTPException
 
-from app.services.memory_analysis import MemoryMetadata, build_sort_date, normalize_string_list
+from app.services.memory_analysis import (
+    MemoryMetadata,
+    build_sort_date,
+    normalize_string_list,
+)
 
 logger = logging.getLogger("memoir.api")
 
@@ -58,7 +62,9 @@ class PhotoSummary:
         return text[:max_length]
 
 
-def _extract_metadata_field(metadata_hint: Optional[str], field_name: str) -> Optional[str]:
+def _extract_metadata_field(
+    metadata_hint: Optional[str], field_name: str
+) -> Optional[str]:
     """Extract a semicolon-delimited metadata hint value like key=value."""
     hint = (metadata_hint or "").strip()
     if not hint:
@@ -67,7 +73,7 @@ def _extract_metadata_field(metadata_hint: Optional[str], field_name: str) -> Op
     for chunk in hint.split(";"):
         piece = chunk.strip()
         if piece.startswith(target_prefix):
-            value = piece[len(target_prefix):].strip()
+            value = piece[len(target_prefix) :].strip()
             return value or None
     return None
 
@@ -137,7 +143,13 @@ def suggest_date_from_research(
                                 "estimated_date_text": {"type": "string"},
                                 "date_precision": {
                                     "type": "string",
-                                    "enum": ["exact", "approximate", "month", "year", "decade"],
+                                    "enum": [
+                                        "exact",
+                                        "approximate",
+                                        "month",
+                                        "year",
+                                        "decade",
+                                    ],
                                 },
                                 "date_year": {"type": "integer"},
                                 "date_month": {"type": "integer"},
@@ -160,7 +172,9 @@ def suggest_date_from_research(
     }
 
     try:
-        response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=30)
+        response = requests.post(
+            endpoint, params={"key": gemini_key}, json=payload, timeout=30
+        )
         if not response.ok:
             logger.warning("Date suggestion request failed: %s", response.text[:200])
             return None
@@ -271,9 +285,13 @@ def suggest_event_edit_from_context(
     }
 
     try:
-        response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=35)
+        response = requests.post(
+            endpoint, params={"key": gemini_key}, json=payload, timeout=35
+        )
         if not response.ok:
-            logger.warning("Event edit suggestion request failed: %s", response.text[:200])
+            logger.warning(
+                "Event edit suggestion request failed: %s", response.text[:200]
+            )
             return None
         data = response.json()
     except Exception as exc:
@@ -301,8 +319,12 @@ def suggest_event_edit_from_context(
         reasoning = str(args.get("reasoning") or "").strip()
 
         changed_title = suggested_title and suggested_title != current_title
-        changed_date = suggested_date and suggested_date != (current_event_date_text or "")
-        changed_description = suggested_description and suggested_description != (current_description or "")
+        changed_date = suggested_date and suggested_date != (
+            current_event_date_text or ""
+        )
+        changed_description = suggested_description and suggested_description != (
+            current_description or ""
+        )
         if not (changed_title or changed_date or changed_description):
             return None
 
@@ -378,17 +400,25 @@ def generate_insightful_questions(
     }
 
     try:
-        response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=30)
+        response = requests.post(
+            endpoint, params={"key": gemini_key}, json=payload, timeout=30
+        )
         if not response.ok:
-            logger.warning("Insightful questions request failed: %s", response.text[:200])
+            logger.warning(
+                "Insightful questions request failed: %s", response.text[:200]
+            )
             return []
         data = response.json()
         candidate = data.get("candidates", [{}])[0]
         parts = candidate.get("content", {}).get("parts", [])
-        text = "\n".join(part.get("text", "").strip() for part in parts if part.get("text")).strip()
+        text = "\n".join(
+            part.get("text", "").strip() for part in parts if part.get("text")
+        ).strip()
         if not text:
             return []
-        questions = [q.strip() for q in text.split("\n") if q.strip() and q.strip().endswith("?")]
+        questions = [
+            q.strip() for q in text.split("\n") if q.strip() and q.strip().endswith("?")
+        ]
         return questions[:3]
     except Exception as exc:
         logger.warning("generate_insightful_questions exception: %s", exc)
@@ -401,11 +431,15 @@ def generate_research_questions(
     referenced_people: list[str],
 ) -> list[str]:
     """Generate 2-3 follow-up research questions based on findings.
-    
+
     Uses Gemini to extract the most important unanswered questions or entities
     worth exploring further from the research summary.
     """
-    logger.info("GENERATE_RESEARCH_QUESTIONS called with event: %s, num_people: %d", event_description[:50], len(referenced_people))
+    logger.info(
+        "GENERATE_RESEARCH_QUESTIONS called with event: %s, num_people: %d",
+        event_description[:50],
+        len(referenced_people),
+    )
     gemini_key = os.getenv("GEMINI_API_KEY")
     if not gemini_key:
         logger.warning("No GEMINI_API_KEY found")
@@ -444,14 +478,18 @@ def generate_research_questions(
     }
 
     try:
-        response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=30)
+        response = requests.post(
+            endpoint, params={"key": gemini_key}, json=payload, timeout=30
+        )
         if not response.ok:
             logger.warning("Research questions request failed: %s", response.text[:200])
             return []
         data = response.json()
         candidate = data.get("candidates", [{}])[0]
         parts = candidate.get("content", {}).get("parts", [])
-        text = "\n".join(part.get("text", "").strip() for part in parts if part.get("text")).strip()
+        text = "\n".join(
+            part.get("text", "").strip() for part in parts if part.get("text")
+        ).strip()
         logger.info("Research questions raw response: %s", text[:300])
         if not text:
             logger.warning("Research questions returned empty text")
@@ -477,14 +515,18 @@ def research_memory_details(
     document_mime_type: Optional[str] = None,
 ) -> ResearchResult:
     gemini_key = os.getenv("GEMINI_API_KEY")
-    gemini_model = os.getenv("GEMINI_RESEARCH_MODEL") or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    gemini_model = os.getenv("GEMINI_RESEARCH_MODEL") or os.getenv(
+        "GEMINI_MODEL", "gemini-2.5-flash"
+    )
 
-    location_text = ", ".join(referenced_locations) if referenced_locations else "Unknown"
+    location_text = (
+        ", ".join(referenced_locations) if referenced_locations else "Unknown"
+    )
     people_text = ", ".join(referenced_people) if referenced_people else "Unknown"
 
     if gemini_key:
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent"
-        
+
         parts = [
             {
                 "text": (
@@ -514,57 +556,60 @@ def research_memory_details(
                     f"Referenced locations: {location_text}\n"
                     f"Referenced people: {people_text}\n"
                     f"Transcript:\n{transcript}"
-                    + ("\n\nThe original document is attached below." if document_bytes else "")
+                    + (
+                        "\n\nThe original document is attached below."
+                        if document_bytes
+                        else ""
+                    )
                 )
             }
         ]
-        
+
         if document_bytes and document_mime_type:
             encoded_doc = base64.b64encode(document_bytes).decode("utf-8")
-            parts.append({
-                "inline_data": {
-                    "mime_type": document_mime_type,
-                    "data": encoded_doc,
-                }
-            })
-        
-        payload = {
-            "contents": [
+            parts.append(
                 {
-                    "role": "user",
-                    "parts": parts
-                }
-            ],
-            "tools": [
-                {
-                    "googleSearch": {
-                        "searchTypes": {
-                            "webSearch": {}
-                        }
+                    "inline_data": {
+                        "mime_type": document_mime_type,
+                        "data": encoded_doc,
                     }
                 }
-            ],
+            )
+
+        payload = {
+            "contents": [{"role": "user", "parts": parts}],
+            "tools": [{"googleSearch": {"searchTypes": {"webSearch": {}}}}],
             "generationConfig": {
                 "temperature": 0.15,
                 "maxOutputTokens": 3000,
-                "responseMimeType": "text/plain"
-            }
+                "responseMimeType": "text/plain",
+            },
         }
 
         try:
-            response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=90)
+            response = requests.post(
+                endpoint, params={"key": gemini_key}, json=payload, timeout=90
+            )
             if response.ok:
                 data = response.json()
                 candidate = data.get("candidates", [{}])[0]
                 text_parts = candidate.get("content", {}).get("parts", [])
-                text = "\n".join(part.get("text", "").strip() for part in text_parts if part.get("text")).strip()
+                text = "\n".join(
+                    part.get("text", "").strip()
+                    for part in text_parts
+                    if part.get("text")
+                ).strip()
                 if text:
                     grounding = candidate.get("groundingMetadata", {})
                     queries = _extract_grounding_queries(grounding)
                     sources = _extract_grounding_sources(grounding)
-                    return ResearchResult(summary=text[:10000], queries=queries, sources=sources)
+                    return ResearchResult(
+                        summary=text[:10000], queries=queries, sources=sources
+                    )
             else:
-                logger.warning("Gemini research request failed: %s", response.text[:300])
+                logger.warning(
+                    "Gemini research request failed: %s", response.text[:300]
+                )
         except Exception as exc:
             logger.warning("Gemini research request exception: %s", exc)
 
@@ -584,13 +629,23 @@ def summarize_event_details(
     gemini_key = os.getenv("GEMINI_API_KEY")
     gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-    clean_memory_points = [point.strip() for point in memory_points if point and point.strip()]
-    clean_asset_points = [point.strip() for point in asset_points if point and point.strip()]
+    clean_memory_points = [
+        point.strip() for point in memory_points if point and point.strip()
+    ]
+    clean_asset_points = [
+        point.strip() for point in asset_points if point and point.strip()
+    ]
 
     if gemini_key:
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{gemini_model}:generateContent"
-        memory_block = "\n".join(f"- {point}" for point in clean_memory_points[:20]) or "- No memory narration provided"
-        asset_block = "\n".join(f"- {point}" for point in clean_asset_points[:20]) or "- No supporting assets linked"
+        memory_block = (
+            "\n".join(f"- {point}" for point in clean_memory_points[:20])
+            or "- No memory narration provided"
+        )
+        asset_block = (
+            "\n".join(f"- {point}" for point in clean_asset_points[:20])
+            or "- No supporting assets linked"
+        )
 
         payload = {
             "contents": [
@@ -620,16 +675,22 @@ def summarize_event_details(
         }
 
         try:
-            response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=60)
+            response = requests.post(
+                endpoint, params={"key": gemini_key}, json=payload, timeout=60
+            )
             if response.ok:
                 data = response.json()
                 candidate = data.get("candidates", [{}])[0]
                 parts = candidate.get("content", {}).get("parts", [])
-                text = "\n".join(part.get("text", "").strip() for part in parts if part.get("text")).strip()
+                text = "\n".join(
+                    part.get("text", "").strip() for part in parts if part.get("text")
+                ).strip()
                 if text:
                     return text[:8000]
             else:
-                logger.warning("Gemini event summary request failed: %s", response.text[:300])
+                logger.warning(
+                    "Gemini event summary request failed: %s", response.text[:300]
+                )
         except Exception as exc:
             logger.warning("Gemini event summary request exception: %s", exc)
 
@@ -703,13 +764,22 @@ def _extract_grounding_sources(grounding: object) -> list[ResearchSource]:
 
 
 def transcribe_audio(filename: str, audio_bytes: bytes) -> str:
-    allow_placeholder = os.getenv("ALLOW_PLACEHOLDER_TRANSCRIPT", "false").lower() == "true"
+    allow_placeholder = (
+        os.getenv("ALLOW_PLACEHOLDER_TRANSCRIPT", "false").lower() == "true"
+    )
     gemini_key = os.getenv("GEMINI_API_KEY")
     gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     failure_reasons: list[str] = []
 
     if gemini_key:
-        mime_types = ["audio/webm", "audio/webm;codecs=opus", "audio/ogg", "audio/mpeg", "audio/wav", "audio/mp4"]
+        mime_types = [
+            "audio/webm",
+            "audio/webm;codecs=opus",
+            "audio/ogg",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+        ]
         if filename.lower().endswith(".wav"):
             mime_types = ["audio/wav"]
         elif filename.lower().endswith(".mp3"):
@@ -725,7 +795,9 @@ def transcribe_audio(filename: str, audio_bytes: bytes) -> str:
                 "contents": [
                     {
                         "parts": [
-                            {"text": "Transcribe this audio exactly. Return plain text only."},
+                            {
+                                "text": "Transcribe this audio exactly. Return plain text only."
+                            },
                             {
                                 "inline_data": {
                                     "mime_type": mime_type,
@@ -738,18 +810,24 @@ def transcribe_audio(filename: str, audio_bytes: bytes) -> str:
             }
 
             try:
-                response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=45)
+                response = requests.post(
+                    endpoint, params={"key": gemini_key}, json=payload, timeout=45
+                )
             except Exception as exc:
                 failure_reasons.append(f"Gemini exception: {str(exc)}")
                 logger.exception("Gemini transcription request failed")
                 continue
 
             if not response.ok:
-                failure_reasons.append(f"Gemini ({mime_type}) HTTP {response.status_code}: {response.text[:180]}")
+                failure_reasons.append(
+                    f"Gemini ({mime_type}) HTTP {response.status_code}: {response.text[:180]}"
+                )
                 continue
 
             data = response.json()
-            text_parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+            text_parts = (
+                data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+            )
             text = " ".join(part.get("text", "") for part in text_parts).strip()
             if text:
                 return text
@@ -771,7 +849,9 @@ def transcribe_audio(filename: str, audio_bytes: bytes) -> str:
     )
 
 
-def extract_metadata_with_gemini_function_call(transcript: str) -> Optional[MemoryMetadata]:
+def extract_metadata_with_gemini_function_call(
+    transcript: str,
+) -> Optional[MemoryMetadata]:
     gemini_key = os.getenv("GEMINI_API_KEY")
     gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     if not gemini_key:
@@ -806,7 +886,14 @@ def extract_metadata_with_gemini_function_call(transcript: str) -> Optional[Memo
                                 "date_text": {"type": "string"},
                                 "date_precision": {
                                     "type": "string",
-                                    "enum": ["day", "month", "year", "decade", "approximate", "unknown"],
+                                    "enum": [
+                                        "day",
+                                        "month",
+                                        "year",
+                                        "decade",
+                                        "approximate",
+                                        "unknown",
+                                    ],
                                 },
                                 "date_year": {"type": "integer"},
                                 "date_month": {"type": "integer"},
@@ -822,7 +909,12 @@ def extract_metadata_with_gemini_function_call(transcript: str) -> Optional[Memo
                                     "items": {"type": "string"},
                                 },
                             },
-                            "required": ["date_text", "date_precision", "people", "locations"],
+                            "required": [
+                                "date_text",
+                                "date_precision",
+                                "people",
+                                "locations",
+                            ],
                         },
                     }
                 ]
@@ -837,7 +929,9 @@ def extract_metadata_with_gemini_function_call(transcript: str) -> Optional[Memo
     }
 
     try:
-        response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=30)
+        response = requests.post(
+            endpoint, params={"key": gemini_key}, json=payload, timeout=30
+        )
         if not response.ok:
             logger.warning("Gemini metadata extraction failed: %s", response.text[:300])
             return None
@@ -862,7 +956,14 @@ def extract_metadata_with_gemini_function_call(transcript: str) -> Optional[Memo
             args = {}
 
         date_precision = str(args.get("date_precision") or "unknown").strip().lower()
-        if date_precision not in {"day", "month", "year", "decade", "approximate", "unknown"}:
+        if date_precision not in {
+            "day",
+            "month",
+            "year",
+            "decade",
+            "approximate",
+            "unknown",
+        }:
             date_precision = "unknown"
 
         date_year = _safe_int(args.get("date_year"))
@@ -870,7 +971,9 @@ def extract_metadata_with_gemini_function_call(transcript: str) -> Optional[Memo
         date_day = _safe_int(args.get("date_day"))
         date_decade = _safe_int(args.get("date_decade"))
 
-        sort_date = build_sort_date(date_precision, date_year, date_month, date_day, date_decade)
+        sort_date = build_sort_date(
+            date_precision, date_year, date_month, date_day, date_decade
+        )
         people = normalize_string_list(_safe_string_list(args.get("people")))
         locations = normalize_string_list(_safe_string_list(args.get("locations")))
 
@@ -960,16 +1063,16 @@ def extract_text_from_document(filename: str, file_bytes: bytes, mime_type: str)
     }
 
     try:
-        response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=60)
+        response = requests.post(
+            endpoint, params={"key": gemini_key}, json=payload, timeout=60
+        )
         if not response.ok:
             raise HTTPException(
                 status_code=502,
                 detail=f"Gemini document analysis failed: {response.text[:300]}",
             )
         data = response.json()
-        text_parts = (
-            data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        )
+        text_parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
         text = "\n".join(
             part.get("text", "").strip() for part in text_parts if part.get("text")
         ).strip()
@@ -1015,7 +1118,7 @@ def _parse_photo_research_notes(raw_text: str) -> dict[int, str]:
 
 
 def extract_text_from_photo_batch(
-    photo_payloads: list[tuple[str, bytes, str] | tuple[str, bytes, str, str | None]]
+    photo_payloads: list[tuple[str, bytes, str] | tuple[str, bytes, str, str | None]],
 ) -> dict[int, "PhotoSummary"]:
     """Use a two-pass Gemini flow to summarize a batch of uploaded photos.
 
@@ -1051,7 +1154,7 @@ def extract_text_from_photo_batch(
         research_model,
         structured_model,
     )
-    
+
     today_date = datetime.now().strftime("%B %d, %Y")
 
     photo_parts_by_index: dict[int, list[dict]] = {}
@@ -1060,10 +1163,14 @@ def extract_text_from_photo_batch(
     for index, payload in enumerate(photo_payloads, start=1):
         filename, file_bytes, mime_type = payload[0], payload[1], payload[2]
         metadata_hint = payload[3] if len(payload) > 3 else None
-        reverse_geocode_name = _extract_metadata_field(metadata_hint, "reverse_geocode_location_name")
+        reverse_geocode_name = _extract_metadata_field(
+            metadata_hint, "reverse_geocode_location_name"
+        )
         if reverse_geocode_name:
             reverse_geocode_by_index[index] = reverse_geocode_name
-        photo_parts: list[dict] = [{"text": f"PHOTO_INDEX={index}; filename={filename}"}]
+        photo_parts: list[dict] = [
+            {"text": f"PHOTO_INDEX={index}; filename={filename}"}
+        ]
         captured_at_hint = _extract_metadata_field(metadata_hint, "captured_at")
         if captured_at_hint:
             photo_parts.append({"text": f"PHOTO_CAPTURED_AT={captured_at_hint}"})
@@ -1072,13 +1179,19 @@ def extract_text_from_photo_batch(
             photo_parts.append({"text": f"PHOTO_COORDINATES={gps_hint}"})
         if metadata_hint:
             photo_parts.append({"text": f"PHOTO_METADATA={metadata_hint}"})
-        place_guess = reverse_geocode_name or _extract_metadata_field(metadata_hint, "exif_place_name") or "Unknown"
+        place_guess = (
+            reverse_geocode_name
+            or _extract_metadata_field(metadata_hint, "exif_place_name")
+            or "Unknown"
+        )
         date_guess = captured_at_hint or "Unknown"
         people_guess = _extract_metadata_field(metadata_hint, "people") or "Unknown"
         event_title = _extract_metadata_field(metadata_hint, "event_title")
         event_date_text = _extract_metadata_field(metadata_hint, "event_date_text")
         event_description = _extract_metadata_field(metadata_hint, "event_description")
-        linked_memory_excerpt = _extract_metadata_field(metadata_hint, "linked_memory_excerpt")
+        linked_memory_excerpt = _extract_metadata_field(
+            metadata_hint, "linked_memory_excerpt"
+        )
         period_title = _extract_metadata_field(metadata_hint, "period_title")
 
         context_lines: list[str] = [
@@ -1097,7 +1210,11 @@ def extract_text_from_photo_batch(
         if linked_memory_excerpt:
             context_lines.append(f"LINKED_MEMORY={linked_memory_excerpt}")
 
-        if place_guess == "Unknown" and date_guess == "Unknown" and people_guess == "Unknown":
+        if (
+            place_guess == "Unknown"
+            and date_guess == "Unknown"
+            and people_guess == "Unknown"
+        ):
             context_lines.append(
                 "ANALYSIS_MODE=No metadata available. Infer from visual evidence and research only."
             )
@@ -1145,15 +1262,7 @@ def extract_text_from_photo_batch(
 
     research_payload = {
         "contents": [{"parts": research_parts}],
-        "tools": [
-            {
-                "googleSearch": {
-                    "searchTypes": {
-                        "webSearch": {}
-                    }
-                }
-            }
-        ],
+        "tools": [{"googleSearch": {"searchTypes": {"webSearch": {}}}}],
         "generationConfig": {
             "temperature": 1.0,
             "maxOutputTokens": 3000,
@@ -1162,15 +1271,30 @@ def extract_text_from_photo_batch(
     }
 
     try:
-        research_response = requests.post(research_endpoint, params={"key": gemini_key}, json=research_payload, timeout=90)
+        research_response = requests.post(
+            research_endpoint,
+            params={"key": gemini_key},
+            json=research_payload,
+            timeout=90,
+        )
         if research_response.ok:
             research_data = research_response.json()
-            research_text_parts = research_data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-            raw_research_text = "\n".join(part.get("text", "").strip() for part in research_text_parts if part.get("text")).strip()
+            research_text_parts = (
+                research_data.get("candidates", [{}])[0]
+                .get("content", {})
+                .get("parts", [])
+            )
+            raw_research_text = "\n".join(
+                part.get("text", "").strip()
+                for part in research_text_parts
+                if part.get("text")
+            ).strip()
             if raw_research_text:
                 research_notes_by_index = _parse_photo_research_notes(raw_research_text)
         else:
-            logger.warning("Gemini photo research pass failed: %s", research_response.text[:300])
+            logger.warning(
+                "Gemini photo research pass failed: %s", research_response.text[:300]
+            )
     except Exception as exc:
         logger.warning("Gemini photo research pass exception: %s", exc)
 
@@ -1239,7 +1363,14 @@ def extract_text_from_photo_batch(
                                     "description": "Metadata conflict note, or empty string when no conflict",
                                 },
                             },
-                            "required": ["index", "suggested_title", "assessed_place", "visual_evidence", "contextual_narrative", "discrepancy_flag"],
+                            "required": [
+                                "index",
+                                "suggested_title",
+                                "assessed_place",
+                                "visual_evidence",
+                                "contextual_narrative",
+                                "discrepancy_flag",
+                            ],
                         },
                     }
                 },
@@ -1249,13 +1380,19 @@ def extract_text_from_photo_batch(
     }
 
     try:
-        response = requests.post(structured_endpoint, params={"key": gemini_key}, json=payload, timeout=90)
+        response = requests.post(
+            structured_endpoint, params={"key": gemini_key}, json=payload, timeout=90
+        )
         if not response.ok:
-            logger.warning("Gemini photo batch extraction failed: %s", response.text[:300])
+            logger.warning(
+                "Gemini photo batch extraction failed: %s", response.text[:300]
+            )
             return {}
         data = response.json()
         text_parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        raw_text = "\n".join(part.get("text", "").strip() for part in text_parts if part.get("text")).strip()
+        raw_text = "\n".join(
+            part.get("text", "").strip() for part in text_parts if part.get("text")
+        ).strip()
         if not raw_text:
             return {}
 
@@ -1270,7 +1407,9 @@ def extract_text_from_photo_batch(
                 continue
             legacy_summary = str(item.get("summary") or "").strip()
             raw_visual_evidence = str(item.get("visual_evidence") or "").strip()
-            raw_contextual_narrative = str(item.get("contextual_narrative") or "").strip()
+            raw_contextual_narrative = str(
+                item.get("contextual_narrative") or ""
+            ).strip()
             if not raw_contextual_narrative and legacy_summary:
                 raw_contextual_narrative = legacy_summary
             if not raw_contextual_narrative and not raw_visual_evidence:
@@ -1278,9 +1417,13 @@ def extract_text_from_photo_batch(
             raw_title = str(item.get("suggested_title") or "").strip()
             suggested_title: Optional[str] = raw_title[:180] if raw_title else None
             raw_assessed_place = str(item.get("assessed_place") or "").strip()
-            assessed_place: Optional[str] = raw_assessed_place[:200] if raw_assessed_place else None
+            assessed_place: Optional[str] = (
+                raw_assessed_place[:200] if raw_assessed_place else None
+            )
             raw_discrepancy_flag = str(item.get("discrepancy_flag") or "").strip()
-            discrepancy_flag: Optional[str] = raw_discrepancy_flag[:300] if raw_discrepancy_flag else None
+            discrepancy_flag: Optional[str] = (
+                raw_discrepancy_flag[:300] if raw_discrepancy_flag else None
+            )
             reverse_geocode_name = reverse_geocode_by_index.get(index_value)
             # Avoid storing a duplicate city/state/country as "assessed place" when Gemini echoes reverse geocode output.
             if (
@@ -1325,7 +1468,9 @@ def generate_period_biography(
 
     # Build a concise bullet list of events for the prompt, including dates when known
     event_lines = []
-    for title, desc, date_text in zip(event_titles, event_descriptions, event_date_texts):
+    for title, desc, date_text in zip(
+        event_titles, event_descriptions, event_date_texts
+    ):
         date_label = f" [{date_text}]" if date_text else ""
         if desc and desc.strip():
             event_lines.append(f"- {title}{date_label}: {desc.strip()[:300]}")
@@ -1356,7 +1501,9 @@ def generate_period_biography(
     }
 
     try:
-        response = requests.post(endpoint, params={"key": gemini_key}, json=payload, timeout=30)
+        response = requests.post(
+            endpoint, params={"key": gemini_key}, json=payload, timeout=30
+        )
         if not response.ok:
             logger.warning("Period biography request failed: %s", response.text[:200])
             return None
@@ -1364,9 +1511,14 @@ def generate_period_biography(
         candidate = data.get("candidates", [{}])[0]
         finish_reason = candidate.get("finishReason", "UNKNOWN")
         if finish_reason not in ("STOP", "UNKNOWN"):
-            logger.warning("Period biography finish reason: %s — output may be truncated", finish_reason)
+            logger.warning(
+                "Period biography finish reason: %s — output may be truncated",
+                finish_reason,
+            )
         parts = candidate.get("content", {}).get("parts", [])
-        text = "\n".join(p.get("text", "").strip() for p in parts if p.get("text")).strip()
+        text = "\n".join(
+            p.get("text", "").strip() for p in parts if p.get("text")
+        ).strip()
         if not text:
             return None
         # Strip any accidental markdown bold/italic

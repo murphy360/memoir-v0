@@ -1,5 +1,14 @@
 import { useState } from "react";
-import type { AssetEntry, DirectoryEntry, LifeEpic, LifeEvent, LifePeriod, LifeThread, MemoryEntry, Question } from "../types";
+import type {
+  AssetEntry,
+  DirectoryEntry,
+  LifeEpic,
+  LifeEvent,
+  LifePeriod,
+  LifeThread,
+  MemoryEntry,
+  Question,
+} from "../types";
 import { type TimelineBundle, fetchTimelineBundle } from "../lib/memoirApi";
 import { dedupeQuestions } from "../lib/memoirUi";
 
@@ -17,7 +26,9 @@ export function useTimelineData({ setStatus }: UseTimelineDataArgs) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [peopleDirectory, setPeopleDirectory] = useState<DirectoryEntry[]>([]);
   const [placesDirectory, setPlacesDirectory] = useState<DirectoryEntry[]>([]);
-  const [mainCharacterName, setMainCharacterName] = useState<string | null | undefined>(undefined);
+  const [mainCharacterName, setMainCharacterName] = useState<
+    string | null | undefined
+  >(undefined);
 
   async function loadTimeline(): Promise<TimelineBundle | null> {
     try {

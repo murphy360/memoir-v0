@@ -2,7 +2,17 @@ import json
 from datetime import date, datetime
 from typing import Any, Optional
 
-from sqlalchemy import CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -14,7 +24,9 @@ class Person(Base):
     __tablename__ = "people"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(
+        String(120), nullable=False, unique=True, index=True
+    )
     # Optional person contact fields edited from the dedicated person details view.
     phone: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -23,10 +35,14 @@ class Person(Base):
     # Free-text birthday keeps compatibility with fuzzy date inputs used elsewhere.
     birthday_text: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     # CompreFace subject UUID, created when the first unknown face is assigned to this person.
-    compreface_subject_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True, index=True)
+    compreface_subject_id: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True, unique=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    aliases: Mapped[list["PersonAlias"]] = relationship(back_populates="person", cascade="all, delete-orphan")
+    aliases: Mapped[list["PersonAlias"]] = relationship(
+        back_populates="person", cascade="all, delete-orphan"
+    )
     tagged_faces: Mapped[list["AssetFace"]] = relationship(back_populates="person")
 
 
@@ -36,10 +52,13 @@ class PersonAlias(Base):
     A single alias (e.g. 'parents') can map to *multiple* people by having
     one row per target person, so expand_person_names() can return both.
     """
+
     __tablename__ = "person_aliases"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    person_id: Mapped[int] = mapped_column(ForeignKey("people.id", ondelete="CASCADE"), nullable=False, index=True)
+    person_id: Mapped[int] = mapped_column(
+        ForeignKey("people.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     alias: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -50,17 +69,25 @@ class Place(Base):
     __tablename__ = "places"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(
+        String(120), nullable=False, unique=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class MemoryPerson(Base):
     __tablename__ = "memory_people"
-    __table_args__ = (UniqueConstraint("memory_id", "person_id", name="uq_memory_person"),)
+    __table_args__ = (
+        UniqueConstraint("memory_id", "person_id", name="uq_memory_person"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    memory_id: Mapped[int] = mapped_column(ForeignKey("memories.id", ondelete="CASCADE"), nullable=False, index=True)
-    person_id: Mapped[int] = mapped_column(ForeignKey("people.id", ondelete="CASCADE"), nullable=False, index=True)
+    memory_id: Mapped[int] = mapped_column(
+        ForeignKey("memories.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    person_id: Mapped[int] = mapped_column(
+        ForeignKey("people.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     role: Mapped[str] = mapped_column(String(20), default="mentioned")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -69,11 +96,17 @@ class MemoryPerson(Base):
 
 class MemoryPlace(Base):
     __tablename__ = "memory_places"
-    __table_args__ = (UniqueConstraint("memory_id", "place_id", name="uq_memory_place"),)
+    __table_args__ = (
+        UniqueConstraint("memory_id", "place_id", name="uq_memory_place"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    memory_id: Mapped[int] = mapped_column(ForeignKey("memories.id", ondelete="CASCADE"), nullable=False, index=True)
-    place_id: Mapped[int] = mapped_column(ForeignKey("places.id", ondelete="CASCADE"), nullable=False, index=True)
+    memory_id: Mapped[int] = mapped_column(
+        ForeignKey("memories.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    place_id: Mapped[int] = mapped_column(
+        ForeignKey("places.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     place: Mapped["Place"] = relationship()
@@ -85,7 +118,9 @@ class MemoryEntry(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     transcript: Mapped[str] = mapped_column(Text)
     event_description: Mapped[str] = mapped_column(Text)
-    estimated_date_text: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    estimated_date_text: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True
+    )
     estimated_date_sort: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     estimated_end_date_sort: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     date_precision: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
@@ -93,10 +128,16 @@ class MemoryEntry(Base):
     date_month: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     date_day: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     date_decade: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    response_to_question_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    response_to_question_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    response_to_question_id: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True
+    )
+    response_to_question_text: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )
     recorder_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
-    recorder_person_id: Mapped[Optional[int]] = mapped_column(ForeignKey("people.id"), nullable=True)
+    recorder_person_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("people.id"), nullable=True
+    )
     people_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     locations_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     emotional_tone: Mapped[str] = mapped_column(String(50), default="neutral")
@@ -104,20 +145,34 @@ class MemoryEntry(Base):
     research_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     research_sources_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     research_queries_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    research_suggested_metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    research_suggested_metadata_json: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )
     audio_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    audio_content_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    audio_content_type: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True
+    )
     audio_size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     document_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    document_original_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    document_content_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    document_original_filename: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
+    document_content_type: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True
+    )
     document_size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     date_recorded: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    recorder_person: Mapped[Optional["Person"]] = relationship(foreign_keys=[recorder_person_id])
-    people_links: Mapped[list["MemoryPerson"]] = relationship(cascade="all, delete-orphan")
-    place_links: Mapped[list["MemoryPlace"]] = relationship(cascade="all, delete-orphan")
+    recorder_person: Mapped[Optional["Person"]] = relationship(
+        foreign_keys=[recorder_person_id]
+    )
+    people_links: Mapped[list["MemoryPerson"]] = relationship(
+        cascade="all, delete-orphan"
+    )
+    place_links: Mapped[list["MemoryPlace"]] = relationship(
+        cascade="all, delete-orphan"
+    )
 
     @property
     def audio_url(self) -> Optional[str]:
@@ -134,13 +189,21 @@ class MemoryEntry(Base):
     @property
     def referenced_people(self) -> list[str]:
         if self.people_links:
-            return [link.person.name for link in self.people_links if link.person and link.person.name]
+            return [
+                link.person.name
+                for link in self.people_links
+                if link.person and link.person.name
+            ]
         return _deserialize_list(self.people_json)
 
     @property
     def referenced_locations(self) -> list[str]:
         if self.place_links:
-            return [link.place.name for link in self.place_links if link.place and link.place.name]
+            return [
+                link.place.name
+                for link in self.place_links
+                if link.place and link.place.name
+            ]
         return _deserialize_list(self.locations_json)
 
     @property
@@ -167,29 +230,45 @@ class LifePeriod(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(160), nullable=False, index=True)
-    slug: Mapped[Optional[str]] = mapped_column(String(180), nullable=True, unique=True, index=True)
+    slug: Mapped[Optional[str]] = mapped_column(
+        String(180), nullable=True, unique=True, index=True
+    )
     start_date_text: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     end_date_text: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     start_sort: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     end_sort: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
-    epics: Mapped[list["LifeEpic"]] = relationship(back_populates="period", cascade="all, delete-orphan")
-    events: Mapped[list["LifeEvent"]] = relationship(back_populates="period", cascade="all, delete-orphan")
-    assets: Mapped[list["Asset"]] = relationship(back_populates="period", cascade="all, delete-orphan")
+    epics: Mapped[list["LifeEpic"]] = relationship(
+        back_populates="period", cascade="all, delete-orphan"
+    )
+    events: Mapped[list["LifeEvent"]] = relationship(
+        back_populates="period", cascade="all, delete-orphan"
+    )
+    assets: Mapped[list["Asset"]] = relationship(
+        back_populates="period", cascade="all, delete-orphan"
+    )
 
 
 class LifeThread(Base):
     __tablename__ = "life_threads"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    title: Mapped[str] = mapped_column(String(160), nullable=False, unique=True, index=True)
-    slug: Mapped[Optional[str]] = mapped_column(String(180), nullable=True, unique=True, index=True)
+    title: Mapped[str] = mapped_column(
+        String(160), nullable=False, unique=True, index=True
+    )
+    slug: Mapped[Optional[str]] = mapped_column(
+        String(180), nullable=True, unique=True, index=True
+    )
     summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     epics: Mapped[list["LifeEpic"]] = relationship(back_populates="thread")
     events: Mapped[list["LifeEvent"]] = relationship(back_populates="thread")
@@ -198,12 +277,18 @@ class LifeThread(Base):
 class LifeEpic(Base):
     __tablename__ = "life_epics"
     __table_args__ = (
-        CheckConstraint("weight >= 1 AND weight <= 10", name="ck_life_epics_weight_1_10"),
+        CheckConstraint(
+            "weight >= 1 AND weight <= 10", name="ck_life_epics_weight_1_10"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    period_id: Mapped[int] = mapped_column(ForeignKey("life_periods.id", ondelete="CASCADE"), nullable=False, index=True)
-    thread_id: Mapped[Optional[int]] = mapped_column(ForeignKey("life_threads.id", ondelete="SET NULL"), nullable=True, index=True)
+    period_id: Mapped[int] = mapped_column(
+        ForeignKey("life_periods.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    thread_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("life_threads.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(180), nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     weight: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
@@ -212,7 +297,9 @@ class LifeEpic(Base):
     start_sort: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
     end_sort: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     period: Mapped["LifePeriod"] = relationship(back_populates="epics")
     thread: Mapped[Optional["LifeThread"]] = relationship(back_populates="epics")
@@ -222,13 +309,21 @@ class LifeEpic(Base):
 class LifeEvent(Base):
     __tablename__ = "life_events"
     __table_args__ = (
-        CheckConstraint("weight >= 1 AND weight <= 10", name="ck_life_events_weight_1_10"),
+        CheckConstraint(
+            "weight >= 1 AND weight <= 10", name="ck_life_events_weight_1_10"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    period_id: Mapped[Optional[int]] = mapped_column(ForeignKey("life_periods.id", ondelete="SET NULL"), nullable=True, index=True)
-    epic_id: Mapped[Optional[int]] = mapped_column(ForeignKey("life_epics.id", ondelete="SET NULL"), nullable=True, index=True)
-    thread_id: Mapped[Optional[int]] = mapped_column(ForeignKey("life_threads.id", ondelete="SET NULL"), nullable=True, index=True)
+    period_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("life_periods.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    epic_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("life_epics.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    thread_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("life_threads.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(180), nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     weight: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
@@ -236,9 +331,13 @@ class LifeEvent(Base):
     research_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     research_sources_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     research_queries_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    research_suggested_edit_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    research_suggested_edit_json: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )
     event_date_text: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    event_date_sort: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
+    event_date_sort: Mapped[Optional[date]] = mapped_column(
+        Date, nullable=True, index=True
+    )
     event_end_date_sort: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     date_precision: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     date_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -246,21 +345,42 @@ class LifeEvent(Base):
     date_day: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     date_decade: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    analysis_status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)
-    analysis_requested_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    analysis_started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    analysis_last_analyzed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    analysis_input_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    analysis_status: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True, index=True
+    )
+    analysis_requested_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
+    analysis_started_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
+    analysis_last_analyzed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
+    analysis_input_hash: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     analysis_last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    legacy_memory_id: Mapped[Optional[int]] = mapped_column(ForeignKey("memories.id", ondelete="SET NULL"), nullable=True, unique=True, index=True)
+    legacy_memory_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("memories.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     period: Mapped[Optional["LifePeriod"]] = relationship(back_populates="events")
     epic: Mapped[Optional["LifeEpic"]] = relationship(back_populates="events")
     thread: Mapped[Optional["LifeThread"]] = relationship(back_populates="events")
-    linked_assets: Mapped[list["EventAsset"]] = relationship(back_populates="event", cascade="all, delete-orphan")
-    legacy_memory: Mapped[Optional["MemoryEntry"]] = relationship(foreign_keys=[legacy_memory_id])
+    linked_assets: Mapped[list["EventAsset"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
+    legacy_memory: Mapped[Optional["MemoryEntry"]] = relationship(
+        foreign_keys=[legacy_memory_id]
+    )
 
     @property
     def research_sources(self) -> list[dict[str, str]]:
@@ -286,8 +406,12 @@ class EventAsset(Base):
     __table_args__ = (UniqueConstraint("event_id", "asset_id", name="uq_event_asset"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    event_id: Mapped[int] = mapped_column(ForeignKey("life_events.id", ondelete="CASCADE"), nullable=False, index=True)
-    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("life_events.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    asset_id: Mapped[int] = mapped_column(
+        ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     relation_type: Mapped[str] = mapped_column(String(30), default="evidence")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -299,18 +423,30 @@ class Asset(Base):
     __tablename__ = "assets"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    period_id: Mapped[Optional[int]] = mapped_column(ForeignKey("life_periods.id", ondelete="SET NULL"), nullable=True, index=True)
-    kind: Mapped[str] = mapped_column(String(20), nullable=False, default="document", index=True)
+    period_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("life_periods.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    kind: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="document", index=True
+    )
     title: Mapped[Optional[str]] = mapped_column(String(180), nullable=True)
     # Most recent Gemini title recommendation from photo analysis.
-    gemini_suggested_title: Mapped[Optional[str]] = mapped_column(String(180), nullable=True)
-    storage_filename: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    gemini_suggested_title: Mapped[Optional[str]] = mapped_column(
+        String(180), nullable=True
+    )
+    storage_filename: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True
+    )
     original_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     content_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    fingerprint_sha256: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    fingerprint_sha256: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     text_excerpt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    captured_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
+    captured_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, index=True
+    )
     captured_end_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     captured_at_text: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     gps_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -318,9 +454,13 @@ class Asset(Base):
     # Place text found directly in EXIF metadata when present (often empty).
     exif_place_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     # Human-readable locality resolved from GPS coordinates.
-    reverse_geocode_location_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    reverse_geocode_location_name: Mapped[Optional[str]] = mapped_column(
+        String(200), nullable=True
+    )
     # Gemini's best-effort place assessment from visual + metadata cues.
-    analyzed_place_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    analyzed_place_name: Mapped[Optional[str]] = mapped_column(
+        String(200), nullable=True
+    )
     # Legacy combined place field kept for backward compatibility.
     location_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     camera_make: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
@@ -331,13 +471,24 @@ class Asset(Base):
     image_height: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     exif_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    legacy_memory_id: Mapped[Optional[int]] = mapped_column(ForeignKey("memories.id", ondelete="SET NULL"), nullable=True, unique=True, index=True)
+    legacy_memory_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("memories.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     period: Mapped[Optional["LifePeriod"]] = relationship(back_populates="assets")
-    event_links: Mapped[list["EventAsset"]] = relationship(back_populates="asset", cascade="all, delete-orphan")
-    faces: Mapped[list["AssetFace"]] = relationship(back_populates="asset", cascade="all, delete-orphan")
-    legacy_memory: Mapped[Optional["MemoryEntry"]] = relationship(foreign_keys=[legacy_memory_id])
+    event_links: Mapped[list["EventAsset"]] = relationship(
+        back_populates="asset", cascade="all, delete-orphan"
+    )
+    faces: Mapped[list["AssetFace"]] = relationship(
+        back_populates="asset", cascade="all, delete-orphan"
+    )
+    legacy_memory: Mapped[Optional["MemoryEntry"]] = relationship(
+        foreign_keys=[legacy_memory_id]
+    )
 
     @property
     def download_url(self) -> str:
@@ -349,11 +500,19 @@ class UnknownFaceGroup(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     # Fingerprint derived from normalized face crops; used as a deterministic grouping key.
-    fingerprint: Mapped[str] = mapped_column(String(32), nullable=False, unique=True, index=True)
-    representative_face_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="open", index=True)
+    fingerprint: Mapped[str] = mapped_column(
+        String(32), nullable=False, unique=True, index=True
+    )
+    representative_face_id: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="open", index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     faces: Mapped[list["AssetFace"]] = relationship(
         back_populates="unknown_face_group",
@@ -365,7 +524,9 @@ class AssetFace(Base):
     __tablename__ = "asset_faces"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    asset_id: Mapped[int] = mapped_column(ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True)
+    asset_id: Mapped[int] = mapped_column(
+        ForeignKey("assets.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     # Bounding box values are normalized to [0, 1] against image width/height.
     bbox_x: Mapped[float] = mapped_column(Float, nullable=False)
     bbox_y: Mapped[float] = mapped_column(Float, nullable=False)
@@ -373,7 +534,9 @@ class AssetFace(Base):
     bbox_h: Mapped[float] = mapped_column(Float, nullable=False)
     confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     # Top CompreFace prediction subject when recognition data is available.
-    compreface_subject: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    compreface_subject: Mapped[Optional[str]] = mapped_column(
+        String(120), nullable=True
+    )
     # Similarity score for the top predicted subject in [0, 1].
     compreface_similarity: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     # Plugin metadata from CompreFace, when face plugins are enabled.
@@ -383,11 +546,19 @@ class AssetFace(Base):
     # Raw CompreFace result object for debugging and UI inspection of all metadata.
     compreface_raw_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     # Deterministic hash of a normalized face crop used for unknown-face grouping.
-    face_fingerprint: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
+    face_fingerprint: Mapped[Optional[str]] = mapped_column(
+        String(32), nullable=True, index=True
+    )
     # Null when this face is assigned to a person or when no grouping key is available.
-    unknown_face_group_id: Mapped[Optional[int]] = mapped_column(ForeignKey("unknown_face_groups.id", ondelete="SET NULL"), nullable=True, index=True)
+    unknown_face_group_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("unknown_face_groups.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     # person_id stays null until a user manually assigns the detected face.
-    person_id: Mapped[Optional[int]] = mapped_column(ForeignKey("people.id", ondelete="SET NULL"), nullable=True, index=True)
+    person_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("people.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     asset: Mapped["Asset"] = relationship(back_populates="faces")

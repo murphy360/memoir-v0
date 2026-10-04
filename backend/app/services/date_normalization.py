@@ -26,7 +26,15 @@ def _last_day(year: int, month: int) -> int:
 
 def _parse_with_formats(text: str) -> tuple[Optional[date], Optional[date]]:
     # Explicit date formats map to the same start and end day.
-    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%m/%d/%Y", "%b %d, %Y", "%B %d, %Y", "%d %b %Y", "%d %B %Y"):
+    for fmt in (
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%m/%d/%Y",
+        "%b %d, %Y",
+        "%B %d, %Y",
+        "%d %b %Y",
+        "%d %B %Y",
+    ):
         try:
             parsed = datetime.strptime(text, fmt).date()
             return parsed, parsed
@@ -161,7 +169,11 @@ def parse_text_date_range(text: Optional[str]) -> tuple[Optional[date], Optional
     if month_day_start or month_day_end:
         return month_day_start, month_day_end
 
-    year_range_match = re.search(r"\b(19\d{2}|20\d{2})\s*(?:-|to|through|until|\u2013|\u2014)\s*(19\d{2}|20\d{2})\b", cleaned, flags=re.IGNORECASE)
+    year_range_match = re.search(
+        r"\b(19\d{2}|20\d{2})\s*(?:-|to|through|until|\u2013|\u2014)\s*(19\d{2}|20\d{2})\b",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     if year_range_match:
         first = int(year_range_match.group(1))
         second = int(year_range_match.group(2))
@@ -169,7 +181,11 @@ def parse_text_date_range(text: Optional[str]) -> tuple[Optional[date], Optional
         end_year = max(first, second)
         return date(start_year, 1, 1), date(end_year, 12, 31)
 
-    season_match = re.search(r"\b(spring|summer|fall|autumn|winter)\s+(19\d{2}|20\d{2})\b", cleaned, flags=re.IGNORECASE)
+    season_match = re.search(
+        r"\b(spring|summer|fall|autumn|winter)\s+(19\d{2}|20\d{2})\b",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     if season_match:
         season = season_match.group(1).lower()
         year = int(season_match.group(2))

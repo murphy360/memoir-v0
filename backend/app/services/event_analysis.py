@@ -112,7 +112,9 @@ def collect_event_memories(event: LifeEvent, db: Session) -> list[MemoryEntry]:
     return memories
 
 
-def event_research_source_memory_id(event: LifeEvent, memories: list[MemoryEntry]) -> Optional[int]:
+def event_research_source_memory_id(
+    event: LifeEvent, memories: list[MemoryEntry]
+) -> Optional[int]:
     """Pick a source memory id for derived follow-up questions from event research."""
     if event.legacy_memory_id is not None:
         return event.legacy_memory_id
@@ -150,7 +152,9 @@ def refresh_event_summary_and_suggestion(
             details.append(" ".join(asset.text_excerpt.split())[:180])
         if asset.captured_at_text:
             details.append(asset.captured_at_text)
-        place = (asset.analyzed_place_name or asset.reverse_geocode_location_name or "").strip()
+        place = (
+            asset.analyzed_place_name or asset.reverse_geocode_location_name or ""
+        ).strip()
         if place:
             details.append(f"Place: {place}")
         if details:
@@ -182,7 +186,9 @@ def refresh_event_summary_and_suggestion(
             if fallback_title and fallback_title.lower() != "unspecified memory":
                 event.title = fallback_title[:180]
 
-    event.research_suggested_edit_json = json.dumps(dataclasses.asdict(suggestion)) if suggestion else None
+    event.research_suggested_edit_json = (
+        json.dumps(dataclasses.asdict(suggestion)) if suggestion else None
+    )
 
 
 def research_memory_entry(memory: MemoryEntry, document_storage_dir: Path) -> None:
@@ -193,7 +199,9 @@ def research_memory_entry(memory: MemoryEntry, document_storage_dir: Path) -> No
         doc_path = document_storage_dir / memory.document_filename
         if doc_path.exists():
             document_bytes = doc_path.read_bytes()
-            document_mime_type = memory.document_content_type or "application/octet-stream"
+            document_mime_type = (
+                memory.document_content_type or "application/octet-stream"
+            )
 
     research = research_memory_details(
         transcript=memory.transcript,
@@ -216,6 +224,8 @@ def research_memory_entry(memory: MemoryEntry, document_storage_dir: Path) -> No
         current_date_precision=memory.date_precision,
     )
     if suggestion:
-        memory.research_suggested_metadata_json = json.dumps(dataclasses.asdict(suggestion))
+        memory.research_suggested_metadata_json = json.dumps(
+            dataclasses.asdict(suggestion)
+        )
     else:
         memory.research_suggested_metadata_json = None

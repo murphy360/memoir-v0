@@ -9,7 +9,16 @@ import { LifePeriodCard } from "./components/LifePeriodCard";
 import { MemoryCard } from "./components/MemoryCard";
 import { PeriodComposer } from "./components/PeriodComposer";
 import { UnlinkedAssetsInbox } from "./components/UnlinkedAssetsInbox";
-import { AssetEntry, EventFaceEntry, LifeEpic, LifeEvent, LifeThread, MemoryEntry, Question, LifePeriodAnalysis } from "./types";
+import {
+  AssetEntry,
+  EventFaceEntry,
+  LifeEpic,
+  LifeEvent,
+  LifeThread,
+  MemoryEntry,
+  Question,
+  LifePeriodAnalysis,
+} from "./types";
 import {
   type TimelineBundle,
   analyzeLifePeriod,
@@ -102,7 +111,9 @@ type EventDocumentUploadProgressItem = {
 export default function HomePage() {
   const [isDirectoryDrawerOpen, setIsDirectoryDrawerOpen] = useState(false);
   const [isCaptureDrawerOpen, setIsCaptureDrawerOpen] = useState(false);
-  const [activeDirectoryTab, setActiveDirectoryTab] = useState<"people" | "places">("people");
+  const [activeDirectoryTab, setActiveDirectoryTab] = useState<
+    "people" | "places"
+  >("people");
   const [directorySearch, setDirectorySearch] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [status, setStatus] = useState("Ready to record a memory.");
@@ -126,13 +137,21 @@ export default function HomePage() {
   } = useTimelineData({ setStatus });
   const [activeEventId, setActiveEventId] = useState<number | null>(null);
   const [activeEventAssets, setActiveEventAssets] = useState<AssetEntry[]>([]);
-  const [activeEventFaces, setActiveEventFaces] = useState<EventFaceEntry[]>([]);
+  const [activeEventFaces, setActiveEventFaces] = useState<EventFaceEntry[]>(
+    [],
+  );
   const [assigningFaceId, setAssigningFaceId] = useState<number | null>(null);
   const [isSavingLifeStructure, setIsSavingLifeStructure] = useState(false);
   const [isUploadingAsset, setIsUploadingAsset] = useState(false);
-  const [assetLinkTargets, setAssetLinkTargets] = useState<Record<number, string>>({});
-  const [eventMergeTargets, setEventMergeTargets] = useState<Record<number, string>>({});
-  const [eventMoveTargets, setEventMoveTargets] = useState<Record<number, string>>({});
+  const [assetLinkTargets, setAssetLinkTargets] = useState<
+    Record<number, string>
+  >({});
+  const [eventMergeTargets, setEventMergeTargets] = useState<
+    Record<number, string>
+  >({});
+  const [eventMoveTargets, setEventMoveTargets] = useState<
+    Record<number, string>
+  >({});
   const [newPeriodTitle, setNewPeriodTitle] = useState("");
   const [newPeriodStart, setNewPeriodStart] = useState("");
   const [newPeriodEnd, setNewPeriodEnd] = useState("");
@@ -141,67 +160,141 @@ export default function HomePage() {
   const [newEventDateText, setNewEventDateText] = useState("");
   const [newEventDescription, setNewEventDescription] = useState("");
   const [newEventPeriodId, setNewEventPeriodId] = useState("");
-  const [editingAssetTitleId, setEditingAssetTitleId] = useState<number | null>(null);
+  const [editingAssetTitleId, setEditingAssetTitleId] = useState<number | null>(
+    null,
+  );
   const [editingAssetTitleValue, setEditingAssetTitleValue] = useState("");
-  const [assetTitleSavingId, setAssetTitleSavingId] = useState<number | null>(null);
-  const [processingEventPhotosId, setProcessingEventPhotosId] = useState<number | null>(null);
-  const [processingPhotoAssetId, setProcessingPhotoAssetId] = useState<number | null>(null);
-  const [editingAssetNotesId, setEditingAssetNotesId] = useState<number | null>(null);
+  const [assetTitleSavingId, setAssetTitleSavingId] = useState<number | null>(
+    null,
+  );
+  const [processingEventPhotosId, setProcessingEventPhotosId] = useState<
+    number | null
+  >(null);
+  const [processingPhotoAssetId, setProcessingPhotoAssetId] = useState<
+    number | null
+  >(null);
+  const [editingAssetNotesId, setEditingAssetNotesId] = useState<number | null>(
+    null,
+  );
   const [editingAssetNotesValue, setEditingAssetNotesValue] = useState("");
-  const [assetNotesSavingId, setAssetNotesSavingId] = useState<number | null>(null);
-  const [editingAssetCapturedDateId, setEditingAssetCapturedDateId] = useState<number | null>(null);
-  const [editingAssetCapturedDateValue, setEditingAssetCapturedDateValue] = useState("");
-  const [assetCapturedDateSavingId, setAssetCapturedDateSavingId] = useState<number | null>(null);
-  const [pendingRecording, setPendingRecording] = useState<PendingRecording | null>(null);
-  const [recordingForEventId, setRecordingForEventId] = useState<number | null>(null);
-  const [recordingForAssetId, setRecordingForAssetId] = useState<number | null>(null);
-  const [eventRecordingPending, setEventRecordingPending] = useState<Record<number, PendingRecording>>({});
-  const [assetRecordingPending, setAssetRecordingPending] = useState<Record<number, PendingRecording>>({});
+  const [assetNotesSavingId, setAssetNotesSavingId] = useState<number | null>(
+    null,
+  );
+  const [editingAssetCapturedDateId, setEditingAssetCapturedDateId] = useState<
+    number | null
+  >(null);
+  const [editingAssetCapturedDateValue, setEditingAssetCapturedDateValue] =
+    useState("");
+  const [assetCapturedDateSavingId, setAssetCapturedDateSavingId] = useState<
+    number | null
+  >(null);
+  const [pendingRecording, setPendingRecording] =
+    useState<PendingRecording | null>(null);
+  const [recordingForEventId, setRecordingForEventId] = useState<number | null>(
+    null,
+  );
+  const [recordingForAssetId, setRecordingForAssetId] = useState<number | null>(
+    null,
+  );
+  const [eventRecordingPending, setEventRecordingPending] = useState<
+    Record<number, PendingRecording>
+  >({});
+  const [assetRecordingPending, setAssetRecordingPending] = useState<
+    Record<number, PendingRecording>
+  >({});
   const [isLoading, setIsLoading] = useState(false);
-  const [highlightedElementId, setHighlightedElementId] = useState<string | null>(null);
+  const [highlightedElementId, setHighlightedElementId] = useState<
+    string | null
+  >(null);
   const [memoryActionId, setMemoryActionId] = useState<number | null>(null);
   const [directoryBusyKey, setDirectoryBusyKey] = useState<string | null>(null);
   const [isPeriodComposerOpen, setIsPeriodComposerOpen] = useState(false);
-  const [expandedPeriods, setExpandedPeriods] = useState<Record<number, boolean>>({});
-  const [expandedEpics, setExpandedEpics] = useState<Record<number, boolean>>({});
-  const [eventDraftsByPeriod, setEventDraftsByPeriod] = useState<
-    Record<number, { title: string; dateText: string; description: string; location: string }>
+  const [expandedPeriods, setExpandedPeriods] = useState<
+    Record<number, boolean>
   >({});
-  const [periodAnalysisById, setPeriodAnalysisById] = useState<Record<number, LifePeriodAnalysis | null>>({});
-  const [periodAnalysisBusyId, setPeriodAnalysisBusyId] = useState<number | null>(null);
-  const [editingPeriodTitleId, setEditingPeriodTitleId] = useState<number | null>(null);
+  const [expandedEpics, setExpandedEpics] = useState<Record<number, boolean>>(
+    {},
+  );
+  const [eventDraftsByPeriod, setEventDraftsByPeriod] = useState<
+    Record<
+      number,
+      { title: string; dateText: string; description: string; location: string }
+    >
+  >({});
+  const [periodAnalysisById, setPeriodAnalysisById] = useState<
+    Record<number, LifePeriodAnalysis | null>
+  >({});
+  const [periodAnalysisBusyId, setPeriodAnalysisBusyId] = useState<
+    number | null
+  >(null);
+  const [editingPeriodTitleId, setEditingPeriodTitleId] = useState<
+    number | null
+  >(null);
   const [editingPeriodTitleValue, setEditingPeriodTitleValue] = useState("");
-  const [editingPeriodDatesId, setEditingPeriodDatesId] = useState<number | null>(null);
+  const [editingPeriodDatesId, setEditingPeriodDatesId] = useState<
+    number | null
+  >(null);
   const [editingPeriodStartValue, setEditingPeriodStartValue] = useState("");
   const [editingPeriodEndValue, setEditingPeriodEndValue] = useState("");
-  const [editingEventTitleId, setEditingEventTitleId] = useState<number | null>(null);
+  const [editingEventTitleId, setEditingEventTitleId] = useState<number | null>(
+    null,
+  );
   const [editingEventTitleValue, setEditingEventTitleValue] = useState("");
-  const [editingEventDateId, setEditingEventDateId] = useState<number | null>(null);
+  const [editingEventDateId, setEditingEventDateId] = useState<number | null>(
+    null,
+  );
   const [editingEventDateValue, setEditingEventDateValue] = useState("");
-  const [editingEventLocationId, setEditingEventLocationId] = useState<number | null>(null);
-  const [editingEventLocationValue, setEditingEventLocationValue] = useState("");
-  const [editingMemoryTitleId, setEditingMemoryTitleId] = useState<number | null>(null);
+  const [editingEventLocationId, setEditingEventLocationId] = useState<
+    number | null
+  >(null);
+  const [editingEventLocationValue, setEditingEventLocationValue] =
+    useState("");
+  const [editingMemoryTitleId, setEditingMemoryTitleId] = useState<
+    number | null
+  >(null);
   const [editingMemoryTitleValue, setEditingMemoryTitleValue] = useState("");
-  const [memoryTitleSavingId, setMemoryTitleSavingId] = useState<number | null>(null);
-  const [expandedMemoryRowIds, setExpandedMemoryRowIds] = useState<Set<number>>(new Set());
-  const [expandedAssetRowIds, setExpandedAssetRowIds] = useState<Set<number>>(new Set());
-  const [eventCapturePanelOpenIds, setEventCapturePanelOpenIds] = useState<Set<number>>(new Set());
-  const [eventDocumentUploadingId, setEventDocumentUploadingId] = useState<number | null>(null);
-  const [eventDocumentErrors, setEventDocumentErrors] = useState<Record<number, string | null>>({});
-  const [eventDocumentUploadProgressByEventId, setEventDocumentUploadProgressByEventId] = useState<Record<number, EventDocumentUploadProgressItem[]>>({});
+  const [memoryTitleSavingId, setMemoryTitleSavingId] = useState<number | null>(
+    null,
+  );
+  const [expandedMemoryRowIds, setExpandedMemoryRowIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const [expandedAssetRowIds, setExpandedAssetRowIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const [eventCapturePanelOpenIds, setEventCapturePanelOpenIds] = useState<
+    Set<number>
+  >(new Set());
+  const [eventDocumentUploadingId, setEventDocumentUploadingId] = useState<
+    number | null
+  >(null);
+  const [eventDocumentErrors, setEventDocumentErrors] = useState<
+    Record<number, string | null>
+  >({});
+  const [
+    eventDocumentUploadProgressByEventId,
+    setEventDocumentUploadProgressByEventId,
+  ] = useState<Record<number, EventDocumentUploadProgressItem[]>>({});
   const [mergingPeriodId, setMergingPeriodId] = useState<number | null>(null);
-  const [periodSortMode, setPeriodSortMode] = useState<PeriodSortMode>("timeline-asc");
+  const [periodSortMode, setPeriodSortMode] =
+    useState<PeriodSortMode>("timeline-asc");
 
   // Threads state
   const [isThreadComposerOpen, setIsThreadComposerOpen] = useState(false);
   const [newThreadTitle, setNewThreadTitle] = useState("");
   const [isSavingThread, setIsSavingThread] = useState(false);
-  const [editingThreadTitleId, setEditingThreadTitleId] = useState<number | null>(null);
+  const [editingThreadTitleId, setEditingThreadTitleId] = useState<
+    number | null
+  >(null);
   const [editingThreadTitleValue, setEditingThreadTitleValue] = useState("");
 
   // Epics state
-  const [epicDraftsByPeriod, setEpicDraftsByPeriod] = useState<Record<number, string>>({});
-  const [editingEpicTitleId, setEditingEpicTitleId] = useState<number | null>(null);
+  const [epicDraftsByPeriod, setEpicDraftsByPeriod] = useState<
+    Record<number, string>
+  >({});
+  const [editingEpicTitleId, setEditingEpicTitleId] = useState<number | null>(
+    null,
+  );
   const [editingEpicTitleValue, setEditingEpicTitleValue] = useState("");
 
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
@@ -244,21 +337,38 @@ export default function HomePage() {
   const sortedLifePeriods = useMemo(() => {
     const periods = [...lifePeriods];
     periods.sort((left, right) => {
-      const leftStartTime = parseOptionalDateTimestamp(left.start_sort) ?? parseOptionalDateTimestamp(left.start_date_text);
-      const rightStartTime = parseOptionalDateTimestamp(right.start_sort) ?? parseOptionalDateTimestamp(right.start_date_text);
-      const leftEndTime = parseOptionalDateTimestamp(left.end_sort) ?? parseOptionalDateTimestamp(left.end_date_text);
-      const rightEndTime = parseOptionalDateTimestamp(right.end_sort) ?? parseOptionalDateTimestamp(right.end_date_text);
-      const leftEventCount = eventCountByPeriod[left.id] ?? left.event_count ?? 0;
-      const rightEventCount = eventCountByPeriod[right.id] ?? right.event_count ?? 0;
+      const leftStartTime =
+        parseOptionalDateTimestamp(left.start_sort) ??
+        parseOptionalDateTimestamp(left.start_date_text);
+      const rightStartTime =
+        parseOptionalDateTimestamp(right.start_sort) ??
+        parseOptionalDateTimestamp(right.start_date_text);
+      const leftEndTime =
+        parseOptionalDateTimestamp(left.end_sort) ??
+        parseOptionalDateTimestamp(left.end_date_text);
+      const rightEndTime =
+        parseOptionalDateTimestamp(right.end_sort) ??
+        parseOptionalDateTimestamp(right.end_date_text);
+      const leftEventCount =
+        eventCountByPeriod[left.id] ?? left.event_count ?? 0;
+      const rightEventCount =
+        eventCountByPeriod[right.id] ?? right.event_count ?? 0;
 
-      if (periodSortMode === "timeline-asc" || periodSortMode === "timeline-desc") {
+      if (
+        periodSortMode === "timeline-asc" ||
+        periodSortMode === "timeline-desc"
+      ) {
         if (leftStartTime === null && rightStartTime !== null) {
           return 1;
         }
         if (leftStartTime !== null && rightStartTime === null) {
           return -1;
         }
-        if (leftStartTime !== null && rightStartTime !== null && leftStartTime !== rightStartTime) {
+        if (
+          leftStartTime !== null &&
+          rightStartTime !== null &&
+          leftStartTime !== rightStartTime
+        ) {
           return periodSortMode === "timeline-asc"
             ? leftStartTime - rightStartTime
             : rightStartTime - leftStartTime;
@@ -269,7 +379,11 @@ export default function HomePage() {
         if (leftEndTime !== null && rightEndTime === null) {
           return -1;
         }
-        if (leftEndTime !== null && rightEndTime !== null && leftEndTime !== rightEndTime) {
+        if (
+          leftEndTime !== null &&
+          rightEndTime !== null &&
+          leftEndTime !== rightEndTime
+        ) {
           return periodSortMode === "timeline-asc"
             ? leftEndTime - rightEndTime
             : rightEndTime - leftEndTime;
@@ -283,24 +397,34 @@ export default function HomePage() {
       }
 
       if (periodSortMode === "updated-desc") {
-        const updatedCompare = compareDateStringsDesc(left.updated_at, right.updated_at);
+        const updatedCompare = compareDateStringsDesc(
+          left.updated_at,
+          right.updated_at,
+        );
         if (updatedCompare !== 0) {
           return updatedCompare;
         }
       }
 
       if (periodSortMode === "title-asc") {
-        const titleCompare = left.title.localeCompare(right.title, undefined, { sensitivity: "base" });
+        const titleCompare = left.title.localeCompare(right.title, undefined, {
+          sensitivity: "base",
+        });
         if (titleCompare !== 0) {
           return titleCompare;
         }
       }
 
-      const createdCompare = compareDateStringsDesc(left.created_at, right.created_at);
+      const createdCompare = compareDateStringsDesc(
+        left.created_at,
+        right.created_at,
+      );
       if (createdCompare !== 0) {
         return createdCompare;
       }
-      return left.title.localeCompare(right.title, undefined, { sensitivity: "base" });
+      return left.title.localeCompare(right.title, undefined, {
+        sensitivity: "base",
+      });
     });
     return periods;
   }, [eventCountByPeriod, lifePeriods, periodSortMode]);
@@ -319,7 +443,9 @@ export default function HomePage() {
         window.clearTimeout(focusClearTimerRef.current);
       }
       focusClearTimerRef.current = window.setTimeout(() => {
-        setHighlightedElementId((current) => (current === elementId ? null : current));
+        setHighlightedElementId((current) =>
+          current === elementId ? null : current,
+        );
       }, 3200);
     }, delayMs);
   }
@@ -333,8 +459,14 @@ export default function HomePage() {
     markAndScrollTo(`event-card-${eventId}`, periodId !== null ? 220 : 120);
   }
 
-  function focusMemoryInTimeline(memoryId: number, data: TimelineBundle | null) {
-    const linkedEvent = data?.events?.find((event) => event.linked_memory_ids.includes(memoryId)) || null;
+  function focusMemoryInTimeline(
+    memoryId: number,
+    data: TimelineBundle | null,
+  ) {
+    const linkedEvent =
+      data?.events?.find((event) =>
+        event.linked_memory_ids.includes(memoryId),
+      ) || null;
     if (linkedEvent) {
       focusEventInTimeline(linkedEvent.id, linkedEvent.period_id);
       markAndScrollTo(`memory-card-${memoryId}`, 320);
@@ -366,21 +498,25 @@ export default function HomePage() {
     options?: { promoteUnknownSubject?: boolean },
   ) {
     setAssigningFaceId(faceId);
-    setStatus(personId === null
-      ? "Clearing face assignment..."
-      : (options?.promoteUnknownSubject
-        ? "Saving face assignment and promoting unknown CompreFace subject..."
-        : "Saving face assignment..."));
+    setStatus(
+      personId === null
+        ? "Clearing face assignment..."
+        : options?.promoteUnknownSubject
+          ? "Saving face assignment and promoting unknown CompreFace subject..."
+          : "Saving face assignment...",
+    );
     try {
       await assignFacePerson(faceId, personId);
       if (activeEventId === eventId) {
         await loadAssetsForEvent(eventId);
       }
-      setStatus(personId === null
-        ? "Face assignment cleared."
-        : (options?.promoteUnknownSubject
-          ? "Face assignment saved. Unknown CompreFace subject promoted to the selected person name."
-          : "Face assignment saved."));
+      setStatus(
+        personId === null
+          ? "Face assignment cleared."
+          : options?.promoteUnknownSubject
+            ? "Face assignment saved. Unknown CompreFace subject promoted to the selected person name."
+            : "Face assignment saved.",
+      );
     } catch {
       setStatus("Failed to update face assignment.");
     } finally {
@@ -401,7 +537,11 @@ export default function HomePage() {
     }
   }
 
-  async function renameFaceComprefaceSubject(faceId: number, newSubjectName: string, eventId: number) {
+  async function renameFaceComprefaceSubject(
+    faceId: number,
+    newSubjectName: string,
+    eventId: number,
+  ) {
     setStatus("Renaming CompreFace subject...");
     try {
       await renameFaceSubject(faceId, newSubjectName);
@@ -415,7 +555,11 @@ export default function HomePage() {
     }
   }
 
-  async function createAndAssignFacePerson(faceId: number, name: string, eventId: number) {
+  async function createAndAssignFacePerson(
+    faceId: number,
+    name: string,
+    eventId: number,
+  ) {
     const normalized = name.trim();
     if (!normalized) {
       return;
@@ -462,7 +606,15 @@ export default function HomePage() {
     useBusyState?: boolean;
     onSuccess?: (result: T) => void;
   }): Promise<T | null> {
-    const { startStatus, successStatus, failureStatus, action, refreshTimeline = true, useBusyState = false, onSuccess } = options;
+    const {
+      startStatus,
+      successStatus,
+      failureStatus,
+      action,
+      refreshTimeline = true,
+      useBusyState = false,
+      onSuccess,
+    } = options;
     if (useBusyState) {
       setIsSavingLifeStructure(true);
     }
@@ -522,7 +674,8 @@ export default function HomePage() {
     resetPeriodDraftId?: number;
   }) {
     const title = options?.title ?? newEventTitle;
-    const periodId = options?.periodId ?? (newEventPeriodId ? Number(newEventPeriodId) : null);
+    const periodId =
+      options?.periodId ?? (newEventPeriodId ? Number(newEventPeriodId) : null);
     const eventDateText = options?.eventDateText ?? newEventDateText;
     const description = options?.description ?? newEventDescription;
     const location = options?.location ?? "";
@@ -568,7 +721,11 @@ export default function HomePage() {
 
   async function analyzePeriod(
     periodId: number,
-    options?: { applyDates?: boolean; applyTitle?: boolean; regenerateSummary?: boolean },
+    options?: {
+      applyDates?: boolean;
+      applyTitle?: boolean;
+      regenerateSummary?: boolean;
+    },
   ) {
     setPeriodAnalysisBusyId(periodId);
     setStatus("Analyzing period...");
@@ -578,9 +735,16 @@ export default function HomePage() {
         apply_title: Boolean(options?.applyTitle),
         regenerate_summary: Boolean(options?.regenerateSummary),
       });
-      setPeriodAnalysisById((current) => ({ ...current, [periodId]: analysis }));
+      setPeriodAnalysisById((current) => ({
+        ...current,
+        [periodId]: analysis,
+      }));
 
-      if (options?.applyDates || options?.applyTitle || options?.regenerateSummary) {
+      if (
+        options?.applyDates ||
+        options?.applyTitle ||
+        options?.regenerateSummary
+      ) {
         await loadTimeline();
         setStatus("Period recommendations applied.");
       } else {
@@ -594,7 +758,10 @@ export default function HomePage() {
   }
 
   function togglePeriodExpanded(periodId: number) {
-    setExpandedPeriods((current) => ({ ...current, [periodId]: !current[periodId] }));
+    setExpandedPeriods((current) => ({
+      ...current,
+      [periodId]: !current[periodId],
+    }));
   }
 
   function toggleEpicExpanded(epicId: number) {
@@ -603,7 +770,12 @@ export default function HomePage() {
 
   function updateEventDraftForPeriod(
     periodId: number,
-    patch: Partial<{ title: string; dateText: string; description: string; location: string }>,
+    patch: Partial<{
+      title: string;
+      dateText: string;
+      description: string;
+      location: string;
+    }>,
   ) {
     setEventDraftsByPeriod((current) => ({
       ...current,
@@ -622,10 +794,11 @@ export default function HomePage() {
       startStatus: "Saving period dates...",
       successStatus: "Period dates updated.",
       failureStatus: "Failed to update period dates.",
-      action: () => updatePeriodById(periodId, {
-        start_date_text: editingPeriodStartValue.trim() || null,
-        end_date_text: editingPeriodEndValue.trim() || null,
-      }),
+      action: () =>
+        updatePeriodById(periodId, {
+          start_date_text: editingPeriodStartValue.trim() || null,
+          end_date_text: editingPeriodEndValue.trim() || null,
+        }),
     });
     if (updated) {
       setEditingPeriodDatesId(null);
@@ -669,7 +842,10 @@ export default function HomePage() {
       startStatus: "Saving event date...",
       successStatus: "Event date updated.",
       failureStatus: "Failed to update event date.",
-      action: () => updateEventById(eventId, { event_date_text: newDateText.trim() || null }),
+      action: () =>
+        updateEventById(eventId, {
+          event_date_text: newDateText.trim() || null,
+        }),
     });
     if (updated) {
       setEditingEventDateId(null);
@@ -682,7 +858,8 @@ export default function HomePage() {
       startStatus: "Saving event location...",
       successStatus: "Event location updated.",
       failureStatus: "Failed to update event location.",
-      action: () => updateEventById(eventId, { location: newLocation.trim() || null }),
+      action: () =>
+        updateEventById(eventId, { location: newLocation.trim() || null }),
     });
     if (updated) {
       setEditingEventLocationId(null);
@@ -691,11 +868,20 @@ export default function HomePage() {
   }
 
   async function deletePeriod(periodId: number, periodTitle: string) {
-    if (!confirm(`Delete "${periodTitle}"? Its events and assets will be unlinked but not deleted.`)) return;
+    if (
+      !confirm(
+        `Delete "${periodTitle}"? Its events and assets will be unlinked but not deleted.`,
+      )
+    )
+      return;
     setStatus("Deleting period...");
     try {
       await deletePeriodById(periodId);
-      setPeriodAnalysisById((current) => { const next = { ...current }; delete next[periodId]; return next; });
+      setPeriodAnalysisById((current) => {
+        const next = { ...current };
+        delete next[periodId];
+        return next;
+      });
       await loadTimeline();
       setStatus("Period deleted.");
     } catch {
@@ -708,7 +894,10 @@ export default function HomePage() {
     setIsSavingThread(true);
     setStatus("Creating thread...");
     try {
-      const created = await createThread({ title: newThreadTitle.trim(), summary: null });
+      const created = await createThread({
+        title: newThreadTitle.trim(),
+        summary: null,
+      });
       setNewThreadTitle("");
       setIsThreadComposerOpen(false);
       setLifeThreads((prev) => [...prev, created]);
@@ -721,7 +910,12 @@ export default function HomePage() {
   }
 
   async function doDeleteThread(threadId: number, threadTitle: string) {
-    if (!confirm(`Delete thread "${threadTitle}"? Events and epics in this thread will be untagged but not deleted.`)) return;
+    if (
+      !confirm(
+        `Delete thread "${threadTitle}"? Events and epics in this thread will be untagged but not deleted.`,
+      )
+    )
+      return;
     setStatus("Deleting thread...");
     try {
       await deleteThread(threadId);
@@ -753,7 +947,10 @@ export default function HomePage() {
       failureStatus: "Failed to update epic thread.",
       refreshTimeline: false,
       action: () => updateEpicById(epicId, { thread_id: threadId }),
-      onSuccess: (updated) => setLifeEpics((prev) => prev.map((e) => (e.id === epicId ? updated : e))),
+      onSuccess: (updated) =>
+        setLifeEpics((prev) =>
+          prev.map((e) => (e.id === epicId ? updated : e)),
+        ),
     });
   }
 
@@ -767,7 +964,10 @@ export default function HomePage() {
     });
   }
 
-  async function doAssignEventToThread(eventId: number, threadId: number | null) {
+  async function doAssignEventToThread(
+    eventId: number,
+    threadId: number | null,
+  ) {
     await runHierarchyMutation({
       startStatus: "Updating event thread...",
       successStatus: "Event thread updated.",
@@ -776,7 +976,10 @@ export default function HomePage() {
     });
   }
 
-  async function doAssignPeriodToThread(_periodId: number, _threadId: number | null) {
+  async function doAssignPeriodToThread(
+    _periodId: number,
+    _threadId: number | null,
+  ) {
     // No-op: threads are no longer assigned to periods
   }
 
@@ -786,7 +989,14 @@ export default function HomePage() {
     setIsSavingLifeStructure(true);
     setStatus("Creating epic...");
     try {
-      const created = await createEpic({ period_id: periodId, title, description: null, weight: 5, start_date_text: null, end_date_text: null });
+      const created = await createEpic({
+        period_id: periodId,
+        title,
+        description: null,
+        weight: 5,
+        start_date_text: null,
+        end_date_text: null,
+      });
       setEpicDraftsByPeriod((prev) => ({ ...prev, [periodId]: "" }));
       setLifeEpics((prev) => [...prev, created]);
       setExpandedEpics((current) => ({ ...current, [created.id]: true }));
@@ -803,7 +1013,15 @@ export default function HomePage() {
     setIsSavingLifeStructure(true);
     setStatus("Creating event...");
     try {
-      await createEvent({ title: title.trim(), period_id: null, epic_id: epicId, weight: 5, description: null, location: null, event_date_text: null });
+      await createEvent({
+        title: title.trim(),
+        period_id: null,
+        epic_id: epicId,
+        weight: 5,
+        description: null,
+        location: null,
+        event_date_text: null,
+      });
       await loadTimeline();
       setStatus("Event created.");
     } catch {
@@ -824,7 +1042,12 @@ export default function HomePage() {
   }
 
   async function doDeleteEpic(epicId: number, epicTitle: string) {
-    if (!confirm(`Delete epic "${epicTitle}"? Its events will be moved to the period.`)) return;
+    if (
+      !confirm(
+        `Delete epic "${epicTitle}"? Its events will be moved to the period.`,
+      )
+    )
+      return;
     setStatus("Deleting epic...");
     try {
       await deleteEpic(epicId);
@@ -850,12 +1073,22 @@ export default function HomePage() {
   }
 
   // Inline epic creation from asset link modal (returns created epic for auto-selection)
-  async function createEpicInPeriod(periodId: number, title: string): Promise<LifeEpic | null> {
+  async function createEpicInPeriod(
+    periodId: number,
+    title: string,
+  ): Promise<LifeEpic | null> {
     if (!title.trim()) return null;
     setIsSavingLifeStructure(true);
     setStatus("Creating epic...");
     try {
-      const created = await createEpic({ period_id: periodId, title: title.trim(), description: null, weight: 5, start_date_text: null, end_date_text: null });
+      const created = await createEpic({
+        period_id: periodId,
+        title: title.trim(),
+        description: null,
+        weight: 5,
+        start_date_text: null,
+        end_date_text: null,
+      });
       await loadTimeline();
       setStatus("Epic created.");
       return created;
@@ -904,7 +1137,11 @@ export default function HomePage() {
     setStatus("Merging period...");
     try {
       await mergePeriodInto(fromPeriodId, intoPeriodId);
-      setPeriodAnalysisById((current) => { const next = { ...current }; delete next[fromPeriodId]; return next; });
+      setPeriodAnalysisById((current) => {
+        const next = { ...current };
+        delete next[fromPeriodId];
+        return next;
+      });
       await loadTimeline();
       setStatus("Period merged.");
     } catch {
@@ -912,7 +1149,10 @@ export default function HomePage() {
     }
   }
 
-  async function uploadAssetToActiveEvent(file: File, capturedDateText: string | null = null) {
+  async function uploadAssetToActiveEvent(
+    file: File,
+    capturedDateText: string | null = null,
+  ) {
     if (!activeEventId) {
       return;
     }
@@ -920,7 +1160,11 @@ export default function HomePage() {
     setStatus("Uploading asset to event...");
     try {
       const formData = new FormData();
-      const kind = file.type.startsWith("audio/") ? "audio" : file.type.startsWith("image/") ? "photo" : "document";
+      const kind = file.type.startsWith("audio/")
+        ? "audio"
+        : file.type.startsWith("image/")
+          ? "photo"
+          : "document";
       formData.append("file", file, file.name);
       formData.append("kind", kind);
       formData.append("event_id", `${activeEventId}`);
@@ -976,7 +1220,11 @@ export default function HomePage() {
   }
 
   async function deleteLifeEvent(eventId: number) {
-    if (!window.confirm("Remove this event from the timeline? Linked memories and assets will be kept and moved to inbox/unlinked state.")) {
+    if (
+      !window.confirm(
+        "Remove this event from the timeline? Linked memories and assets will be kept and moved to inbox/unlinked state.",
+      )
+    ) {
       return;
     }
 
@@ -1008,7 +1256,10 @@ export default function HomePage() {
     setIsSavingLifeStructure(true);
     setStatus("Merging event...");
     try {
-      const merged: LifeEvent = await mergeEventInto(sourceId, Number(targetId));
+      const merged: LifeEvent = await mergeEventInto(
+        sourceId,
+        Number(targetId),
+      );
       setEventMergeTargets((current) => {
         const next = { ...current };
         delete next[sourceId];
@@ -1025,8 +1276,15 @@ export default function HomePage() {
   }
 
   async function moveEventToPeriod(event: LifeEvent) {
-    const selectedTarget = eventMoveTargets[event.id] || (event.period_id === null ? UNASSIGNED_PERIOD_VALUE : `${event.period_id}`);
-    const nextPeriodId = selectedTarget === UNASSIGNED_PERIOD_VALUE ? null : Number(selectedTarget);
+    const selectedTarget =
+      eventMoveTargets[event.id] ||
+      (event.period_id === null
+        ? UNASSIGNED_PERIOD_VALUE
+        : `${event.period_id}`);
+    const nextPeriodId =
+      selectedTarget === UNASSIGNED_PERIOD_VALUE
+        ? null
+        : Number(selectedTarget);
     if (nextPeriodId === event.period_id) {
       return;
     }
@@ -1134,7 +1392,9 @@ export default function HomePage() {
   }
 
   async function deleteAsset(assetId: number, eventId?: number) {
-    if (!window.confirm("Delete this asset permanently? This cannot be undone.")) {
+    if (
+      !window.confirm("Delete this asset permanently? This cannot be undone.")
+    ) {
       return;
     }
 
@@ -1152,11 +1412,16 @@ export default function HomePage() {
     }
   }
 
-  async function saveAssetTitle(assetId: number, eventId?: number, nextTitle?: string) {
+  async function saveAssetTitle(
+    assetId: number,
+    eventId?: number,
+    nextTitle?: string,
+  ) {
     setAssetTitleSavingId(assetId);
     setStatus("Saving asset title...");
     try {
-      const titleToSave = nextTitle !== undefined ? nextTitle : editingAssetTitleValue;
+      const titleToSave =
+        nextTitle !== undefined ? nextTitle : editingAssetTitleValue;
       await updateAssetTitleById(assetId, titleToSave.trim() || null);
       setEditingAssetTitleId(null);
       setEditingAssetTitleValue("");
@@ -1172,11 +1437,16 @@ export default function HomePage() {
     }
   }
 
-  async function saveAssetNotes(assetId: number, eventId?: number, nextNotes?: string) {
+  async function saveAssetNotes(
+    assetId: number,
+    eventId?: number,
+    nextNotes?: string,
+  ) {
     setAssetNotesSavingId(assetId);
     setStatus("Saving asset notes...");
     try {
-      const notesToSave = nextNotes !== undefined ? nextNotes : editingAssetNotesValue;
+      const notesToSave =
+        nextNotes !== undefined ? nextNotes : editingAssetNotesValue;
       await updateAssetNotesById(assetId, notesToSave.trim() || null);
       setEditingAssetNotesId(null);
       setEditingAssetNotesValue("");
@@ -1192,14 +1462,22 @@ export default function HomePage() {
     }
   }
 
-  async function saveAssetCapturedDate(assetId: number, eventId?: number, nextCapturedDateText?: string) {
+  async function saveAssetCapturedDate(
+    assetId: number,
+    eventId?: number,
+    nextCapturedDateText?: string,
+  ) {
     setAssetCapturedDateSavingId(assetId);
     setStatus("Saving captured date...");
     try {
-      const capturedDateToSave = nextCapturedDateText !== undefined
-        ? nextCapturedDateText
-        : editingAssetCapturedDateValue;
-      await updateAssetCapturedDateById(assetId, capturedDateToSave.trim() || null);
+      const capturedDateToSave =
+        nextCapturedDateText !== undefined
+          ? nextCapturedDateText
+          : editingAssetCapturedDateValue;
+      await updateAssetCapturedDateById(
+        assetId,
+        capturedDateToSave.trim() || null,
+      );
       setEditingAssetCapturedDateId(null);
       setEditingAssetCapturedDateValue("");
       if (eventId !== undefined) {
@@ -1234,15 +1512,20 @@ export default function HomePage() {
       // continue anyway — progress list will fill in as SSE fires
     }
 
-    const progressRows: EventDocumentUploadProgressItem[] = photoAssets.map((a) => ({
-      fileName: a.original_filename || a.title || `asset-${a.id}`,
-      assetId: a.id,
-      isPhoto: true,
-      status: "saved",
-      stages: { geocoding: "pending", faces: "pending", gemini: "pending" },
-    }));
+    const progressRows: EventDocumentUploadProgressItem[] = photoAssets.map(
+      (a) => ({
+        fileName: a.original_filename || a.title || `asset-${a.id}`,
+        assetId: a.id,
+        isPhoto: true,
+        status: "saved",
+        stages: { geocoding: "pending", faces: "pending", gemini: "pending" },
+      }),
+    );
     if (progressRows.length > 0) {
-      setEventDocumentUploadProgressByEventId((prev) => ({ ...prev, [eventId]: progressRows }));
+      setEventDocumentUploadProgressByEventId((prev) => ({
+        ...prev,
+        [eventId]: progressRows,
+      }));
     }
 
     const url = `${API_BASE}/api/assets/analyze-stream?event_id=${eventId}&include_processed=true`;
@@ -1250,7 +1533,10 @@ export default function HomePage() {
 
     es.onmessage = (event: MessageEvent) => {
       try {
-        const data = JSON.parse(event.data as string) as Record<string, unknown>;
+        const data = JSON.parse(event.data as string) as Record<
+          string,
+          unknown
+        >;
 
         if (data["type"] === "complete" || data["type"] === "error") {
           es.close();
@@ -1262,8 +1548,8 @@ export default function HomePage() {
             data["type"] === "error"
               ? `Analysis error: ${String(data["message"] ?? "unknown")}`
               : count === 0
-              ? "No unprocessed photos found for this event."
-              : `Reprocessed ${count} photo${count === 1 ? "" : "s"} for this event.`,
+                ? "No unprocessed photos found for this event."
+                : `Reprocessed ${count} photo${count === 1 ? "" : "s"} for this event.`,
           );
           return;
         }
@@ -1278,14 +1564,26 @@ export default function HomePage() {
           [eventId]: (prev[eventId] ?? []).map((item) => {
             if (item.assetId !== assetId) return item;
             const newDetails = { ...item.stageDetails };
-            if (stage === "geocoding" && typeof data["place"] === "string" && data["place"]) {
+            if (
+              stage === "geocoding" &&
+              typeof data["place"] === "string" &&
+              data["place"]
+            ) {
               newDetails.geocoding = data["place"] as string;
             } else if (stage === "faces" && data["face_count"] !== undefined) {
               newDetails.faces = String(data["face_count"]);
-            } else if (stage === "gemini" && typeof data["title"] === "string" && data["title"]) {
+            } else if (
+              stage === "gemini" &&
+              typeof data["title"] === "string" &&
+              data["title"]
+            ) {
               newDetails.gemini = data["title"] as string;
             }
-            return { ...item, stages: { ...item.stages, [stage]: stageStatus }, stageDetails: newDetails };
+            return {
+              ...item,
+              stages: { ...item.stages, [stage]: stageStatus },
+              stageDetails: newDetails,
+            };
           }),
         }));
       } catch {
@@ -1311,13 +1609,23 @@ export default function HomePage() {
       if (activeEventId === eventId) {
         await loadAssetsForEvent(eventId);
       }
-      const exifPlacePart = result.exif_place_name ? `EXIF place: ${result.exif_place_name}.` : "";
+      const exifPlacePart = result.exif_place_name
+        ? `EXIF place: ${result.exif_place_name}.`
+        : "";
       const reverseGeocodePart = result.reverse_geocode_location_name
         ? `Reverse geocode: ${result.reverse_geocode_location_name}.`
-        : (result.has_gps ? "GPS found (reverse geocode unavailable)." : "No GPS EXIF found.");
-      const analyzedPlacePart = result.analyzed_place_name ? `Gemini assessed place: ${result.analyzed_place_name}.` : "";
-      const capturePart = result.captured_at_text ? `Captured: ${result.captured_at_text}.` : "";
-      const titlePart = result.suggested_title ? `Gemini suggests title: "${result.suggested_title}".` : "";
+        : result.has_gps
+          ? "GPS found (reverse geocode unavailable)."
+          : "No GPS EXIF found.";
+      const analyzedPlacePart = result.analyzed_place_name
+        ? `Gemini assessed place: ${result.analyzed_place_name}.`
+        : "";
+      const capturePart = result.captured_at_text
+        ? `Captured: ${result.captured_at_text}.`
+        : "";
+      const titlePart = result.suggested_title
+        ? `Gemini suggests title: "${result.suggested_title}".`
+        : "";
       setStatus(
         `Photo analyzed. Found ${result.face_count} face${result.face_count === 1 ? "" : "s"}. ${exifPlacePart} ${reverseGeocodePart} ${analyzedPlacePart} ${capturePart} ${titlePart}`.trim(),
       );
@@ -1353,7 +1661,6 @@ export default function HomePage() {
     }
   }
 
-
   async function assignRecorder(memoryId: number, personId: number) {
     setMemoryActionId(memoryId);
     setStatus("Saving recorder...");
@@ -1382,7 +1689,11 @@ export default function HomePage() {
     }
   }
 
-  async function splitPersonEntry(sourceId: number, newNames: string[], keepAlias: boolean) {
+  async function splitPersonEntry(
+    sourceId: number,
+    newNames: string[],
+    keepAlias: boolean,
+  ) {
     setDirectoryBusyKey(`people:split:${sourceId}`);
     setStatus("Splitting person...");
     try {
@@ -1430,7 +1741,10 @@ export default function HomePage() {
       await loadTimeline();
       setStatus("CompreFace link saved.");
     } catch (error) {
-      const message = error instanceof Error && error.message ? error.message : "Failed to link person to CompreFace.";
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to link person to CompreFace.";
       setStatus(message);
     } finally {
       setDirectoryBusyKey(null);
@@ -1451,7 +1765,11 @@ export default function HomePage() {
     }
   }
 
-  async function renameDirectoryEntry(kind: "people" | "places", itemId: number, name: string) {
+  async function renameDirectoryEntry(
+    kind: "people" | "places",
+    itemId: number,
+    name: string,
+  ) {
     setDirectoryBusyKey(`${kind}:rename:${itemId}`);
     setStatus(`Renaming ${kind === "people" ? "person" : "place"}...`);
     try {
@@ -1465,8 +1783,15 @@ export default function HomePage() {
     }
   }
 
-  async function deleteDirectoryEntry(kind: "people" | "places", itemId: number) {
-    if (!window.confirm(`Delete this ${kind === "people" ? "person" : "place"} from the directory?`)) {
+  async function deleteDirectoryEntry(
+    kind: "people" | "places",
+    itemId: number,
+  ) {
+    if (
+      !window.confirm(
+        `Delete this ${kind === "people" ? "person" : "place"} from the directory?`,
+      )
+    ) {
       return;
     }
 
@@ -1501,12 +1826,15 @@ export default function HomePage() {
   ) {
     try {
       shouldDiscardRecordingRef.current = false;
-      const isQuickCapture = options?.quickCapture === true && forEventId === undefined;
+      const isQuickCapture =
+        options?.quickCapture === true && forEventId === undefined;
       const targetAssetId = options?.relatedAssetId;
       const audioConstraint = selectedDeviceId
         ? { deviceId: { exact: selectedDeviceId } }
         : true;
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraint });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: audioConstraint,
+      });
       streamRef.current = stream;
       chunksRef.current = [];
       startAudioLevelMonitoring(stream);
@@ -1582,7 +1910,13 @@ export default function HomePage() {
         }
 
         setStatus("Audio recorded. You can play it now while we process it.");
-        await uploadRecording(blob, nextPendingId, targetEventId ?? undefined, targetAssetId, isQuickCapture);
+        await uploadRecording(
+          blob,
+          nextPendingId,
+          targetEventId ?? undefined,
+          targetAssetId,
+          isQuickCapture,
+        );
       };
 
       recorder.start();
@@ -1603,7 +1937,10 @@ export default function HomePage() {
   }
 
   // A period-scoped quick memory still needs an event wrapper so uploads and summaries stay organized.
-  async function startQuickMemoryCaptureForPeriod(period: { id: number; title: string }) {
+  async function startQuickMemoryCaptureForPeriod(period: {
+    id: number;
+    title: string;
+  }) {
     if (isRecording || isLoading || isSavingLifeStructure) {
       return;
     }
@@ -1675,7 +2012,9 @@ export default function HomePage() {
   ) {
     setIsLoading(true);
 
-    const updatePending = (updater: (prev: PendingRecording) => PendingRecording) => {
+    const updatePending = (
+      updater: (prev: PendingRecording) => PendingRecording,
+    ) => {
       if (relatedAssetId !== undefined) {
         setAssetRecordingPending((prev) => {
           const current = prev[relatedAssetId];
@@ -1698,7 +2037,12 @@ export default function HomePage() {
     updatePending((p) => ({ ...p, status: "processing", error: undefined }));
 
     try {
-      const created: MemoryEntry = await createMemoryFromAudioBlob(blob, eventId, relatedAssetId, quickCapture);
+      const created: MemoryEntry = await createMemoryFromAudioBlob(
+        blob,
+        eventId,
+        relatedAssetId,
+        quickCapture,
+      );
       if (activeQuestion) {
         try {
           await answerQuestionWithMemory(activeQuestion.id, created.id);
@@ -1717,7 +2061,8 @@ export default function HomePage() {
       setRecordingForAssetId(null);
       updatePending((p) => ({ ...p, status: "saved", error: undefined }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to process recording.";
+      const message =
+        error instanceof Error ? error.message : "Failed to process recording.";
       setStatus(message);
       setRecordingForAssetId(null);
       updatePending((p) => ({
@@ -1730,7 +2075,10 @@ export default function HomePage() {
     }
   }
 
-  async function uploadDocument(file: File, capturedDateText: string | null = null) {
+  async function uploadDocument(
+    file: File,
+    capturedDateText: string | null = null,
+  ) {
     setIsUploadingDocument(true);
     setDocumentUploadError(null);
     setStatus("Uploading file...");
@@ -1751,7 +2099,8 @@ export default function HomePage() {
         documentFileInputRef.current.value = "";
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to process document.";
+      const message =
+        error instanceof Error ? error.message : "Failed to process document.";
       setDocumentUploadError(message);
       setStatus("Document upload failed.");
     } finally {
@@ -1777,20 +2126,33 @@ export default function HomePage() {
     uploadDocument,
   });
 
-  async function uploadDocumentsToEvent(files: File[], eventId: number, capturedDateText: string | null = null) {
+  async function uploadDocumentsToEvent(
+    files: File[],
+    eventId: number,
+    capturedDateText: string | null = null,
+  ) {
     if (files.length === 0) {
       return;
     }
 
-    const initialProgress: EventDocumentUploadProgressItem[] = files.map((file) => ({
-      fileName: file.name || "unnamed file",
-      status: "uploading",
-    }));
+    const initialProgress: EventDocumentUploadProgressItem[] = files.map(
+      (file) => ({
+        fileName: file.name || "unnamed file",
+        status: "uploading",
+      }),
+    );
 
     setEventDocumentUploadingId(eventId);
     setEventDocumentErrors((prev) => ({ ...prev, [eventId]: null }));
-    setEventDocumentUploadProgressByEventId((prev) => ({ ...prev, [eventId]: initialProgress }));
-    setStatus(files.length === 1 ? "Uploading file to event..." : `Uploading ${files.length} files to event...`);
+    setEventDocumentUploadProgressByEventId((prev) => ({
+      ...prev,
+      [eventId]: initialProgress,
+    }));
+    setStatus(
+      files.length === 1
+        ? "Uploading file to event..."
+        : `Uploading ${files.length} files to event...`,
+    );
 
     const uploadedAssetIds: number[] = [];
     const photoAssetIds: number[] = [];
@@ -1819,9 +2181,16 @@ export default function HomePage() {
                     assetId: uploaded.id,
                     isPhoto: kind === "photo",
                     status: "saved" as const,
-                    stages: kind === "photo" ? { geocoding: "pending", faces: "pending", gemini: "pending" } : undefined,
+                    stages:
+                      kind === "photo"
+                        ? {
+                            geocoding: "pending",
+                            faces: "pending",
+                            gemini: "pending",
+                          }
+                        : undefined,
                   }
-                : item
+                : item,
             ),
           }));
         } catch {
@@ -1829,7 +2198,9 @@ export default function HomePage() {
           setEventDocumentUploadProgressByEventId((prev) => ({
             ...prev,
             [eventId]: (prev[eventId] ?? []).map((item, itemIndex) =>
-              itemIndex === index ? { ...item, status: "failed" as const, error: "Upload failed" } : item
+              itemIndex === index
+                ? { ...item, status: "failed" as const, error: "Upload failed" }
+                : item,
             ),
           }));
         }
@@ -1838,7 +2209,10 @@ export default function HomePage() {
       if (uploadedAssetIds.length === 0) {
         setEventDocumentErrors((prev) => ({
           ...prev,
-          [eventId]: files.length === 1 ? "Document upload failed." : `All ${files.length} uploads failed.`,
+          [eventId]:
+            files.length === 1
+              ? "Document upload failed."
+              : `All ${files.length} uploads failed.`,
         }));
         setStatus("Document upload failed.");
         setEventDocumentUploadingId(null);
@@ -1849,13 +2223,20 @@ export default function HomePage() {
       setEventDocumentUploadingId(null);
 
       if (photoAssetIds.length > 0) {
-        setStatus(`Analyzing ${photoAssetIds.length} photo${photoAssetIds.length === 1 ? "" : "s"}...`);
+        setStatus(
+          `Analyzing ${photoAssetIds.length} photo${photoAssetIds.length === 1 ? "" : "s"}...`,
+        );
 
-        const es = new EventSource(`${API_BASE}/api/assets/analyze-stream?asset_ids=${photoAssetIds.join(",")}`);
+        const es = new EventSource(
+          `${API_BASE}/api/assets/analyze-stream?asset_ids=${photoAssetIds.join(",")}`,
+        );
 
         es.onmessage = (event: MessageEvent) => {
           try {
-            const data = JSON.parse(event.data as string) as Record<string, unknown>;
+            const data = JSON.parse(event.data as string) as Record<
+              string,
+              unknown
+            >;
 
             if (data["type"] === "complete" || data["type"] === "error") {
               es.close();
@@ -1864,8 +2245,10 @@ export default function HomePage() {
               const count = uploadedAssetIds.length;
               setStatus(
                 failedFileNames.length === 0
-                  ? count === 1 ? "Photo uploaded and analyzed." : `${count} photos uploaded and analyzed.`
-                  : `${count} uploaded and analyzed, ${failedFileNames.length} failed.`
+                  ? count === 1
+                    ? "Photo uploaded and analyzed."
+                    : `${count} photos uploaded and analyzed.`
+                  : `${count} uploaded and analyzed, ${failedFileNames.length} failed.`,
               );
               return;
             }
@@ -1880,14 +2263,29 @@ export default function HomePage() {
               [eventId]: (prev[eventId] ?? []).map((item) => {
                 if (item.assetId !== assetId) return item;
                 const newDetails = { ...item.stageDetails };
-                if (stage === "geocoding" && typeof data["place"] === "string" && data["place"]) {
+                if (
+                  stage === "geocoding" &&
+                  typeof data["place"] === "string" &&
+                  data["place"]
+                ) {
                   newDetails.geocoding = data["place"] as string;
-                } else if (stage === "faces" && data["face_count"] !== undefined) {
+                } else if (
+                  stage === "faces" &&
+                  data["face_count"] !== undefined
+                ) {
                   newDetails.faces = String(data["face_count"]);
-                } else if (stage === "gemini" && typeof data["title"] === "string" && data["title"]) {
+                } else if (
+                  stage === "gemini" &&
+                  typeof data["title"] === "string" &&
+                  data["title"]
+                ) {
                   newDetails.gemini = data["title"] as string;
                 }
-                return { ...item, stages: { ...item.stages, [stage]: stageStatus }, stageDetails: newDetails };
+                return {
+                  ...item,
+                  stages: { ...item.stages, [stage]: stageStatus },
+                  stageDetails: newDetails,
+                };
               }),
             }));
           } catch {
@@ -1903,26 +2301,38 @@ export default function HomePage() {
       } else {
         // No photos — load and done
         await Promise.all([loadTimeline(), loadAssetsForEvent(eventId)]);
-        markAndScrollTo(`asset-row-${uploadedAssetIds[uploadedAssetIds.length - 1]}`, 220);
+        markAndScrollTo(
+          `asset-row-${uploadedAssetIds[uploadedAssetIds.length - 1]}`,
+          220,
+        );
         if (failedFileNames.length === 0) {
-          setStatus(uploadedAssetIds.length === 1 ? "File uploaded and linked to event." : `${uploadedAssetIds.length} files uploaded and linked to event.`);
+          setStatus(
+            uploadedAssetIds.length === 1
+              ? "File uploaded and linked to event."
+              : `${uploadedAssetIds.length} files uploaded and linked to event.`,
+          );
         } else {
           setEventDocumentErrors((prev) => ({
             ...prev,
             [eventId]: `${failedFileNames.length} file(s) failed: ${failedFileNames.slice(0, 3).join(", ")}${failedFileNames.length > 3 ? ", ..." : ""}`,
           }));
-          setStatus(`${uploadedAssetIds.length} uploaded, ${failedFileNames.length} failed.`);
+          setStatus(
+            `${uploadedAssetIds.length} uploaded, ${failedFileNames.length} failed.`,
+          );
         }
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to process document.";
+      const message =
+        error instanceof Error ? error.message : "Failed to process document.";
       setEventDocumentErrors((prev) => ({ ...prev, [eventId]: message }));
       setStatus("Document upload failed.");
       setEventDocumentUploadingId(null);
     }
   }
 
-  const [peopleSortMode, setPeopleSortMode] = useState<"weighted" | "alphabetical" | "photos">("weighted");
+  const [peopleSortMode, setPeopleSortMode] = useState<
+    "weighted" | "alphabetical" | "photos"
+  >("weighted");
   const normalizedDirectorySearch = directorySearch.trim().toLowerCase();
   let filteredPeopleDirectory = peopleDirectory.filter((entry) => {
     if (!normalizedDirectorySearch) {
@@ -1931,7 +2341,9 @@ export default function HomePage() {
     if (entry.name.toLowerCase().includes(normalizedDirectorySearch)) {
       return true;
     }
-    return entry.aliases.some((alias) => alias.toLowerCase().includes(normalizedDirectorySearch));
+    return entry.aliases.some((alias) =>
+      alias.toLowerCase().includes(normalizedDirectorySearch),
+    );
   });
   // Sort people by selected mode
   filteredPeopleDirectory = [...filteredPeopleDirectory].sort((a, b) => {
@@ -1939,7 +2351,11 @@ export default function HomePage() {
       return a.name.localeCompare(b.name);
     }
     if (peopleSortMode === "photos") {
-      return b.photo_count - a.photo_count || b.memory_count - a.memory_count || a.name.localeCompare(b.name);
+      return (
+        b.photo_count - a.photo_count ||
+        b.memory_count - a.memory_count ||
+        a.name.localeCompare(b.name)
+      );
     }
     // weighted (descending by memory_count)
     return b.memory_count - a.memory_count || a.name.localeCompare(b.name);
@@ -1950,26 +2366,32 @@ export default function HomePage() {
     }
     return entry.name.toLowerCase().includes(normalizedDirectorySearch);
   });
-  const activeDirectoryCount = activeDirectoryTab === "people"
-    ? filteredPeopleDirectory.length
-    : filteredPlacesDirectory.length;
-  const activeDirectoryTotal = activeDirectoryTab === "people"
-    ? peopleDirectory.length
-    : placesDirectory.length;
+  const activeDirectoryCount =
+    activeDirectoryTab === "people"
+      ? filteredPeopleDirectory.length
+      : filteredPlacesDirectory.length;
+  const activeDirectoryTotal =
+    activeDirectoryTab === "people"
+      ? peopleDirectory.length
+      : placesDirectory.length;
   const lifeEventMemoryIds = new Set(
-    lifeEvents
-      .flatMap((event) => event.linked_memory_ids),
+    lifeEvents.flatMap((event) => event.linked_memory_ids),
   );
   const questionsWithContext = questions.map((question) => {
     const sourceMemory = question.source_memory_id
-      ? timeline.find((memory) => memory.id === question.source_memory_id) ?? null
+      ? (timeline.find((memory) => memory.id === question.source_memory_id) ??
+        null)
       : null;
     const sourceEvent = sourceMemory
-      ? lifeEvents.find((event) => event.linked_memory_ids.includes(sourceMemory.id)) ?? null
+      ? (lifeEvents.find((event) =>
+          event.linked_memory_ids.includes(sourceMemory.id),
+        ) ?? null)
       : null;
-    const sourcePeriod = sourceEvent && sourceEvent.period_id !== null
-      ? lifePeriods.find((period) => period.id === sourceEvent.period_id) ?? null
-      : null;
+    const sourcePeriod =
+      sourceEvent && sourceEvent.period_id !== null
+        ? (lifePeriods.find((period) => period.id === sourceEvent.period_id) ??
+          null)
+        : null;
 
     return {
       question,
@@ -1979,7 +2401,10 @@ export default function HomePage() {
     };
   });
   const questionsByEventId = new Map<number, typeof questionsWithContext>();
-  const questionsByPeriodNoEvent = new Map<number, typeof questionsWithContext>();
+  const questionsByPeriodNoEvent = new Map<
+    number,
+    typeof questionsWithContext
+  >();
   const questionsWithNoContext: typeof questionsWithContext = [];
   for (const item of questionsWithContext) {
     if (item.sourceEvent) {
@@ -1994,9 +2419,16 @@ export default function HomePage() {
       questionsWithNoContext.push(item);
     }
   }
-  const compareEventsByStartDate = (left: LifeEvent, right: LifeEvent): number => {
-    const leftStart = parseOptionalDateTimestamp(left.event_date_sort) ?? parseOptionalDateTimestamp(left.event_date_text);
-    const rightStart = parseOptionalDateTimestamp(right.event_date_sort) ?? parseOptionalDateTimestamp(right.event_date_text);
+  const compareEventsByStartDate = (
+    left: LifeEvent,
+    right: LifeEvent,
+  ): number => {
+    const leftStart =
+      parseOptionalDateTimestamp(left.event_date_sort) ??
+      parseOptionalDateTimestamp(left.event_date_text);
+    const rightStart =
+      parseOptionalDateTimestamp(right.event_date_sort) ??
+      parseOptionalDateTimestamp(right.event_date_text);
     if (leftStart === null && rightStart !== null) {
       return 1;
     }
@@ -2010,8 +2442,12 @@ export default function HomePage() {
   };
 
   const compareEpicsByStartDate = (left: LifeEpic, right: LifeEpic): number => {
-    const leftStart = parseOptionalDateTimestamp(left.start_sort) ?? parseOptionalDateTimestamp(left.start_date_text);
-    const rightStart = parseOptionalDateTimestamp(right.start_sort) ?? parseOptionalDateTimestamp(right.start_date_text);
+    const leftStart =
+      parseOptionalDateTimestamp(left.start_sort) ??
+      parseOptionalDateTimestamp(left.start_date_text);
+    const rightStart =
+      parseOptionalDateTimestamp(right.start_sort) ??
+      parseOptionalDateTimestamp(right.start_date_text);
     if (leftStart === null && rightStart !== null) {
       return 1;
     }
@@ -2024,10 +2460,18 @@ export default function HomePage() {
     return compareDateStringsDesc(left.created_at, right.created_at);
   };
 
-  const unassignedEvents = [...lifeEvents.filter((event) => event.period_id === null)].sort(compareEventsByStartDate);
-  const timelineStandaloneMemories = timeline.filter((memory) => !lifeEventMemoryIds.has(memory.id));
+  const unassignedEvents = [
+    ...lifeEvents.filter((event) => event.period_id === null),
+  ].sort(compareEventsByStartDate);
+  const timelineStandaloneMemories = timeline.filter(
+    (memory) => !lifeEventMemoryIds.has(memory.id),
+  );
 
-  function renderEventCard(event: LifeEvent, mergeCandidates: LifeEvent[], epicsInPeriod: LifeEpic[] = []) {
+  function renderEventCard(
+    event: LifeEvent,
+    mergeCandidates: LifeEvent[],
+    epicsInPeriod: LifeEpic[] = [],
+  ) {
     return (
       <EventCard
         key={event.id}
@@ -2101,7 +2545,9 @@ export default function HomePage() {
         startRecordingForAsset={startRecordingForAsset}
         eventDocumentUploadingId={eventDocumentUploadingId}
         eventDocumentErrors={eventDocumentErrors}
-        eventDocumentUploadProgressByEventId={eventDocumentUploadProgressByEventId}
+        eventDocumentUploadProgressByEventId={
+          eventDocumentUploadProgressByEventId
+        }
         uploadDocumentsToEvent={uploadDocumentsToEvent}
         eventAssetInputRef={eventAssetInputRef}
         isUploadingAsset={isUploadingAsset}
@@ -2137,7 +2583,7 @@ export default function HomePage() {
         renameFaceSubject={renameFaceComprefaceSubject}
         assigningFaceId={assigningFaceId}
         timeline={timeline}
-          discardFace={discardFace}
+        discardFace={discardFace}
         editingMemoryTitleId={editingMemoryTitleId}
         setEditingMemoryTitleId={setEditingMemoryTitleId}
         editingMemoryTitleValue={editingMemoryTitleValue}
@@ -2155,7 +2601,9 @@ export default function HomePage() {
         assignRecorder={assignRecorder}
         memoryActionId={memoryActionId}
         threads={lifeThreads}
-        onAssignThread={(threadId) => void doAssignEventToThread(event.id, threadId)}
+        onAssignThread={(threadId) =>
+          void doAssignEventToThread(event.id, threadId)
+        }
       />
     );
   }
@@ -2191,7 +2639,11 @@ export default function HomePage() {
       <div className="workspaceColumn">
         <section className="hero">
           <div className="heroRow">
-            <h1>{mainCharacterName ? `${mainCharacterName}'s Memoir` : "Memoir MVP"}</h1>
+            <h1>
+              {mainCharacterName
+                ? `${mainCharacterName}'s Memoir`
+                : "Memoir MVP"}
+            </h1>
             <div className="heroActions">
               <button
                 type="button"
@@ -2211,367 +2663,693 @@ export default function HomePage() {
             </div>
           </div>
           <p>Explore your timeline.</p>
-          <p className="meta">Tip: start each recording with your name, where this memory happened, and when it happened.</p>
+          <p className="meta">
+            Tip: start each recording with your name, where this memory
+            happened, and when it happened.
+          </p>
         </section>
 
         <>
-            <section className="panel" style={{ marginTop: "1rem" }}>
-              <div className="periodsHeader">
-                <div>
-                  <h2>Life Threads</h2>
-                  <p className="meta">Threads group related periods across time — e.g. "Military Career" or "Family".</p>
-                </div>
-                <h2
-                  style={{ cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: "0.4rem", margin: 0 }}
-                  onClick={() => setIsThreadComposerOpen((c) => !c)}
-                >
-                  <span>{isThreadComposerOpen ? "▾" : "▸"}</span>
-                  New thread
-                </h2>
+          <section className="panel" style={{ marginTop: "1rem" }}>
+            <div className="periodsHeader">
+              <div>
+                <h2>Life Threads</h2>
+                <p className="meta">
+                  Threads group related periods across time — e.g. "Military
+                  Career" or "Family".
+                </p>
               </div>
+              <h2
+                style={{
+                  cursor: "pointer",
+                  userSelect: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  margin: 0,
+                }}
+                onClick={() => setIsThreadComposerOpen((c) => !c)}
+              >
+                <span>{isThreadComposerOpen ? "▾" : "▸"}</span>
+                New thread
+              </h2>
+            </div>
 
-              {isThreadComposerOpen && (
-                <div className="controls" style={{ marginBottom: "0.75rem", flexWrap: "wrap" }}>
-                  <input
-                    className="directoryInput"
-                    type="text"
-                    placeholder="Thread title (e.g. Military Career)"
-                    value={newThreadTitle}
-                    onChange={(e) => setNewThreadTitle(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") void createLifeThread(); }}
-                    disabled={isSavingThread}
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    className="primary"
-                    type="button"
-                    onClick={() => void createLifeThread()}
-                    disabled={!newThreadTitle.trim() || isSavingThread}
+            {isThreadComposerOpen && (
+              <div
+                className="controls"
+                style={{ marginBottom: "0.75rem", flexWrap: "wrap" }}
+              >
+                <input
+                  className="directoryInput"
+                  type="text"
+                  placeholder="Thread title (e.g. Military Career)"
+                  value={newThreadTitle}
+                  onChange={(e) => setNewThreadTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void createLifeThread();
+                  }}
+                  disabled={isSavingThread}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  className="primary"
+                  type="button"
+                  onClick={() => void createLifeThread()}
+                  disabled={!newThreadTitle.trim() || isSavingThread}
+                >
+                  Create Thread
+                </button>
+              </div>
+            )}
+
+            {lifeThreads.length === 0 ? (
+              <p className="meta">No threads yet.</p>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                  marginBottom: "0.75rem",
+                }}
+              >
+                {lifeThreads.map((thread) => (
+                  <article
+                    key={thread.id}
+                    className="memory"
+                    style={{ padding: "0.55rem 0.75rem" }}
                   >
-                    Create Thread
-                  </button>
-                </div>
-              )}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.45rem",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span className="entityPill entityPillThread">
+                        Thread
+                      </span>
+                      {editingThreadTitleId === thread.id ? (
+                        <div className="controls" style={{ flex: 1 }}>
+                          <input
+                            className="directoryInput"
+                            type="text"
+                            value={editingThreadTitleValue}
+                            autoFocus
+                            onChange={(e) =>
+                              setEditingThreadTitleValue(e.target.value)
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter")
+                                void saveThreadTitle(
+                                  thread.id,
+                                  editingThreadTitleValue,
+                                );
+                              if (e.key === "Escape") {
+                                setEditingThreadTitleId(null);
+                                setEditingThreadTitleValue("");
+                              }
+                            }}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            className="primary"
+                            type="button"
+                            onClick={() =>
+                              void saveThreadTitle(
+                                thread.id,
+                                editingThreadTitleValue,
+                              )
+                            }
+                            disabled={!editingThreadTitleValue.trim()}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="secondary"
+                            type="button"
+                            onClick={() => {
+                              setEditingThreadTitleId(null);
+                              setEditingThreadTitleValue("");
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <strong>{thread.title}</strong>
+                          <span className="badge">
+                            {thread.event_count} event
+                            {thread.event_count === 1 ? "" : "s"}
+                          </span>
+                          <span className="badge">
+                            {thread.epic_count} epic
+                            {thread.epic_count === 1 ? "" : "s"}
+                          </span>
+                          <button
+                            className="secondary"
+                            type="button"
+                            title="Rename thread"
+                            style={{
+                              padding: "0.1rem 0.45rem",
+                              fontSize: "0.8rem",
+                            }}
+                            onClick={() => {
+                              setEditingThreadTitleId(thread.id);
+                              setEditingThreadTitleValue(thread.title);
+                            }}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="secondary"
+                            type="button"
+                            title="Delete thread"
+                            style={{
+                              padding: "0.1rem 0.45rem",
+                              fontSize: "0.8rem",
+                              color: "var(--danger, #c0392b)",
+                            }}
+                            onClick={() =>
+                              void doDeleteThread(thread.id, thread.title)
+                            }
+                          >
+                            🗑
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    {thread.summary && (
+                      <p className="meta" style={{ marginTop: "0.25rem" }}>
+                        {thread.summary}
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
 
-              {lifeThreads.length === 0 ? (
-                <p className="meta">No threads yet.</p>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                  {lifeThreads.map((thread) => (
-                    <article key={thread.id} className="memory" style={{ padding: "0.55rem 0.75rem" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap" }}>
-                        <span className="entityPill entityPillThread">Thread</span>
-                        {editingThreadTitleId === thread.id ? (
-                          <div className="controls" style={{ flex: 1 }}>
+          <section className="panel" style={{ marginTop: "1rem" }}>
+            <div className="periodsHeader">
+              <div>
+                <h2>Life Periods</h2>
+                <p className="meta">
+                  Start with periods, expand only the one you want, and add
+                  events inside that period.
+                </p>
+              </div>
+              <div
+                className="controls"
+                style={{ justifyContent: "flex-end", marginBottom: 0 }}
+              >
+                <label
+                  className="meta"
+                  htmlFor="period-sort-mode"
+                  style={{ alignSelf: "center" }}
+                >
+                  Sort
+                </label>
+                <select
+                  id="period-sort-mode"
+                  className="directoryInput"
+                  value={periodSortMode}
+                  onChange={(e) =>
+                    setPeriodSortMode(e.target.value as PeriodSortMode)
+                  }
+                  disabled={isSavingLifeStructure || isRecording || isLoading}
+                  style={{ width: "min(18rem, 44vw)" }}
+                >
+                  <option value="timeline-asc">Timeline: oldest first</option>
+                  <option value="timeline-desc">Timeline: newest first</option>
+                  <option value="events-desc">Most active first</option>
+                  <option value="updated-desc">Recently updated</option>
+                  <option value="title-asc">Title: A to Z</option>
+                </select>
+                <h3
+                  style={{
+                    cursor: "pointer",
+                    userSelect: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
+                    margin: 0,
+                  }}
+                  onClick={() => setIsPeriodComposerOpen((current) => !current)}
+                >
+                  <span>{isPeriodComposerOpen ? "▾" : "▸"}</span>
+                  New period
+                </h3>
+              </div>
+            </div>
+
+            <PeriodComposer
+              isOpen={isPeriodComposerOpen}
+              newPeriodTitle={newPeriodTitle}
+              setNewPeriodTitle={setNewPeriodTitle}
+              newPeriodStart={newPeriodStart}
+              setNewPeriodStart={setNewPeriodStart}
+              newPeriodEnd={newPeriodEnd}
+              setNewPeriodEnd={setNewPeriodEnd}
+              newPeriodSummary={newPeriodSummary}
+              setNewPeriodSummary={setNewPeriodSummary}
+              isBusy={isSavingLifeStructure || isRecording || isLoading}
+              createLifePeriod={createLifePeriod}
+              onCreated={() => setIsPeriodComposerOpen(false)}
+            />
+
+            <div className="lifePeriodList">
+              {lifePeriods.length === 0 && (
+                <p className="meta">No periods created yet.</p>
+              )}
+              {sortedLifePeriods.map((period) => {
+                const eventsForPeriod = [
+                  ...lifeEvents.filter(
+                    (event) => event.period_id === period.id,
+                  ),
+                ].sort(compareEventsByStartDate);
+                const eventsForPeriodIds = new Set(
+                  eventsForPeriod.map((e) => e.id),
+                );
+                const periodQuestionCount =
+                  (questionsByPeriodNoEvent.get(period.id)?.length ?? 0) +
+                  questionsWithContext.filter(
+                    (item) =>
+                      item.sourceEvent !== null &&
+                      eventsForPeriodIds.has(item.sourceEvent.id),
+                  ).length;
+                const isExpanded = Boolean(expandedPeriods[period.id]);
+                const draft = eventDraftsByPeriod[period.id] || {
+                  title: "",
+                  dateText: "",
+                  description: "",
+                };
+                const periodAnalysis = periodAnalysisById[period.id] || null;
+
+                return (
+                  <LifePeriodCard
+                    key={period.id}
+                    period={period}
+                    isHighlighted={
+                      highlightedElementId === `period-card-${period.id}`
+                    }
+                  >
+                    <div className="periodSummaryRow">
+                      <div style={{ flex: 1 }}>
+                        {editingPeriodTitleId === period.id ? (
+                          <div
+                            className="controls"
+                            style={{ marginBottom: "0.35rem" }}
+                          >
                             <input
                               className="directoryInput"
                               type="text"
-                              value={editingThreadTitleValue}
+                              value={editingPeriodTitleValue}
                               autoFocus
-                              onChange={(e) => setEditingThreadTitleValue(e.target.value)}
+                              onChange={(e) =>
+                                setEditingPeriodTitleValue(e.target.value)
+                              }
                               onKeyDown={(e) => {
-                                if (e.key === "Enter") void saveThreadTitle(thread.id, editingThreadTitleValue);
-                                if (e.key === "Escape") { setEditingThreadTitleId(null); setEditingThreadTitleValue(""); }
+                                if (e.key === "Enter")
+                                  renamePeriod(
+                                    period.id,
+                                    editingPeriodTitleValue,
+                                  );
+                                if (e.key === "Escape") {
+                                  setEditingPeriodTitleId(null);
+                                  setEditingPeriodTitleValue("");
+                                }
                               }}
                               style={{ flex: 1 }}
                             />
-                            <button className="primary" type="button" onClick={() => void saveThreadTitle(thread.id, editingThreadTitleValue)} disabled={!editingThreadTitleValue.trim()}>Save</button>
-                            <button className="secondary" type="button" onClick={() => { setEditingThreadTitleId(null); setEditingThreadTitleValue(""); }}>Cancel</button>
-                          </div>
-                        ) : (
-                          <>
-                            <strong>{thread.title}</strong>
-                            <span className="badge">{thread.event_count} event{thread.event_count === 1 ? "" : "s"}</span>
-                            <span className="badge">{thread.epic_count} epic{thread.epic_count === 1 ? "" : "s"}</span>
-                            <button
-                              className="secondary"
-                              type="button"
-                              title="Rename thread"
-                              style={{ padding: "0.1rem 0.45rem", fontSize: "0.8rem" }}
-                              onClick={() => { setEditingThreadTitleId(thread.id); setEditingThreadTitleValue(thread.title); }}
-                            >✏️</button>
-                            <button
-                              className="secondary"
-                              type="button"
-                              title="Delete thread"
-                              style={{ padding: "0.1rem 0.45rem", fontSize: "0.8rem", color: "var(--danger, #c0392b)" }}
-                              onClick={() => void doDeleteThread(thread.id, thread.title)}
-                            >🗑</button>
-                          </>
-                        )}
-                      </div>
-                      {thread.summary && <p className="meta" style={{ marginTop: "0.25rem" }}>{thread.summary}</p>}
-                    </article>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className="panel" style={{ marginTop: "1rem" }}>
-              <div className="periodsHeader">
-                <div>
-                  <h2>Life Periods</h2>
-                  <p className="meta">Start with periods, expand only the one you want, and add events inside that period.</p>
-                </div>
-                <div className="controls" style={{ justifyContent: "flex-end", marginBottom: 0 }}>
-                  <label className="meta" htmlFor="period-sort-mode" style={{ alignSelf: "center" }}>
-                    Sort
-                  </label>
-                  <select
-                    id="period-sort-mode"
-                    className="directoryInput"
-                    value={periodSortMode}
-                    onChange={(e) => setPeriodSortMode(e.target.value as PeriodSortMode)}
-                    disabled={isSavingLifeStructure || isRecording || isLoading}
-                    style={{ width: "min(18rem, 44vw)" }}
-                  >
-                    <option value="timeline-asc">Timeline: oldest first</option>
-                    <option value="timeline-desc">Timeline: newest first</option>
-                    <option value="events-desc">Most active first</option>
-                    <option value="updated-desc">Recently updated</option>
-                    <option value="title-asc">Title: A to Z</option>
-                  </select>
-                  <h3
-                    style={{ cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: "0.4rem", margin: 0 }}
-                    onClick={() => setIsPeriodComposerOpen((current) => !current)}
-                  >
-                    <span>{isPeriodComposerOpen ? "▾" : "▸"}</span>
-                    New period
-                  </h3>
-                </div>
-              </div>
-
-              <PeriodComposer
-                isOpen={isPeriodComposerOpen}
-                newPeriodTitle={newPeriodTitle}
-                setNewPeriodTitle={setNewPeriodTitle}
-                newPeriodStart={newPeriodStart}
-                setNewPeriodStart={setNewPeriodStart}
-                newPeriodEnd={newPeriodEnd}
-                setNewPeriodEnd={setNewPeriodEnd}
-                newPeriodSummary={newPeriodSummary}
-                setNewPeriodSummary={setNewPeriodSummary}
-                isBusy={isSavingLifeStructure || isRecording || isLoading}
-                createLifePeriod={createLifePeriod}
-                onCreated={() => setIsPeriodComposerOpen(false)}
-              />
-
-              <div className="lifePeriodList">
-                {lifePeriods.length === 0 && <p className="meta">No periods created yet.</p>}
-                {sortedLifePeriods.map((period) => {
-                  const eventsForPeriod = [...lifeEvents.filter((event) => event.period_id === period.id)].sort(compareEventsByStartDate);
-                  const eventsForPeriodIds = new Set(eventsForPeriod.map((e) => e.id));
-                  const periodQuestionCount =
-                    (questionsByPeriodNoEvent.get(period.id)?.length ?? 0) +
-                    questionsWithContext.filter(
-                      (item) => item.sourceEvent !== null && eventsForPeriodIds.has(item.sourceEvent.id),
-                    ).length;
-                  const isExpanded = Boolean(expandedPeriods[period.id]);
-                  const draft = eventDraftsByPeriod[period.id] || {
-                    title: "",
-                    dateText: "",
-                    description: "",
-                  };
-                  const periodAnalysis = periodAnalysisById[period.id] || null;
-
-                  return (
-                    <LifePeriodCard
-                      key={period.id}
-                      period={period}
-                      isHighlighted={highlightedElementId === `period-card-${period.id}`}
-                    >
-                      <div className="periodSummaryRow">
-                        <div style={{ flex: 1 }}>
-                          {editingPeriodTitleId === period.id ? (
-                            <div className="controls" style={{ marginBottom: "0.35rem" }}>
-                              <input
-                                className="directoryInput"
-                                type="text"
-                                value={editingPeriodTitleValue}
-                                autoFocus
-                                onChange={(e) => setEditingPeriodTitleValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") renamePeriod(period.id, editingPeriodTitleValue);
-                                  if (e.key === "Escape") { setEditingPeriodTitleId(null); setEditingPeriodTitleValue(""); }
-                                }}
-                                style={{ flex: 1 }}
-                              />
-                              <button className="primary" type="button" onClick={() => renamePeriod(period.id, editingPeriodTitleValue)} disabled={!editingPeriodTitleValue.trim()}>Save</button>
-                              <button className="secondary" type="button" onClick={() => { setEditingPeriodTitleId(null); setEditingPeriodTitleValue(""); }}>Cancel</button>
-                            </div>
-                          ) : (
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                              <span className="entityPill entityPillPeriod">Period</span>
-                              <h3 style={{ margin: 0 }}>{period.title}</h3>
-                              <button
-                                className="secondary"
-                                type="button"
-                                title="Edit title"
-                                style={{ padding: "0.1rem 0.45rem", fontSize: "0.8rem" }}
-                                onClick={() => { setEditingPeriodTitleId(period.id); setEditingPeriodTitleValue(period.title); }}
-                              >
-                                ✏️
-                              </button>
-                            </div>
-                          )}
-                          {editingPeriodDatesId === period.id ? (
-                            <div className="controls" style={{ marginBottom: "0.35rem", flexWrap: "wrap" }}>
-                              <input
-                                className="directoryInput"
-                                type="text"
-                                placeholder="Start (e.g. 1948)"
-                                value={editingPeriodStartValue}
-                                autoFocus
-                                onChange={(e) => setEditingPeriodStartValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") savePeriodDates(period.id);
-                                  if (e.key === "Escape") setEditingPeriodDatesId(null);
-                                }}
-                                style={{ width: "9rem" }}
-                              />
-                              <span className="meta" style={{ alignSelf: "center" }}>to</span>
-                              <input
-                                className="directoryInput"
-                                type="text"
-                                placeholder="End (e.g. 1960)"
-                                value={editingPeriodEndValue}
-                                onChange={(e) => setEditingPeriodEndValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") savePeriodDates(period.id);
-                                  if (e.key === "Escape") setEditingPeriodDatesId(null);
-                                }}
-                                style={{ width: "9rem" }}
-                              />
-                              <button className="primary" type="button" onClick={() => savePeriodDates(period.id)}>Save</button>
-                              <button className="secondary" type="button" onClick={() => setEditingPeriodDatesId(null)}>Cancel</button>
-                            </div>
-                          ) : (
-                            <p className="meta">
-                              Range: <span className="badge">{period.start_date_text || "unknown"}</span> to{" "}
-                              <span className="badge">{period.end_date_text || "unknown"}</span>
-                              <button
-                                className="secondary"
-                                type="button"
-                                title="Edit dates"
-                                style={{ marginLeft: "0.4rem", padding: "0.1rem 0.45rem", fontSize: "0.8rem" }}
-                                onClick={() => {
-                                  setEditingPeriodDatesId(period.id);
-                                  setEditingPeriodStartValue(period.start_date_text ?? "");
-                                  setEditingPeriodEndValue(period.end_date_text ?? "");
-                                }}
-                              >
-                                ✏️
-                              </button>
-                            </p>
-                          )}
-                          <p className="meta">
-                            Events: <span className="badge">{eventsForPeriod.length}</span> Assets: <span className="badge">{period.asset_count}</span>{periodQuestionCount > 0 && <> Questions: <span className="badge">{periodQuestionCount}</span></>}
-                          </p>
-                        </div>
-                      </div>
-
-                      <h3
-                        style={{ marginTop: 0, cursor: "pointer", userSelect: "none", display: "flex", alignItems: "center", gap: "0.4rem" }}
-                        onClick={() => togglePeriodExpanded(period.id)}
-                      >
-                        <span>{isExpanded ? "▾" : "▸"}</span>
-                        Period Details
-                      </h3>
-
-                      {isExpanded && (
-                        <>
-                          {period.summary && <p>{displayPeriodSummary(period.summary)}</p>}
-
-                          <div className="controls" style={{ marginTop: "0.45rem" }}>
                             <button
                               className="primary"
                               type="button"
-                              onClick={() => void startQuickMemoryCaptureForPeriod(period)}
-                              disabled={isSavingLifeStructure || isRecording || isLoading}
+                              onClick={() =>
+                                renamePeriod(period.id, editingPeriodTitleValue)
+                              }
+                              disabled={!editingPeriodTitleValue.trim()}
                             >
-                              Quick Memory in This Period
+                              Save
                             </button>
                             <button
                               className="secondary"
                               type="button"
-                              onClick={() => analyzePeriod(period.id)}
-                              disabled={periodAnalysisBusyId === period.id || isSavingLifeStructure || isRecording || isLoading}
+                              onClick={() => {
+                                setEditingPeriodTitleId(null);
+                                setEditingPeriodTitleValue("");
+                              }}
                             >
-                              Analyze Period
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <span className="entityPill entityPillPeriod">
+                              Period
+                            </span>
+                            <h3 style={{ margin: 0 }}>{period.title}</h3>
+                            <button
+                              className="secondary"
+                              type="button"
+                              title="Edit title"
+                              style={{
+                                padding: "0.1rem 0.45rem",
+                                fontSize: "0.8rem",
+                              }}
+                              onClick={() => {
+                                setEditingPeriodTitleId(period.id);
+                                setEditingPeriodTitleValue(period.title);
+                              }}
+                            >
+                              ✏️
+                            </button>
+                          </div>
+                        )}
+                        {editingPeriodDatesId === period.id ? (
+                          <div
+                            className="controls"
+                            style={{
+                              marginBottom: "0.35rem",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <input
+                              className="directoryInput"
+                              type="text"
+                              placeholder="Start (e.g. 1948)"
+                              value={editingPeriodStartValue}
+                              autoFocus
+                              onChange={(e) =>
+                                setEditingPeriodStartValue(e.target.value)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter")
+                                  savePeriodDates(period.id);
+                                if (e.key === "Escape")
+                                  setEditingPeriodDatesId(null);
+                              }}
+                              style={{ width: "9rem" }}
+                            />
+                            <span
+                              className="meta"
+                              style={{ alignSelf: "center" }}
+                            >
+                              to
+                            </span>
+                            <input
+                              className="directoryInput"
+                              type="text"
+                              placeholder="End (e.g. 1960)"
+                              value={editingPeriodEndValue}
+                              onChange={(e) =>
+                                setEditingPeriodEndValue(e.target.value)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter")
+                                  savePeriodDates(period.id);
+                                if (e.key === "Escape")
+                                  setEditingPeriodDatesId(null);
+                              }}
+                              style={{ width: "9rem" }}
+                            />
+                            <button
+                              className="primary"
+                              type="button"
+                              onClick={() => savePeriodDates(period.id)}
+                            >
+                              Save
                             </button>
                             <button
                               className="secondary"
                               type="button"
-                              onClick={() => analyzePeriod(period.id, { regenerateSummary: true })}
-                              disabled={periodAnalysisBusyId === period.id || isSavingLifeStructure || isRecording || isLoading}
+                              onClick={() => setEditingPeriodDatesId(null)}
                             >
-                              Generate Summary
+                              Cancel
                             </button>
+                          </div>
+                        ) : (
+                          <p className="meta">
+                            Range:{" "}
+                            <span className="badge">
+                              {period.start_date_text || "unknown"}
+                            </span>{" "}
+                            to{" "}
+                            <span className="badge">
+                              {period.end_date_text || "unknown"}
+                            </span>
                             <button
                               className="secondary"
                               type="button"
-                              onClick={() => setMergingPeriodId(mergingPeriodId === period.id ? null : period.id)}
-                              disabled={lifePeriods.length < 2 || isSavingLifeStructure || isRecording || isLoading}
+                              title="Edit dates"
+                              style={{
+                                marginLeft: "0.4rem",
+                                padding: "0.1rem 0.45rem",
+                                fontSize: "0.8rem",
+                              }}
+                              onClick={() => {
+                                setEditingPeriodDatesId(period.id);
+                                setEditingPeriodStartValue(
+                                  period.start_date_text ?? "",
+                                );
+                                setEditingPeriodEndValue(
+                                  period.end_date_text ?? "",
+                                );
+                              }}
                             >
-                              Merge Into…
+                              ✏️
                             </button>
-                            <button
-                              className="secondary"
-                              type="button"
-                              style={{ color: "var(--danger, #c0392b)" }}
-                              onClick={() => deletePeriod(period.id, period.title)}
-                              disabled={isSavingLifeStructure || isRecording || isLoading}
-                            >
-                              Delete Period
-                            </button>
-                          {periodAnalysis && (periodAnalysis.recommended_titles.length > 0 || !periodAnalysis.coverage_ok) && (
+                          </p>
+                        )}
+                        <p className="meta">
+                          Events:{" "}
+                          <span className="badge">
+                            {eventsForPeriod.length}
+                          </span>{" "}
+                          Assets:{" "}
+                          <span className="badge">{period.asset_count}</span>
+                          {periodQuestionCount > 0 && (
+                            <>
+                              {" "}
+                              Questions:{" "}
+                              <span className="badge">
+                                {periodQuestionCount}
+                              </span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    <h3
+                      style={{
+                        marginTop: 0,
+                        cursor: "pointer",
+                        userSelect: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.4rem",
+                      }}
+                      onClick={() => togglePeriodExpanded(period.id)}
+                    >
+                      <span>{isExpanded ? "▾" : "▸"}</span>
+                      Period Details
+                    </h3>
+
+                    {isExpanded && (
+                      <>
+                        {period.summary && (
+                          <p>{displayPeriodSummary(period.summary)}</p>
+                        )}
+
+                        <div
+                          className="controls"
+                          style={{ marginTop: "0.45rem" }}
+                        >
+                          <button
+                            className="primary"
+                            type="button"
+                            onClick={() =>
+                              void startQuickMemoryCaptureForPeriod(period)
+                            }
+                            disabled={
+                              isSavingLifeStructure || isRecording || isLoading
+                            }
+                          >
+                            Quick Memory in This Period
+                          </button>
+                          <button
+                            className="secondary"
+                            type="button"
+                            onClick={() => analyzePeriod(period.id)}
+                            disabled={
+                              periodAnalysisBusyId === period.id ||
+                              isSavingLifeStructure ||
+                              isRecording ||
+                              isLoading
+                            }
+                          >
+                            Analyze Period
+                          </button>
+                          <button
+                            className="secondary"
+                            type="button"
+                            onClick={() =>
+                              analyzePeriod(period.id, {
+                                regenerateSummary: true,
+                              })
+                            }
+                            disabled={
+                              periodAnalysisBusyId === period.id ||
+                              isSavingLifeStructure ||
+                              isRecording ||
+                              isLoading
+                            }
+                          >
+                            Generate Summary
+                          </button>
+                          <button
+                            className="secondary"
+                            type="button"
+                            onClick={() =>
+                              setMergingPeriodId(
+                                mergingPeriodId === period.id
+                                  ? null
+                                  : period.id,
+                              )
+                            }
+                            disabled={
+                              lifePeriods.length < 2 ||
+                              isSavingLifeStructure ||
+                              isRecording ||
+                              isLoading
+                            }
+                          >
+                            Merge Into…
+                          </button>
+                          <button
+                            className="secondary"
+                            type="button"
+                            style={{ color: "var(--danger, #c0392b)" }}
+                            onClick={() =>
+                              deletePeriod(period.id, period.title)
+                            }
+                            disabled={
+                              isSavingLifeStructure || isRecording || isLoading
+                            }
+                          >
+                            Delete Period
+                          </button>
+                          {periodAnalysis &&
+                            (periodAnalysis.recommended_titles.length > 0 ||
+                              !periodAnalysis.coverage_ok) && (
                               <button
                                 className="primary"
                                 type="button"
-                                onClick={() => analyzePeriod(period.id, { applyDates: true, applyTitle: true, regenerateSummary: true })}
-                                disabled={periodAnalysisBusyId === period.id || isSavingLifeStructure || isRecording || isLoading}
+                                onClick={() =>
+                                  analyzePeriod(period.id, {
+                                    applyDates: true,
+                                    applyTitle: true,
+                                    regenerateSummary: true,
+                                  })
+                                }
+                                disabled={
+                                  periodAnalysisBusyId === period.id ||
+                                  isSavingLifeStructure ||
+                                  isRecording ||
+                                  isLoading
+                                }
                               >
                                 Apply Top Recommendation
                               </button>
                             )}
+                        </div>
+
+                        {mergingPeriodId === period.id && (
+                          <div
+                            className="controls"
+                            style={{ marginTop: "0.35rem", flexWrap: "wrap" }}
+                          >
+                            <span
+                              className="meta"
+                              style={{ alignSelf: "center" }}
+                            >
+                              Move all events &amp; assets into:
+                            </span>
+                            {sortedLifePeriods
+                              .filter((p) => p.id !== period.id)
+                              .map((p) => (
+                                <button
+                                  key={p.id}
+                                  className="secondary"
+                                  type="button"
+                                  onClick={() => mergePeriod(period.id, p.id)}
+                                >
+                                  {p.title}
+                                </button>
+                              ))}
+                            <button
+                              className="secondary"
+                              type="button"
+                              onClick={() => setMergingPeriodId(null)}
+                            >
+                              Cancel
+                            </button>
                           </div>
+                        )}
 
-                          {mergingPeriodId === period.id && (
-                            <div className="controls" style={{ marginTop: "0.35rem", flexWrap: "wrap" }}>
-                              <span className="meta" style={{ alignSelf: "center" }}>Move all events &amp; assets into:</span>
-                              {sortedLifePeriods
-                                .filter((p) => p.id !== period.id)
-                                .map((p) => (
-                                  <button
-                                    key={p.id}
-                                    className="secondary"
-                                    type="button"
-                                    onClick={() => mergePeriod(period.id, p.id)}
-                                  >
-                                    {p.title}
-                                  </button>
-                                ))}
-                              <button className="secondary" type="button" onClick={() => setMergingPeriodId(null)}>Cancel</button>
-                            </div>
-                          )}
-
-                          {periodAnalysis && (
-                            <article className="memory" style={{ marginBottom: "0.65rem" }}>
-                              <h3>Period Analysis</h3>
-                              <p className="meta">
-                                Coverage: <span className="badge">{periodAnalysis.coverage_ok ? "Good" : "Needs update"}</span>
-                              </p>
-                              <p className="meta">{periodAnalysis.coverage_reasoning}</p>
-                              {periodAnalysis.recommended_start_date_text && periodAnalysis.recommended_end_date_text && (
+                        {periodAnalysis && (
+                          <article
+                            className="memory"
+                            style={{ marginBottom: "0.65rem" }}
+                          >
+                            <h3>Period Analysis</h3>
+                            <p className="meta">
+                              Coverage:{" "}
+                              <span className="badge">
+                                {periodAnalysis.coverage_ok
+                                  ? "Good"
+                                  : "Needs update"}
+                              </span>
+                            </p>
+                            <p className="meta">
+                              {periodAnalysis.coverage_reasoning}
+                            </p>
+                            {periodAnalysis.recommended_start_date_text &&
+                              periodAnalysis.recommended_end_date_text && (
                                 <p className="meta">
-                                  Recommended date range: <span className="badge">{periodAnalysis.recommended_start_date_text}</span> to <span className="badge">{periodAnalysis.recommended_end_date_text}</span>
+                                  Recommended date range:{" "}
+                                  <span className="badge">
+                                    {periodAnalysis.recommended_start_date_text}
+                                  </span>{" "}
+                                  to{" "}
+                                  <span className="badge">
+                                    {periodAnalysis.recommended_end_date_text}
+                                  </span>
                                 </p>
                               )}
-                              {periodAnalysis.recommended_titles.length > 0 && (
-                                <div style={{ marginTop: "0.45rem" }}>
-                                  <p className="meta"><strong>Suggested titles</strong> — click one to apply it:</p>
-                                  <div className="controls" style={{ flexWrap: "wrap" }}>
-                                    {periodAnalysis.recommended_titles.map((title) => (
+                            {periodAnalysis.recommended_titles.length > 0 && (
+                              <div style={{ marginTop: "0.45rem" }}>
+                                <p className="meta">
+                                  <strong>Suggested titles</strong> — click one
+                                  to apply it:
+                                </p>
+                                <div
+                                  className="controls"
+                                  style={{ flexWrap: "wrap" }}
+                                >
+                                  {periodAnalysis.recommended_titles.map(
+                                    (title) => (
                                       <button
                                         key={title}
                                         className="secondary"
@@ -2579,122 +3357,217 @@ export default function HomePage() {
                                         style={{ fontWeight: "normal" }}
                                         onClick={async () => {
                                           await renamePeriod(period.id, title);
-                                          setPeriodAnalysisById((current) => ({ ...current, [period.id]: null }));
+                                          setPeriodAnalysisById((current) => ({
+                                            ...current,
+                                            [period.id]: null,
+                                          }));
                                         }}
                                       >
                                         {title}
                                       </button>
-                                    ))}
-                                  </div>
+                                    ),
+                                  )}
                                 </div>
-                              )}
-                              <p className="meta">{periodAnalysis.title_reasoning}</p>
-                              {periodAnalysis.generated_summary && (
-                                <>
-                                  <p className="meta" style={{ marginTop: "0.55rem" }}><strong>Suggested summary</strong></p>
-                                  <p>{periodAnalysis.generated_summary}</p>
-                                  <p className="meta">{periodAnalysis.summary_reasoning}</p>
-                                </>
-                              )}
-                            </article>
-                          )}
-
-                          <article className="memory" style={{ marginBottom: "0.65rem" }}>
-                            <h3>Add Event to {period.title}</h3>
-                            <div className="lifeFormFields">
-                              <input
-                                className="directoryInput"
-                                type="text"
-                                placeholder="Event title"
-                                value={draft.title}
-                                onChange={(e) => updateEventDraftForPeriod(period.id, { title: e.target.value })}
-                                disabled={isSavingLifeStructure || isRecording || isLoading}
-                              />
-                              <input
-                                className="directoryInput"
-                                type="text"
-                                placeholder="Event date text"
-                                value={draft.dateText}
-                                onChange={(e) => updateEventDraftForPeriod(period.id, { dateText: e.target.value })}
-                                disabled={isSavingLifeStructure || isRecording || isLoading}
-                              />
-                              <input
-                                className="directoryInput"
-                                type="text"
-                                placeholder="Location (optional)"
-                                value={draft.location || ""}
-                                onChange={(e) => updateEventDraftForPeriod(period.id, { location: e.target.value })}
-                                disabled={isSavingLifeStructure || isRecording || isLoading}
-                              />
-                              <textarea
-                                className="directoryInput"
-                                placeholder="Event description"
-                                value={draft.description}
-                                onChange={(e) => updateEventDraftForPeriod(period.id, { description: e.target.value })}
-                                disabled={isSavingLifeStructure || isRecording || isLoading}
-                                rows={3}
-                              />
-                            </div>
-                            <div className="controls">
-                              <button
-                                className="primary"
-                                type="button"
-                                onClick={() =>
-                                  createLifeEvent({
-                                    title: draft.title,
-                                    eventDateText: draft.dateText,
-                                    description: draft.description,
-                                    location: draft.location,
-                                    periodId: period.id,
-                                    resetPeriodDraftId: period.id,
-                                  })
-                                }
-                                disabled={!draft.title.trim() || isSavingLifeStructure || isRecording || isLoading}
-                              >
-                                Create Event
-                              </button>
-                            </div>
+                              </div>
+                            )}
+                            <p className="meta">
+                              {periodAnalysis.title_reasoning}
+                            </p>
+                            {periodAnalysis.generated_summary && (
+                              <>
+                                <p
+                                  className="meta"
+                                  style={{ marginTop: "0.55rem" }}
+                                >
+                                  <strong>Suggested summary</strong>
+                                </p>
+                                <p>{periodAnalysis.generated_summary}</p>
+                                <p className="meta">
+                                  {periodAnalysis.summary_reasoning}
+                                </p>
+                              </>
+                            )}
                           </article>
+                        )}
 
-                          <article className="memory" style={{ marginBottom: "0.65rem" }}>
-                            <h3>Add Epic to {period.title}</h3>
-                            <p className="meta">Epics group related events within this period — e.g. "Deployment to Bahrain" or "Summer Vacation 2010".</p>
-                            <div className="controls">
-                              <input
-                                className="directoryInput"
-                                type="text"
-                                placeholder="Epic title"
-                                value={epicDraftsByPeriod[period.id] ?? ""}
-                                onChange={(e) => setEpicDraftsByPeriod((prev) => ({ ...prev, [period.id]: e.target.value }))}
-                                onKeyDown={(e) => { if (e.key === "Enter") void createLifeEpic(period.id); }}
-                                disabled={isSavingLifeStructure || isRecording || isLoading}
-                                style={{ flex: 1 }}
-                              />
-                              <button
-                                className="primary"
-                                type="button"
-                                onClick={() => void createLifeEpic(period.id)}
-                                disabled={!(epicDraftsByPeriod[period.id] ?? "").trim() || isSavingLifeStructure || isRecording || isLoading}
-                              >
-                                Create Epic
-                              </button>
-                            </div>
-                          </article>
+                        <article
+                          className="memory"
+                          style={{ marginBottom: "0.65rem" }}
+                        >
+                          <h3>Add Event to {period.title}</h3>
+                          <div className="lifeFormFields">
+                            <input
+                              className="directoryInput"
+                              type="text"
+                              placeholder="Event title"
+                              value={draft.title}
+                              onChange={(e) =>
+                                updateEventDraftForPeriod(period.id, {
+                                  title: e.target.value,
+                                })
+                              }
+                              disabled={
+                                isSavingLifeStructure ||
+                                isRecording ||
+                                isLoading
+                              }
+                            />
+                            <input
+                              className="directoryInput"
+                              type="text"
+                              placeholder="Event date text"
+                              value={draft.dateText}
+                              onChange={(e) =>
+                                updateEventDraftForPeriod(period.id, {
+                                  dateText: e.target.value,
+                                })
+                              }
+                              disabled={
+                                isSavingLifeStructure ||
+                                isRecording ||
+                                isLoading
+                              }
+                            />
+                            <input
+                              className="directoryInput"
+                              type="text"
+                              placeholder="Location (optional)"
+                              value={draft.location || ""}
+                              onChange={(e) =>
+                                updateEventDraftForPeriod(period.id, {
+                                  location: e.target.value,
+                                })
+                              }
+                              disabled={
+                                isSavingLifeStructure ||
+                                isRecording ||
+                                isLoading
+                              }
+                            />
+                            <textarea
+                              className="directoryInput"
+                              placeholder="Event description"
+                              value={draft.description}
+                              onChange={(e) =>
+                                updateEventDraftForPeriod(period.id, {
+                                  description: e.target.value,
+                                })
+                              }
+                              disabled={
+                                isSavingLifeStructure ||
+                                isRecording ||
+                                isLoading
+                              }
+                              rows={3}
+                            />
+                          </div>
+                          <div className="controls">
+                            <button
+                              className="primary"
+                              type="button"
+                              onClick={() =>
+                                createLifeEvent({
+                                  title: draft.title,
+                                  eventDateText: draft.dateText,
+                                  description: draft.description,
+                                  location: draft.location,
+                                  periodId: period.id,
+                                  resetPeriodDraftId: period.id,
+                                })
+                              }
+                              disabled={
+                                !draft.title.trim() ||
+                                isSavingLifeStructure ||
+                                isRecording ||
+                                isLoading
+                              }
+                            >
+                              Create Event
+                            </button>
+                          </div>
+                        </article>
 
-                          {(questionsByPeriodNoEvent.get(period.id)?.length ?? 0) > 0 && (
-                            <div className="inlineQuestionList">
-                              <p className="inlineQuestionListLabel">Open questions for this period</p>
-                              {questionsByPeriodNoEvent.get(period.id)!.map(({ question, sourceMemory }) => (
-                                <article key={question.id} className="questionCard inlineQuestionCard">
-                                  <p className="questionText">{question.text}</p>
+                        <article
+                          className="memory"
+                          style={{ marginBottom: "0.65rem" }}
+                        >
+                          <h3>Add Epic to {period.title}</h3>
+                          <p className="meta">
+                            Epics group related events within this period — e.g.
+                            "Deployment to Bahrain" or "Summer Vacation 2010".
+                          </p>
+                          <div className="controls">
+                            <input
+                              className="directoryInput"
+                              type="text"
+                              placeholder="Epic title"
+                              value={epicDraftsByPeriod[period.id] ?? ""}
+                              onChange={(e) =>
+                                setEpicDraftsByPeriod((prev) => ({
+                                  ...prev,
+                                  [period.id]: e.target.value,
+                                }))
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter")
+                                  void createLifeEpic(period.id);
+                              }}
+                              disabled={
+                                isSavingLifeStructure ||
+                                isRecording ||
+                                isLoading
+                              }
+                              style={{ flex: 1 }}
+                            />
+                            <button
+                              className="primary"
+                              type="button"
+                              onClick={() => void createLifeEpic(period.id)}
+                              disabled={
+                                !(epicDraftsByPeriod[period.id] ?? "").trim() ||
+                                isSavingLifeStructure ||
+                                isRecording ||
+                                isLoading
+                              }
+                            >
+                              Create Epic
+                            </button>
+                          </div>
+                        </article>
+
+                        {(questionsByPeriodNoEvent.get(period.id)?.length ??
+                          0) > 0 && (
+                          <div className="inlineQuestionList">
+                            <p className="inlineQuestionListLabel">
+                              Open questions for this period
+                            </p>
+                            {questionsByPeriodNoEvent
+                              .get(period.id)!
+                              .map(({ question, sourceMemory }) => (
+                                <article
+                                  key={question.id}
+                                  className="questionCard inlineQuestionCard"
+                                >
+                                  <p className="questionText">
+                                    {question.text}
+                                  </p>
                                   {sourceMemory && (
-                                    <p className="questionSource">From: <em>{sourceMemory.event_description}</em></p>
+                                    <p className="questionSource">
+                                      From:{" "}
+                                      <em>{sourceMemory.event_description}</em>
+                                    </p>
                                   )}
                                   <div className="questionActions">
                                     <button
                                       className="primary"
                                       type="button"
-                                      onClick={() => { setActiveQuestion(question); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                                      onClick={() => {
+                                        setActiveQuestion(question);
+                                        window.scrollTo({
+                                          top: 0,
+                                          behavior: "smooth",
+                                        });
+                                      }}
                                       disabled={isRecording || isLoading}
                                     >
                                       Answer this
@@ -2702,7 +3575,9 @@ export default function HomePage() {
                                     <button
                                       className="ghost"
                                       type="button"
-                                      onClick={() => dismissQuestion(question.id)}
+                                      onClick={() =>
+                                        dismissQuestion(question.id)
+                                      }
                                       disabled={isRecording || isLoading}
                                     >
                                       Remove
@@ -2710,227 +3585,323 @@ export default function HomePage() {
                                   </div>
                                 </article>
                               ))}
+                          </div>
+                        )}
+
+                        {(() => {
+                          const epicsForPeriod = [
+                            ...lifeEpics.filter(
+                              (e) => e.period_id === period.id,
+                            ),
+                          ].sort(compareEpicsByStartDate);
+                          const ungroupedEvents = eventsForPeriod.filter(
+                            (ev) =>
+                              ev.epic_id === null ||
+                              !epicsForPeriod.some(
+                                (ep) => ep.id === ev.epic_id,
+                              ),
+                          );
+                          return (
+                            <div className="lifeEventList">
+                              {eventsForPeriod.length === 0 && (
+                                <p className="meta">
+                                  No events in this period yet.
+                                </p>
+                              )}
+                              {ungroupedEvents.length > 0 && (
+                                <div className="unepicedEventList">
+                                  {ungroupedEvents.map((event) =>
+                                    renderEventCard(
+                                      event,
+                                      eventsForPeriod,
+                                      epicsForPeriod,
+                                    ),
+                                  )}
+                                </div>
+                              )}
+                              {epicsForPeriod.map((epic) => {
+                                const epicEvents = eventsForPeriod.filter(
+                                  (ev) => ev.epic_id === epic.id,
+                                );
+                                const isEpicExpanded = Boolean(
+                                  expandedEpics[epic.id],
+                                );
+                                return (
+                                  <EpicCard
+                                    key={epic.id}
+                                    epic={epic}
+                                    periods={lifePeriods}
+                                    threads={lifeThreads}
+                                    isOpen={isEpicExpanded}
+                                    isRenamingTitle={
+                                      editingEpicTitleId === epic.id
+                                    }
+                                    renamingTitleValue={editingEpicTitleValue}
+                                    setRenamingTitleValue={
+                                      setEditingEpicTitleValue
+                                    }
+                                    onToggleOpen={() =>
+                                      toggleEpicExpanded(epic.id)
+                                    }
+                                    onStartRenameTitle={() => {
+                                      setEditingEpicTitleId(epic.id);
+                                      setEditingEpicTitleValue(epic.title);
+                                    }}
+                                    onSaveRenameTitle={() =>
+                                      void saveEpicTitle(
+                                        epic.id,
+                                        editingEpicTitleValue,
+                                      )
+                                    }
+                                    onCancelRenameTitle={() => {
+                                      setEditingEpicTitleId(null);
+                                      setEditingEpicTitleValue("");
+                                    }}
+                                    onDelete={() =>
+                                      void doDeleteEpic(epic.id, epic.title)
+                                    }
+                                    onAssignThread={(threadId) =>
+                                      void doAssignEpicToThread(
+                                        epic.id,
+                                        threadId,
+                                      )
+                                    }
+                                    onAssignPeriod={(periodId) =>
+                                      void doAssignEpicToPeriod(
+                                        epic.id,
+                                        periodId,
+                                      )
+                                    }
+                                    onCreateEvent={(title) =>
+                                      createLifeEventInEpic(epic.id, title)
+                                    }
+                                    isBusy={
+                                      isSavingLifeStructure ||
+                                      isRecording ||
+                                      isLoading
+                                    }
+                                  >
+                                    {epicEvents.length === 0 ? (
+                                      <p className="meta">
+                                        No events assigned to this epic yet.
+                                      </p>
+                                    ) : (
+                                      epicEvents.map((event) =>
+                                        renderEventCard(
+                                          event,
+                                          eventsForPeriod,
+                                          epicsForPeriod,
+                                        ),
+                                      )
+                                    )}
+                                  </EpicCard>
+                                );
+                              })}
                             </div>
-                          )}
+                          );
+                        })()}
+                      </>
+                    )}
+                  </LifePeriodCard>
+                );
+              })}
+            </div>
 
-                          {(() => {
-                            const epicsForPeriod = [...lifeEpics.filter((e) => e.period_id === period.id)].sort(compareEpicsByStartDate);
-                            const ungroupedEvents = eventsForPeriod.filter((ev) => ev.epic_id === null || !epicsForPeriod.some((ep) => ep.id === ev.epic_id));
-                            return (
-                              <div className="lifeEventList">
-                                {eventsForPeriod.length === 0 && <p className="meta">No events in this period yet.</p>}
-                                {ungroupedEvents.length > 0 && (
-                                  <div className="unepicedEventList">
-                                    {ungroupedEvents.map((event) => renderEventCard(event, eventsForPeriod, epicsForPeriod))}
-                                  </div>
-                                )}
-                                {epicsForPeriod.map((epic) => {
-                                  const epicEvents = eventsForPeriod.filter((ev) => ev.epic_id === epic.id);
-                                  const isEpicExpanded = Boolean(expandedEpics[epic.id]);
-                                  return (
-                                    <EpicCard
-                                      key={epic.id}
-                                      epic={epic}
-                                      periods={lifePeriods}
-                                      threads={lifeThreads}
-                                      isOpen={isEpicExpanded}
-                                      isRenamingTitle={editingEpicTitleId === epic.id}
-                                      renamingTitleValue={editingEpicTitleValue}
-                                      setRenamingTitleValue={setEditingEpicTitleValue}
-                                      onToggleOpen={() => toggleEpicExpanded(epic.id)}
-                                      onStartRenameTitle={() => { setEditingEpicTitleId(epic.id); setEditingEpicTitleValue(epic.title); }}
-                                      onSaveRenameTitle={() => void saveEpicTitle(epic.id, editingEpicTitleValue)}
-                                      onCancelRenameTitle={() => { setEditingEpicTitleId(null); setEditingEpicTitleValue(""); }}
-                                      onDelete={() => void doDeleteEpic(epic.id, epic.title)}
-                                      onAssignThread={(threadId) => void doAssignEpicToThread(epic.id, threadId)}
-                                      onAssignPeriod={(periodId) => void doAssignEpicToPeriod(epic.id, periodId)}
-                                      onCreateEvent={(title) => createLifeEventInEpic(epic.id, title)}
-                                      isBusy={isSavingLifeStructure || isRecording || isLoading}
-                                    >
-                                      {epicEvents.length === 0 ? (
-                                        <p className="meta">No events assigned to this epic yet.</p>
-                                      ) : (
-                                        epicEvents.map((event) => renderEventCard(event, eventsForPeriod, epicsForPeriod))
-                                      )}
-                                    </EpicCard>
-                                  );
-                                })}
-                              </div>
-                            );
-                          })()}
-                        </>
-                      )}
-                    </LifePeriodCard>
-                  );
-                })}
+            <article className="memory" style={{ marginTop: "0.75rem" }}>
+              <h3>Unassigned Events</h3>
+              <p className="meta">
+                Events with no period assignment appear here so they never
+                disappear from view.
+              </p>
+              <div className="lifeEventList">
+                {unassignedEvents.length === 0 && (
+                  <p className="meta">No unassigned events.</p>
+                )}
+                {unassignedEvents.map((event) =>
+                  renderEventCard(event, lifeEvents),
+                )}
               </div>
+            </article>
 
-              <article className="memory" style={{ marginTop: "0.75rem" }}>
-                <h3>Unassigned Events</h3>
-                <p className="meta">Events with no period assignment appear here so they never disappear from view.</p>
-                <div className="lifeEventList">
-                  {unassignedEvents.length === 0 && <p className="meta">No unassigned events.</p>}
-                  {unassignedEvents.map((event) => renderEventCard(event, lifeEvents))}
-                </div>
+            <UnlinkedAssetsInbox
+              unlinkedAssets={unlinkedAssets}
+              highlightedElementId={highlightedElementId}
+              expandedAssetRowIds={expandedAssetRowIds}
+              setExpandedAssetRowIds={setExpandedAssetRowIds}
+              editingAssetTitleId={editingAssetTitleId}
+              setEditingAssetTitleId={setEditingAssetTitleId}
+              editingAssetTitleValue={editingAssetTitleValue}
+              setEditingAssetTitleValue={setEditingAssetTitleValue}
+              assetTitleSavingId={assetTitleSavingId}
+              saveAssetTitle={saveAssetTitle}
+              editingAssetNotesId={editingAssetNotesId}
+              setEditingAssetNotesId={setEditingAssetNotesId}
+              editingAssetNotesValue={editingAssetNotesValue}
+              setEditingAssetNotesValue={setEditingAssetNotesValue}
+              assetNotesSavingId={assetNotesSavingId}
+              saveAssetNotes={saveAssetNotes}
+              editingAssetCapturedDateId={editingAssetCapturedDateId}
+              setEditingAssetCapturedDateId={setEditingAssetCapturedDateId}
+              editingAssetCapturedDateValue={editingAssetCapturedDateValue}
+              setEditingAssetCapturedDateValue={
+                setEditingAssetCapturedDateValue
+              }
+              assetCapturedDateSavingId={assetCapturedDateSavingId}
+              saveAssetCapturedDate={saveAssetCapturedDate}
+              resolveApiUrl={resolveApiUrl}
+              formatBytes={formatBytes}
+              deleteAsset={deleteAsset}
+              lifePeriods={lifePeriods}
+              lifeEpics={lifeEpics}
+              lifeEvents={lifeEvents}
+              createEpicInPeriod={createEpicInPeriod}
+              createEventForLinking={createEventForLinking}
+              assetLinkTargets={assetLinkTargets}
+              setAssetLinkTargets={setAssetLinkTargets}
+              linkUnlinkedAssetToEvent={linkUnlinkedAssetToEvent}
+              isSavingLifeStructure={isSavingLifeStructure}
+            />
+          </section>
+
+          <section className="timeline">
+            {mainCharacterName === null && (
+              <article className="questionCard characterPromptCard">
+                <p className="questionText">
+                  Before we continue, what should we call you on your memory
+                  cards?
+                </p>
+                {showCharacterInput ? (
+                  <div className="characterInputRow">
+                    <input
+                      className="characterInput"
+                      type="text"
+                      placeholder="Your name or nickname"
+                      value={characterInputValue}
+                      onChange={(e) => setCharacterInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && characterInputValue.trim()) {
+                          saveMainCharacterName(characterInputValue.trim());
+                        }
+                      }}
+                      autoFocus
+                      disabled={isSavingCharacter}
+                    />
+                    <button
+                      className="primary"
+                      type="button"
+                      onClick={() => {
+                        if (characterInputValue.trim()) {
+                          saveMainCharacterName(characterInputValue.trim());
+                        }
+                      }}
+                      disabled={
+                        isSavingCharacter || !characterInputValue.trim()
+                      }
+                    >
+                      Save
+                    </button>
+                    <button
+                      className="ghost"
+                      type="button"
+                      onClick={() => {
+                        setShowCharacterInput(false);
+                        setCharacterInputValue("");
+                      }}
+                      disabled={isSavingCharacter}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="questionActions">
+                    <button
+                      className="primary"
+                      type="button"
+                      onClick={() => setShowCharacterInput(true)}
+                    >
+                      Answer this
+                    </button>
+                    <button
+                      className="ghost"
+                      type="button"
+                      onClick={() => saveMainCharacterName("")}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
               </article>
-
-              <UnlinkedAssetsInbox
-                unlinkedAssets={unlinkedAssets}
-                highlightedElementId={highlightedElementId}
-                expandedAssetRowIds={expandedAssetRowIds}
-                setExpandedAssetRowIds={setExpandedAssetRowIds}
-                editingAssetTitleId={editingAssetTitleId}
-                setEditingAssetTitleId={setEditingAssetTitleId}
-                editingAssetTitleValue={editingAssetTitleValue}
-                setEditingAssetTitleValue={setEditingAssetTitleValue}
-                assetTitleSavingId={assetTitleSavingId}
-                saveAssetTitle={saveAssetTitle}
-                editingAssetNotesId={editingAssetNotesId}
-                setEditingAssetNotesId={setEditingAssetNotesId}
-                editingAssetNotesValue={editingAssetNotesValue}
-                setEditingAssetNotesValue={setEditingAssetNotesValue}
-                assetNotesSavingId={assetNotesSavingId}
-                saveAssetNotes={saveAssetNotes}
-                editingAssetCapturedDateId={editingAssetCapturedDateId}
-                setEditingAssetCapturedDateId={setEditingAssetCapturedDateId}
-                editingAssetCapturedDateValue={editingAssetCapturedDateValue}
-                setEditingAssetCapturedDateValue={setEditingAssetCapturedDateValue}
-                assetCapturedDateSavingId={assetCapturedDateSavingId}
-                saveAssetCapturedDate={saveAssetCapturedDate}
-                resolveApiUrl={resolveApiUrl}
-                formatBytes={formatBytes}
-                deleteAsset={deleteAsset}
-                lifePeriods={lifePeriods}
-                lifeEpics={lifeEpics}
-                lifeEvents={lifeEvents}
-                createEpicInPeriod={createEpicInPeriod}
-                createEventForLinking={createEventForLinking}
-                assetLinkTargets={assetLinkTargets}
-                setAssetLinkTargets={setAssetLinkTargets}
-                linkUnlinkedAssetToEvent={linkUnlinkedAssetToEvent}
-                isSavingLifeStructure={isSavingLifeStructure}
-              />
-            </section>
-
-            <section className="timeline">
-              {mainCharacterName === null && (
-          <article className="questionCard characterPromptCard">
-            <p className="questionText">Before we continue, what should we call you on your memory cards?</p>
-            {showCharacterInput ? (
-              <div className="characterInputRow">
-                <input
-                  className="characterInput"
-                  type="text"
-                  placeholder="Your name or nickname"
-                  value={characterInputValue}
-                  onChange={(e) => setCharacterInputValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && characterInputValue.trim()) {
-                      saveMainCharacterName(characterInputValue.trim());
-                    }
-                  }}
-                  autoFocus
-                  disabled={isSavingCharacter}
-                />
-                <button
-                  className="primary"
-                  type="button"
-                  onClick={() => {
-                    if (characterInputValue.trim()) {
-                      saveMainCharacterName(characterInputValue.trim());
-                    }
-                  }}
-                  disabled={isSavingCharacter || !characterInputValue.trim()}
+            )}
+            {questionsWithNoContext.length > 0 && (
+              <div className="questionsSection">
+                <p
+                  className="inlineQuestionListLabel"
+                  style={{ marginBottom: "0.5rem" }}
                 >
-                  Save
-                </button>
-                <button
-                  className="ghost"
-                  type="button"
-                  onClick={() => {
-                    setShowCharacterInput(false);
-                    setCharacterInputValue("");
-                  }}
-                  disabled={isSavingCharacter}
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="questionActions">
-                <button
-                  className="primary"
-                  type="button"
-                  onClick={() => setShowCharacterInput(true)}
-                >
-                  Answer this
-                </button>
-                <button
-                  className="ghost"
-                  type="button"
-                  onClick={() => saveMainCharacterName("")}
-                >
-                  Remove
-                </button>
+                  General open questions
+                </p>
+                {questionsWithNoContext.map(({ question }) => (
+                  <article key={question.id} className="questionCard">
+                    <p className="questionText">{question.text}</p>
+                    <div className="questionActions">
+                      <button
+                        className="primary"
+                        type="button"
+                        onClick={() => {
+                          setActiveQuestion(question);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        disabled={isRecording || isLoading}
+                      >
+                        Answer this
+                      </button>
+                      <button
+                        className="ghost"
+                        type="button"
+                        onClick={() => dismissQuestion(question.id)}
+                        disabled={isRecording || isLoading}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </article>
+                ))}
               </div>
             )}
-          </article>
-        )}
-              {questionsWithNoContext.length > 0 && (
-                <div className="questionsSection">
-                  <p className="inlineQuestionListLabel" style={{ marginBottom: "0.5rem" }}>General open questions</p>
-                  {questionsWithNoContext.map(({ question }) => (
-                    <article key={question.id} className="questionCard">
-                      <p className="questionText">{question.text}</p>
-                      <div className="questionActions">
-                        <button
-                          className="primary"
-                          type="button"
-                          onClick={() => {
-                            setActiveQuestion(question);
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
-                          disabled={isRecording || isLoading}
-                        >
-                          Answer this
-                        </button>
-                        <button
-                          className="ghost"
-                          type="button"
-                          onClick={() => dismissQuestion(question.id)}
-                          disabled={isRecording || isLoading}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-              {timelineStandaloneMemories.map((memory) => (
-                <MemoryCard
-                  key={memory.id}
-                  containerId={`memory-card-${memory.id}`}
-                  isHighlighted={highlightedElementId === `memory-card-${memory.id}`}
-                  memory={memory}
-                  linkedQuestions={questions.filter((q) => q.source_memory_id === memory.id)}
-                  peopleOptions={peopleDirectory}
-                  formatBytes={formatBytes}
-                  resolveApiUrl={resolveApiUrl}
-                  onAcceptSuggestion={acceptResearchSuggestion}
-                  onDismissSuggestion={dismissResearchSuggestion}
-                  onReanalyze={reanalyzeMemory}
-                  onDelete={deleteMemory}
-                  onAssignRecorder={assignRecorder}
-                  isBusy={isLoading || memoryActionId === memory.id || isRecording}
-                />
-              ))}
-              {timeline.length === 0 && <p className="meta">No memories yet. Record your first one.</p>}
-              {timeline.length > 0 && timelineStandaloneMemories.length === 0 && (
-                <p className="meta">All captured memories are organized in Life Periods above.</p>
-              )}
-            </section>
-          </>
+            {timelineStandaloneMemories.map((memory) => (
+              <MemoryCard
+                key={memory.id}
+                containerId={`memory-card-${memory.id}`}
+                isHighlighted={
+                  highlightedElementId === `memory-card-${memory.id}`
+                }
+                memory={memory}
+                linkedQuestions={questions.filter(
+                  (q) => q.source_memory_id === memory.id,
+                )}
+                peopleOptions={peopleDirectory}
+                formatBytes={formatBytes}
+                resolveApiUrl={resolveApiUrl}
+                onAcceptSuggestion={acceptResearchSuggestion}
+                onDismissSuggestion={dismissResearchSuggestion}
+                onReanalyze={reanalyzeMemory}
+                onDelete={deleteMemory}
+                onAssignRecorder={assignRecorder}
+                isBusy={
+                  isLoading || memoryActionId === memory.id || isRecording
+                }
+              />
+            ))}
+            {timeline.length === 0 && (
+              <p className="meta">No memories yet. Record your first one.</p>
+            )}
+            {timeline.length > 0 && timelineStandaloneMemories.length === 0 && (
+              <p className="meta">
+                All captured memories are organized in Life Periods above.
+              </p>
+            )}
+          </section>
+        </>
       </div>
 
       <CaptureSidebar

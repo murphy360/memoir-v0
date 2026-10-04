@@ -1,15 +1,9 @@
+# ruff at its defaults (88 columns, `ruff format`), as murphy360/standards asks. The complexity and
+# file-size limits come from the standards' code_rules.py, against code_rules_baseline.json here.
 [tool.ruff]
-line-length = 140
-target-version = "py311"
-exclude = [
-  ".venv",
-  "__pycache__",
-  "data",
-]
+target-version = "py312"
+exclude = [".venv", "__pycache__", "data"]
 
-[tool.ruff.lint]
-select = ["E9", "F63", "F7", "F82"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

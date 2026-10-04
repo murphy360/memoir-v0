@@ -1,0 +1,61 @@
+# From murphy360/standards templates/ci.yml: two images (api, web), each linted and tested in its own directory.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  standards:
+    uses: murphy360/standards/.github/workflows/standards-check.yml@v1
+  lint-api:
+    uses: murphy360/standards/.github/workflows/python-lint.yml@v1
+    with:
+      working-directory: backend
+      format-check: true
+  lint-web:
+    # Pinned to murphy360/standards#2 until it is released as v1.1.0; then @v1 like the others.
+    uses: murphy360/standards/.github/workflows/node-lint.yml@5d52c5303ca6f7a1212d12d2385eb861badbd33b
+    with:
+      working-directory: frontend
+      format-check: true
+      standards-ref: 5d52c5303ca6f7a1212d12d2385eb861badbd33b
+  workflows:
+    uses: murphy360/standards/.github/workflows/actionlint.yml@v1
+  test-api:
+    uses: murphy360/standards/.github/workflows/test-docker.yml@v1
+    with:
+      context: backend
+      file: backend/Dockerfile
+      target: test
+      command: "cd backend && pytest -q"
+  test-web:
+    uses: murphy360/standards/.github/workflows/test-docker.yml@v1
+    with:
+      context: frontend
+      file: frontend/Dockerfile
+      target: test
+      command: "cd frontend && npm run typecheck && npm test"
+  image-api:
+    needs: [lint-api, test-api]
+    uses: murphy360/standards/.github/workflows/image.yml@v1
+    with:
+      image: memoir-v0-api
+      context: backend
+      file: backend/Dockerfile
+      push: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+      packages: write
+  image-web:
+    needs: [lint-web, test-web]
+    uses: murphy360/standards/.github/workflows/image.yml@v1
+    with:
+      image: memoir-v0-web
+      context: frontend
+      file: frontend/Dockerfile
+      push: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+      packages: write
