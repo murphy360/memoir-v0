@@ -38,8 +38,10 @@ jobs:
       target: test
       command: "cd frontend && npm run typecheck && npm test"
   image-api:
+    # image.yml from v2: v1's names every image's digests the same, so a run that
+    # builds two images mixes them up (murphy360/standards#11).
     needs: [lint-api, test-api]
-    uses: murphy360/standards/.github/workflows/image.yml@v1
+    uses: murphy360/standards/.github/workflows/image.yml@v2
     with:
       image: memoir-v0-api
       context: backend
@@ -50,7 +52,7 @@ jobs:
       packages: write
   image-web:
     needs: [lint-web, test-web]
-    uses: murphy360/standards/.github/workflows/image.yml@v1
+    uses: murphy360/standards/.github/workflows/image.yml@v2
     with:
       image: memoir-v0-web
       context: frontend
