@@ -50,21 +50,22 @@ analyses it with Gemini, files photos and faces (CompreFace), and the web app sh
 and events. Two images from one repository:
 
 - `backend/`: FastAPI on Python 3.12, SQLite at `/data/memoir.db`, audio and documents under `/data`. Image
-  `ghcr.io/murphy360/memoir-api`. Settings are environment variables (see `docker-compose.yml`); no key means that
+  `ghcr.io/murphy360/memoir-v0-api`. Settings are environment variables (see `docker-compose.yml`); no key means that
   feature is off (no `GEMINI_API_KEY`: no transcription; no `COMPREFACE_API_KEY`: no faces).
-- `frontend/`: Next.js 14 (app router, client components) on Node 22. Image `ghcr.io/murphy360/memoir-web`. The
+- `frontend/`: Next.js 14 (app router, client components) on Node 22. Image `ghcr.io/murphy360/memoir-v0-web`. The
   browser talks to the API at `API_BASE` (`frontend/app/lib/memoirApi.ts`): an absolute URL for local development,
   otherwise the same origin under the base path. `NEXT_PUBLIC_BASE_PATH` and `NEXT_PUBLIC_API_BASE_URL` are inlined
-  at build time, so they are Docker build arguments; the image defaults are the hosted deployment (`/memoir`).
+  at build time, so they are Docker build arguments; the image defaults are the hosted deployment (`/memoir-v0`).
 - Tests and lint: `make test`, `make lint`, `make format` (all in Docker, `TAG=<you>` for your own image tags).
   The API tests use a throwaway SQLite database (`backend/tests/conftest.py`) and never call Gemini or CompreFace.
   The ratchet baselines live in `backend/` and `frontend/`; `make baseline` rewrites them with a checkout of
   murphy360/standards beside this repository. `backend/app/main.py` and `frontend/app/page.tsx` are far over the
   file-size limit: add nothing to them, put new routes in a router module and new UI in a component.
 - Local run: `docker compose up --build` (web on :3000, API on :8001, a CompreFace stack of its own on :8080).
-- Hosted on the owner's server from the dontpanic stack (`~/Software/dontpanic`, services `memoir-api` and
-  `memoir-web`) behind Caddy at `https://dontpanic.ddns.net/memoir`, with Caddy's basic auth in front. Caddy strips
-  `/memoir` from `/memoir/api/*` for the API and passes the rest to the web app. Data in `/docker/memoir/data`,
-  secrets in `/docker/memoir/memoir.env`; the CompreFace there is the stack's shared one. Never in the repository.
+- Hosted on the owner's server from the dontpanic stack (`~/Software/dontpanic`, services `memoir-v0-api` and
+  `memoir-v0-web`) behind Caddy at `https://dontpanic.ddns.net/memoir-v0`, with Caddy's basic auth in front, beside
+  the rewrite (murphy360/memoir) at `/memoir`. Caddy strips `/memoir-v0` from `/memoir-v0/api/*` for the API and
+  passes the rest to the web app. Data in `/docker/memoir/data`, secrets in `/docker/memoir/v0.env`; the
+  CompreFace there is the stack's shared one. Never in the repository.
 - Memories, photos and faces are private family data. Never log transcripts or send them anywhere but the
   configured Gemini and CompreFace endpoints; keep the basic auth in front of every route.

@@ -135,24 +135,27 @@ and Prettier at their defaults, the code-rules ratchet, Dependabot, and `CLAUDE.
 | `make baseline` | Rewrites the ratchet baselines after a clean-up (needs `../standards`) |
 
 CI (`.github/workflows/ci.yml`) runs the same checks and publishes two images on `main`:
-`ghcr.io/murphy360/memoir-api` and `ghcr.io/murphy360/memoir-web`. The complexity and file-size limits are enforced
+`ghcr.io/murphy360/memoir-v0-api` and `ghcr.io/murphy360/memoir-v0-web` (the `memoir-*` names belong to the
+rewrite, murphy360/memoir). The complexity and file-size limits are enforced
 against `code_rules_baseline.json` in `backend/` and `frontend/`: what is there today may only go down. The largest
 files (`backend/app/main.py`, `frontend/app/page.tsx`) are over the limit, so new code goes in new modules.
 
 ## Hosting
 
-The images are built for one deployment: the web app served under `/memoir` and the API on the same origin, so
+The images are built for one deployment: the web app served under `/memoir-v0` and the API on the same origin, so
 that a reverse proxy can put both behind one hostname and one login. The frontend's `NEXT_PUBLIC_BASE_PATH`
-(default `/memoir`) and `NEXT_PUBLIC_API_BASE_URL` (default empty, meaning same origin) are build arguments.
+(default `/memoir-v0`) and `NEXT_PUBLIC_API_BASE_URL` (default empty, meaning same origin) are build arguments.
 
-The owner's deployment lives in the dontpanic stack at `https://dontpanic.ddns.net/memoir`:
+The owner's deployment lives in the dontpanic stack at `https://dontpanic.ddns.net/memoir-v0`, beside the rewrite
+at `/memoir`, until the owner retires it:
 
-- Caddy asks for basic auth on everything under `/memoir`, strips `/memoir` from `/memoir/api/*` and proxies it to
-  `memoir-api:8000`, and proxies the rest to `memoir-web:3000`.
-- `memoir-api` keeps its data in `/docker/memoir/data` and reads its secrets (`GEMINI_API_KEY`,
-  `COMPREFACE_API_KEY`) from `/docker/memoir/memoir.env`. It uses the stack's shared CompreFace at
+- Caddy asks for basic auth on everything under `/memoir-v0`, strips `/memoir-v0` from `/memoir-v0/api/*` and
+  proxies it to `memoir-v0-api:8000`, and proxies the rest to `memoir-v0-web:3000`.
+- `memoir-v0-api` keeps its data in `/docker/memoir/data` and reads its secrets (`GEMINI_API_KEY`,
+  `COMPREFACE_API_KEY`) from `/docker/memoir/v0.env`. It uses the stack's shared CompreFace at
   `http://compreface-api:8080`; the key is a Recognition service created for Memoir in that CompreFace UI.
-- Deploy a new build with `docker compose pull memoir-api memoir-web && docker compose up -d memoir-api memoir-web`.
+- Deploy a new build with
+  `docker compose pull memoir-v0-api memoir-v0-web && docker compose up -d memoir-v0-api memoir-v0-web`.
 
 ## API Endpoints (MVP)
 
