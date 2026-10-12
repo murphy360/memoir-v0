@@ -14,6 +14,9 @@ jobs:
     with:
       working-directory: backend
       format-check: true
+      # v2 lints every file by default; this backend still carries v1-era findings, so
+      # only the files a change touches must be clean until that debt is paid down.
+      mode: changed
   lint-web:
     # Pinned to murphy360/standards#2 until it is released as v1.1.0; then @v1 like the others.
     uses: murphy360/standards/.github/workflows/node-lint.yml@5d52c5303ca6f7a1212d12d2385eb861badbd33b
