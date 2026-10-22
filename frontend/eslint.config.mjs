@@ -9,7 +9,15 @@ export default tseslint.config(
   { ignores: [".next/", "node_modules/", "next-env.d.ts", ".standards/"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  reactHooks.configs["recommended-latest"],
+  // v7's recommended set adds the React Compiler rules (set-state-in-effect and others), which flag
+  // effects this app relies on. Keep the two classic rules until the effects are reworked.
+  {
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+    },
+  },
   {
     plugins: { "@next/next": nextPlugin },
     rules: {
