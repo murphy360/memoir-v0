@@ -1,4 +1,4 @@
 # What the tests and the lint need on top of requirements.txt (the `test` image target).
 pytest==9.1.1
 httpx==0.28.1
-ruff==0.17.0
+ruff==0.17.1
