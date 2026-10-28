@@ -23,6 +23,8 @@ jobs:
     with:
       working-directory: frontend
       format-check: true
+      # The v0 frontend carries old lint debt (40 findings); every file a change touches must be clean.
+      mode: changed
       standards-ref: 1b8a062ac454e98fbd68b7a0c186442395a56f77
   workflows:
     uses: murphy360/standards/.github/workflows/actionlint.yml@v2
