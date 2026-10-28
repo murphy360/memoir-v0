@@ -18,12 +18,12 @@ jobs:
       # only the files a change touches must be clean until that debt is paid down.
       mode: changed
   lint-web:
-    # Pinned to murphy360/standards#2 until it is released as v1.1.0; then @v1 like the others.
-    uses: murphy360/standards/.github/workflows/node-lint.yml@5d52c5303ca6f7a1212d12d2385eb861badbd33b
+    # Pinned to the merge of murphy360/standards#2 until node-lint is tagged (v2.2.0); then @v2 like the others.
+    uses: murphy360/standards/.github/workflows/node-lint.yml@cfd61a0efaa4642ff2bf056f90653de1207dd80a
     with:
       working-directory: frontend
       format-check: true
-      standards-ref: 5d52c5303ca6f7a1212d12d2385eb861badbd33b
+      standards-ref: cfd61a0efaa4642ff2bf056f90653de1207dd80a
   workflows:
     uses: murphy360/standards/.github/workflows/actionlint.yml@v2
   test-api:
