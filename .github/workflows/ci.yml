@@ -19,11 +19,11 @@ jobs:
       mode: changed
   lint-web:
     # Pinned to the merge of murphy360/standards#2 until node-lint is tagged (v2.2.0); then @v2 like the others.
-    uses: murphy360/standards/.github/workflows/node-lint.yml@cfd61a0efaa4642ff2bf056f90653de1207dd80a
+    uses: murphy360/standards/.github/workflows/node-lint.yml@1b8a062ac454e98fbd68b7a0c186442395a56f77
     with:
       working-directory: frontend
       format-check: true
-      standards-ref: cfd61a0efaa4642ff2bf056f90653de1207dd80a
+      standards-ref: 1b8a062ac454e98fbd68b7a0c186442395a56f77
   workflows:
     uses: murphy360/standards/.github/workflows/actionlint.yml@v2
   test-api:
