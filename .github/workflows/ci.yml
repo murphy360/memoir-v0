@@ -64,3 +64,16 @@ jobs:
     permissions:
       contents: read
       packages: write
+
+  result:
+    name: result
+    if: always()
+    needs: [standards, lint-api, lint-web, workflows, test-api, test-web, image-api, image-web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job that ran passed
+        run: |
+          echo '${{ toJSON(needs) }}' > needs.json
+          cat needs.json
+          jq -e 'all(.[]; .result == "success" or .result == "skipped")' needs.json
