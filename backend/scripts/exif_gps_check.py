@@ -26,18 +26,14 @@ def run(photo_path: Path) -> None:
     meta = extract_image_metadata(file_bytes, content_type)
 
     # ── GPS assertions ────────────────────────────────────────────────────────
-    assert (
-        meta.gps_latitude is not None
-    ), "FAIL: gps_latitude is None — GPS data not parsed"
-    assert (
-        meta.gps_longitude is not None
-    ), "FAIL: gps_longitude is None — GPS data not parsed"
-    assert (
-        -90.0 <= meta.gps_latitude <= 90.0
-    ), f"FAIL: latitude out of range: {meta.gps_latitude}"
-    assert (
-        -180.0 <= meta.gps_longitude <= 180.0
-    ), f"FAIL: longitude out of range: {meta.gps_longitude}"
+    has_lat = meta.gps_latitude is not None
+    assert has_lat, "FAIL: gps_latitude is None — GPS data not parsed"
+    has_lon = meta.gps_longitude is not None
+    assert has_lon, "FAIL: gps_longitude is None — GPS data not parsed"
+    lat_ok = -90.0 <= meta.gps_latitude <= 90.0
+    assert lat_ok, f"FAIL: latitude out of range: {meta.gps_latitude}"
+    lon_ok = -180.0 <= meta.gps_longitude <= 180.0
+    assert lon_ok, f"FAIL: longitude out of range: {meta.gps_longitude}"
 
     # ── Print all extracted fields ────────────────────────────────────────────
     print(f"  gps_latitude   : {meta.gps_latitude}")
