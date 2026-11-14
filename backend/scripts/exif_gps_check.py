@@ -12,10 +12,11 @@ from pathlib import Path
 _here = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_here))
 
-from app.services.image_metadata import extract_image_metadata  # noqa: E402
-
 
 def run(photo_path: Path) -> None:
+    # imported here: the path above must be in place first
+    from app.services.image_metadata import extract_image_metadata
+
     if not photo_path.exists():
         raise FileNotFoundError(f"Photo not found: {photo_path}")
 
