@@ -6,26 +6,57 @@ on:
   pull_request:
 permissions:
   contents: read
+
+# One run per ref. A pull request's superseded run is cancelled; a push to main or a tag always finishes what it
+# started.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  standards:
-    uses: murphy360/standards/.github/workflows/standards-check.yml@v2
-  lint-api:
-    uses: murphy360/standards/.github/workflows/python-lint.yml@v2
-    with:
-      working-directory: backend
-      format-check: true
-      # v2 lints every file by default; this backend still carries v1-era findings, so
-      # only the files a change touches must be clean until that debt is paid down.
-      mode: changed
-  lint-web:
-    uses: murphy360/standards/.github/workflows/node-lint.yml@v2
-    with:
-      working-directory: frontend
-      format-check: true
-      # The v0 frontend carries old lint debt (40 findings); every file a change touches must be clean.
-      mode: changed
-  workflows:
-    uses: murphy360/standards/.github/workflows/actionlint.yml@v2
+  # The quick checks in one job (murphy360/standards, actions/checks): standards-check, the lint, shellcheck,
+  # actionlint and the secret scan. One runner and one checkout; every check runs, also after one failed, and the
+  # last lines of the step say which failed.
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      # A self-hosted runner keeps its workspace: this takes back the files a container of the job before left
+      # there, so that the checkout can replace them. On a GitHub-hosted runner it does nothing.
+      - uses: murphy360/standards/actions/take-ownership@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0  # the secret scan reads the commits of the change, so it needs the history
+      - uses: murphy360/standards/actions/checks@v2
+        with:
+          format-check: true
+          working-directory: backend
+          # mode changed: the v0 backend still carries v1-era findings (about 220), so every file a change touches must
+          # be clean until that debt is paid down.
+          mode: changed
+          format-only: ${{ contains(github.event.pull_request.labels.*.name, 'format-only') }}
+          silencers: true    # a skip, an xfail, a type ignore, a `# pragma: no cover` and a `# shellcheck disable=`
+          #                  # each carry a reason, and the last line counts them
+          project-ruff: true    # lint with the ruff the project pins, so that Dependabot's pull request
+          #                     # here is where a new ruff's findings show up
+          check-pr-template: true          # also requires .github/pull_request_template.md
+          check-pre-commit-config: true    # also requires .pre-commit-config.yaml
+          check-ticket-template: true      # also requires an issue template in .github/ISSUE_TEMPLATE
+          check-templates: true            # the shared text of AGENTS.md is the template's (tools/sync_templates.py)
+          check-agent-settings: true       # also requires .claude/settings.json with the guard hook
+          check-ruff-version: true         # every ruff version the project names is the same one
+      # The frontend's lint, a second step in the same job. It runs after a failure too.
+      - if: ${{ !cancelled() }}
+        uses: murphy360/standards/actions/checks@v2
+        with:
+          checks: node-lint
+          working-directory: frontend
+          format-check: true
+          # The v0 frontend carries old lint debt (40 findings); every file a change touches must be clean.
+          mode: changed
+          silencers: true          # a `.skip` in a test carries its reason, and `.only` is a problem
+          no-inline-config: true   # an eslint-disable comment hides nothing and is a problem
   test-api:
     uses: murphy360/standards/.github/workflows/test-docker.yml@v2
     with:
@@ -43,7 +74,7 @@ jobs:
   image-api:
     # image.yml from v2: v1's names every image's digests the same, so a run that
     # builds two images mixes them up (murphy360/standards#11).
-    needs: [lint-api, test-api]
+    needs: [checks, test-api]
     uses: murphy360/standards/.github/workflows/image.yml@v2
     with:
       image: memoir-v0-api
@@ -54,7 +85,7 @@ jobs:
       contents: read
       packages: write
   image-web:
-    needs: [lint-web, test-web]
+    needs: [checks, test-web]
     uses: murphy360/standards/.github/workflows/image.yml@v2
     with:
       image: memoir-v0-web
@@ -68,7 +99,7 @@ jobs:
   result:
     name: result
     if: always()
-    needs: [standards, lint-api, lint-web, workflows, test-api, test-web, image-api, image-web]
+    needs: [checks, test-api, test-web, image-api, image-web]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
