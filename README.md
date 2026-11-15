@@ -132,13 +132,13 @@ and Prettier at their defaults, the code-rules ratchet, Dependabot, and `CLAUDE.
 | `make test` | Builds the `test` image targets and runs pytest (backend) and the typecheck plus tests (frontend) |
 | `make lint` | ruff and ESLint, with the formatting checks |
 | `make format` | `ruff format` and `prettier --write` |
-| `make baseline` | Rewrites the ratchet baselines after a clean-up (needs `../standards`) |
 
 CI (`.github/workflows/ci.yml`) runs the same checks and publishes two images on `main`:
 `ghcr.io/murphy360/memoir-v0-api` and `ghcr.io/murphy360/memoir-v0-web` (the `memoir-*` names belong to the
-rewrite, murphy360/memoir). The complexity and file-size limits are enforced
-against `code_rules_baseline.json` in `backend/` and `frontend/`: what is there today may only go down. The largest
-files (`backend/app/main.py`, `frontend/app/page.tsx`) are over the limit, so new code goes in new modules.
+rewrite, murphy360/memoir). The complexity and file-size limits of murphy360/standards hold for every file a
+change touches (mode changed): the old findings stay until someone pays them down. `pre-commit run --all-files` runs
+the same checks before a push. The largest files (`backend/app/main.py`, `frontend/app/page.tsx`) are over the limit,
+so new code goes in new modules.
 
 ## Hosting
 

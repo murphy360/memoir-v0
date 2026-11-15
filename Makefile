@@ -5,9 +5,8 @@ TAG ?= dev
 API_TEST := memoir-api-test:$(TAG)
 WEB_TEST := memoir-web-test:$(TAG)
 RUN := docker run --rm -u $$(id -u):$$(id -g) -e HOME=/tmp -v "$(CURDIR):/src"
-STANDARDS ?= ../standards
 
-.PHONY: images test test-api test-web lint lint-api lint-web format baseline
+.PHONY: images test test-api test-web lint lint-api lint-web format
 
 images:
 	docker build --target test -t $(API_TEST) backend
@@ -32,8 +31,3 @@ lint-web: images
 format: images
 	$(RUN) -w /src/backend $(API_TEST) ruff format --no-cache .
 	$(RUN) -w /src/frontend $(WEB_TEST) prettier --write .
-
-# The code-rules ratchet, as CI runs it (python-lint and node-lint). Lower a baseline in the same PR as the fix.
-baseline: images
-	$(RUN) -w /src/backend -v "$(abspath $(STANDARDS))/tools:/tools:ro" $(API_TEST) python3 /tools/code_rules.py --update
-	cd frontend && npm ci && python3 $(STANDARDS)/tools/code_rules.py --eslint --update

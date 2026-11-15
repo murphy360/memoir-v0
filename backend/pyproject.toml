@@ -1,5 +1,5 @@
 # ruff at its defaults (88 columns, `ruff format`), as murphy360/standards asks. The complexity and
-# file-size limits come from the standards' code_rules.py, against code_rules_baseline.json here.
+# file-size limits come from the standards' code_rules.py.
 [tool.ruff]
 target-version = "py312"
 exclude = [".venv", "__pycache__", "data"]
