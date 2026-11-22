@@ -1,8 +1,8 @@
-fastapi==0.162.5
+fastapi==0.165.0
 uvicorn[standard]==0.54.0
-python-multipart==0.0.33
-sqlalchemy==2.1.8
+python-multipart==0.0.34
+sqlalchemy==2.1.9
 pydantic==2.14.3
 requests==2.34.2
 Pillow==13.0.0
-opencv-python-headless==5.0.0.93
+opencv-python-headless==5.1.0.95
